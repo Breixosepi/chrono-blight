@@ -1,0 +1,3 @@
+pygame>=2.6.0
+gale-engine>=1.16.0
+
