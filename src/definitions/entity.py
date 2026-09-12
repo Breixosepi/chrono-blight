@@ -2,6 +2,8 @@
 Chrono Blight - Entity Definitions
 """
 
+from typing import Any, Dict
+
 PLAYER_HIT_W = 16
 PLAYER_HIT_H = 24
 
@@ -16,6 +18,83 @@ MAGE_AREA_CIRCLES = [
     [0, 1, 2, 3, 4, 5],
     [12, 13, 14, 15, 16, 17],
 ]
+
+
+def player_attack(entity, target=None, action_name: str = "attack", *args, **kwargs) -> int:
+    action = entity.get_action(action_name) if hasattr(entity, "get_action") else {}
+    damage = int(action.get("damage", 10))
+    if target is not None:
+        target_list = [target] if hasattr(target, "take_damage") else target
+        for t in target_list:
+            if hasattr(t, "take_damage"):
+                t.take_damage(float(damage))
+    return damage
+
+
+def player_attack_aoe(entity, targets=None, action_name: str = "special", *args, **kwargs) -> tuple[int, int]:
+    action = entity.get_action(action_name) if hasattr(entity, "get_action") else {}
+    damage = int(action.get("damage", 25))
+    hit_count = 0
+    if targets is not None:
+        target_list = [targets] if hasattr(targets, "take_damage") else targets
+        for target in target_list:
+            if hasattr(target, "take_damage"):
+                target.take_damage(float(damage))
+                hit_count += 1
+    return damage, hit_count
+
+
+def sword_special_finish(entity) -> None:
+    dash_distance = 78.0
+    if entity.facing == "right":
+        entity.x += dash_distance
+    else:
+        entity.x -= dash_distance
+    entity.hitbox.x = int(entity.x)
+    entity.invulnerable_timer = max(entity.invulnerable_timer, 0.25)
+
+
+def mage_special_update(entity, dt: float) -> None:
+    entity.area_active = True
+    circle_fps = 12.0
+    total_area_frame = int(entity._anim_timer * circle_fps)
+    new_circle_idx = min(2, total_area_frame // 6)
+    entity.area_subframe = total_area_frame % 6
+
+    if new_circle_idx != entity.area_circle_idx or (
+        new_circle_idx == 0 and total_area_frame == 0 and entity._anim_timer <= dt
+    ):
+        offsets_x = [45, 105, 175]
+        base_offset = offsets_x[new_circle_idx]
+        circle_offset_x = base_offset if entity.facing == "right" else -base_offset
+        spawn_x = entity.hitbox.centerx + circle_offset_x
+        spawn_y = entity.hitbox.bottom
+
+        entity.flames.append({
+            "x":     spawn_x,
+            "y":     spawn_y,
+            "idx":   new_circle_idx,
+            "timer": 0.0,
+        })
+
+    entity.area_circle_idx = new_circle_idx
+
+
+def mage_special_finish(entity) -> None:
+    entity.area_active = False
+
+
+def morph_dash(entity) -> None:
+    entity.dash_speed = 220.0
+
+
+def enemy_melee_attack(entity, target=None, action_name: str = "attack", *args, **kwargs) -> int:
+    action = entity.get_action(action_name) if hasattr(entity, "get_action") else {}
+    damage = int(action.get("damage", getattr(entity, "contact_damage", 10)))
+    if target is not None and hasattr(target, "take_damage"):
+        target.take_damage(damage, source_x=entity.hitbox.centerx)
+    return damage
+
 
 _SWORD_ANIMATIONS = {
     "idle":           {"frames": [0, 1, 2, 3, 4, 5, 6], "interval": 1/5.0,  "loops": None},
@@ -51,112 +130,90 @@ _MAGE_ANIMATIONS = {
     "death":          {"frames": [50, 51, 52, 53, 54, 55, 56, 57], "interval": 1/7.0, "loops": 1},
 }
 
-def _character_attack(entity, target=None):
-    action = entity.get_action("attack")
-    damage = action.get("damage", 10)
-    if target is not None and hasattr(target, "damage"):
-        target.damage(damage)
-    return damage
-
-_player_basic_attack = _character_attack
-
-
-def _character_attack_aoe(entity, targets=None):
-    action = entity.get_action("special")
-    damage = action.get("damage", 50)
-    hit_count = 0
-    if targets:
-        for target in targets:
-            if hasattr(target, "damage"):
-                target.damage(damage)
-                hit_count += 1
-    return damage, hit_count
-
-#damage and dash
-def _sword_special_finish(entity):
-    dash_distance = 78.0
-    if entity.facing == "right":
-        entity.x += dash_distance
-    else:
-        entity.x -= dash_distance
-    entity.hitbox.x = int(entity.x)
-
-
-def _mage_special_update(entity, dt):
-    entity.area_active = True
-    circle_fps = 12.0
-    total_area_frame = int(entity._anim_timer * circle_fps)
-    new_circle_idx = min(2, total_area_frame // 6)
-    entity.area_subframe = total_area_frame % 6
-
-    if new_circle_idx != entity.area_circle_idx or (
-        new_circle_idx == 0 and total_area_frame == 0 and entity._anim_timer <= dt
-    ):
-        offsets_x = [45, 105, 175]
-        base_offset = offsets_x[new_circle_idx]
-        circle_offset_x = base_offset if entity.facing == "right" else -base_offset
-        spawn_x = entity.hitbox.centerx + circle_offset_x
-        spawn_y = entity.hitbox.bottom
-
-        entity.flames.append({
-            "x":     spawn_x,
-            "y":     spawn_y,
-            "idx":   new_circle_idx,
-            "timer": 0.0,
-        })
-
-    entity.area_circle_idx = new_circle_idx
-
-
-def _mage_special_finish(entity):
-    entity.area_active = False
-
-
-def _morph_special_finish(entity):
-    pass
-
-
-def _morph_dash(entity):
-    entity.dash_speed = 220.0
-
-
-def _entity_take_damage(entity, amount: float, source=None) -> float:
-    if hasattr(entity, "health"):
-        entity.health = max(0.0, entity.health - amount)
-        if entity.health <= 0.0 and hasattr(entity, "change_state") and getattr(entity, "state_name", "") != "death":
-            entity.change_state("death")
-    return amount
-
-
-def _entity_heal(entity, amount: float) -> float:
-    if hasattr(entity, "health") and hasattr(entity, "MAX_HEALTH"):
-        entity.health = min(entity.MAX_HEALTH, entity.health + amount)
-    return amount
-
-
-def _enemy_melee_attack(entity, target=None):
-    action = entity.get_action("attack") if hasattr(entity, "get_action") else {}
-    damage = action.get("damage", 10)
-    if target is not None and hasattr(target, "damage"):
-        target.damage(damage)
-    return damage
-
-
-_ENTITY_ANIMATIONS = {
-    "player": {
-        "sword": _SWORD_ANIMATIONS,
-        "morph": _MORPH_ANIMATIONS,
-        "mage":  _MAGE_ANIMATIONS,
-    },
-    "enemies": {}
+_SKELETON_SWORD_ANIMATIONS = {
+    "idle":    {"frames": [0, 1, 2],                 "interval": 1/5.0, "loops": None},
+    "walk":    {"frames": list(range(3, 9)),         "interval": 1/8.0, "loops": None},
+    "run":     {"frames": list(range(9, 15)),        "interval": 1/9.0, "loops": None},
+    "attack":  {"frames": list(range(15, 21)),       "interval": 1/10.0, "loops": 1},
+    "attack2": {"frames": list(range(21, 27)),       "interval": 1/10.0, "loops": 1},
+    "hit":     {"frames": [27, 28, 29],              "interval": 1/8.0, "loops": 1},
+    "death":   {"frames": list(range(30, 36)),       "interval": 1/8.0, "loops": 1},
+    "death2":  {"frames": list(range(36, 42)),       "interval": 1/8.0, "loops": 1},
+    "reborn":  {"frames": [42, 43, 44],              "interval": 1/6.0, "loops": 1},
 }
 
-ENTITY_DEFS = {
-    "animations": _ENTITY_ANIMATIONS,
+_MONSTER_EYES_ANIMATIONS = {
+    "idle":    {"frames": [0, 1, 2, 3, 4, 5, 6, 7], "interval": 1/7.0, "loops": None},
+    "walk":    {"frames": [8, 9, 10, 11, 12, 13, 14, 15], "interval": 1/8.0, "loops": None},
+    "walk2":   {"frames": [16, 17, 18, 19, 20, 21, 22, 23], "interval": 1/8.0, "loops": None},
+    "attack":  {"frames": [24, 25, 26, 27, 28, 29, 30, 31], "interval": 1/10.0, "loops": 1},
+    "attack2": {"frames": [32, 33, 34, 35, 36, 37, 38, 39], "interval": 1/10.0, "loops": 1},
+    "hit":     {"frames": [40, 41, 42], "interval": 1/8.0, "loops": 1},
+    "death":   {"frames": [48, 49, 50, 51, 52, 53, 54, 55], "interval": 1/7.0, "loops": 1},
+    "death2":  {"frames": [56, 57, 58, 59, 60, 61, 62, 63], "interval": 1/7.0, "loops": 1},
+}
 
+_CULTIST_PRIEST_ANIMATIONS = {
+    "idle":   {"frames": list(range(0, 5)),   "interval": 1/6.0, "loops": None},
+    "walk":   {"frames": list(range(5, 11)),  "interval": 1/8.0, "loops": None},
+    "attack": {"frames": list(range(11, 16)), "interval": 1/8.0, "loops": 1},
+    "hit":    {"frames": list(range(16, 20)), "interval": 1/8.0, "loops": 1},
+    "death":  {"frames": list(range(20, 26)), "interval": 1/7.0, "loops": 1},
+}
+
+_GOBLIN_ANIMATIONS = {
+    "idle":    {"frames": [64, 65, 66, 67, 68, 69, 70, 71], "interval": 1/7.0, "loops": None},
+    "walk":    {"frames": [80, 81, 82, 83, 84, 85, 86, 87], "interval": 1/8.0, "loops": None},
+    "run":     {"frames": [96, 97, 98, 99, 100, 101, 102, 103], "interval": 1/9.0, "loops": None},
+    "attack":  {"frames": [128, 129, 130, 131, 132, 133, 134, 135], "interval": 1/10.0, "loops": 1},
+    "attack2": {"frames": [144, 145, 146, 147, 148, 149, 150, 151], "interval": 1/10.0, "loops": 1},
+    "hit":     {"frames": [240, 241, 242], "interval": 1/8.0, "loops": 1},
+    "death":   {"frames": [256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267], "interval": 1/8.0, "loops": 1},
+    "death2":  {"frames": list(range(272, 288)), "interval": 1/8.0, "loops": 1},
+}
+
+_BIG_MONSTER_ANIMATIONS = {
+    "idle":   {"frames": list(range(0, 16)), "interval": 1/8.0, "loops": None},
+    "walk":   {"frames": list(range(16, 32)), "interval": 1/8.0, "loops": None},
+    "attack": {"frames": list(range(32, 48)), "interval": 1/10.0, "loops": 1},
+    "hit":    {"frames": [48, 49, 50], "interval": 1/8.0, "loops": 1},
+    "death":  {"frames": list(range(51, 67)), "interval": 1/8.0, "loops": 1},
+}
+
+_CROWN_ANIMATIONS = {
+    "idle":   {"frames": list(range(0, 4)), "interval": 1/6.0, "loops": None},
+    "walk":   {"frames": list(range(4, 8)), "interval": 1/8.0, "loops": None},
+    "jump":   {"frames": list(range(8, 14)), "interval": 1/8.0, "loops": None},
+    "attack": {"frames": list(range(14, 19)), "interval": 1/9.0, "loops": 1},
+    "hit":    {"frames": [19, 20, 21], "interval": 1/8.0, "loops": 1},
+    "death":  {"frames": list(range(22, 27)), "interval": 1/7.0, "loops": 1},
+    "death2": {"frames": list(range(27, 33)), "interval": 1/7.0, "loops": 1},
+}
+
+_MONSTER2_ANIMATIONS = {
+    "idle":    {"frames": list(range(0, 8)),   "interval": 1/8.0, "loops": None},
+    "walk":    {"frames": list(range(10, 18)), "interval": 1/8.0, "loops": None},
+    "attack":  {"frames": list(range(40, 48)), "interval": 1/10.0, "loops": 1},
+    "attack2": {"frames": list(range(50, 60)), "interval": 1/10.0, "loops": 1},
+    "hit":     {"frames": [20, 21, 22],        "interval": 1/8.0, "loops": 1},
+    "death":   {"frames": list(range(20, 30)), "interval": 1/8.0, "loops": 1},
+    "death2":  {"frames": list(range(30, 38)), "interval": 1/8.0, "loops": 1},
+}
+
+_MONSTER3_ANIMATIONS = {
+    "idle":      {"frames": list(range(0, 8)),     "interval": 1/8.0, "loops": None},
+    "walk":      {"frames": list(range(18, 26)),   "interval": 1/8.0, "loops": None},
+    "attack":    {"frames": list(range(36, 46)),   "interval": 1/10.0, "loops": 1},
+    "attack2":   {"frames": list(range(54, 68)),   "interval": 1/11.0, "loops": 1},
+    "hit":       {"frames": [72, 73, 74],          "interval": 1/8.0, "loops": 1},
+    "death":     {"frames": list(range(90, 104)),  "interval": 1/9.0, "loops": 1},
+    "awakening": {"frames": list(range(108, 126)), "interval": 1/10.0, "loops": 1},
+}
+
+ENTITY_DEFS: Dict[str, Any] = {
     "player": {
         "hitbox": {"width": PLAYER_HIT_W, "height": PLAYER_HIT_H},
-        
+
         "physics": {
             "gravity": GRAVITY,
             "jump_velocity": JUMP_VELOCITY,
@@ -173,17 +230,19 @@ ENTITY_DEFS = {
             "sword": {
                 "name": "Swordmaster",
                 "stats": {
-                    "max_health": 80,
-                    "max_mana":   50,
-                    "mana_regen": 3.0,
-                    "jumps":      2,
+                    "max_health": 80.0,
+                    "max_mana":   50.0,
+                    "mana_regen":  3.0,
+                    "jumps":       2,
                 },
+                "offsets": {"right": -18, "left": -94, "y": -27},
+                "animations": _SWORD_ANIMATIONS,
                 "actions": {
                     "attack": {
                         "name": "Sword Slash Combo",
-                        "func": _player_basic_attack,
                         "damage": 15,
                         "mana_cost": 0,
+                        "func": player_attack,
                         "combo": {
                             "hit1_frames": 7,
                             "hit2_damage": 20,
@@ -192,96 +251,396 @@ ENTITY_DEFS = {
                     },
                     "special": {
                         "name": "Thrust Dash",
-                        "func": None,
                         "damage": 30,
                         "mana_cost": 20,
-                        "on_finish": _sword_special_finish,
+                        "func": None,
+                        "on_finish": sword_special_finish,
                     },
                 },
-                "combat": {
-                    "attack_damage":         15,
-                    "attack_mana_cost":       0,
-                    "special_damage":        30,
-                    "special_mana_cost":     20,
-                },
-                "offsets": {"right": -18, "left": -94, "y": -27},
             },
 
             "morph": {
                 "name": "Beast Morph",
                 "stats": {
-                    "max_health": 120,
-                    "max_mana":    30,
-                    "mana_regen":  2.0,
-                    "jumps":       1,
+                    "max_health": 120.0,
+                    "max_mana":    30.0,
+                    "mana_regen":   2.0,
+                    "jumps":        1,
                 },
+                "offsets": {"right": -23, "left": -89, "y": -26},
+                "animations": _MORPH_ANIMATIONS,
                 "actions": {
                     "attack": {
                         "name": "Beast Claw",
-                        "func": _player_basic_attack,
                         "damage": 12,
                         "mana_cost": 0,
+                        "func": player_attack,
                     },
                     "special": {
                         "name": "Primal Impact",
-                        "func": None,
                         "damage": 20,
                         "mana_cost": 15,
-                        "on_finish": _morph_special_finish,
+                        "func": None,
                     },
                     "dash": {
                         "name": "Beast Dash",
-                        "func": _morph_dash,
-                        "mana_cost": 10,
                         "dash_speed": 220.0,
+                        "mana_cost": 10,
+                        "func": morph_dash,
                     },
                 },
-                "combat": {
-                    "attack_damage":         12,
-                    "attack_mana_cost":       0,
-                    "special_damage":        20,
-                    "special_mana_cost":     15,
-                    "dash_cost":             10,
-                },
-                "offsets": {"right": -23, "left": -89, "y": -26},
             },
 
             "mage": {
                 "name": "Phase Mage",
                 "stats": {
-                    "max_health": 50,
-                    "max_mana":  100,
-                    "mana_regen": 10.0,
-                    "jumps":       1,
+                    "max_health":  50.0,
+                    "max_mana":   100.0,
+                    "mana_regen":  10.0,
+                    "jumps":        1,
                 },
+                "offsets": {"right": -29, "left": -83, "y": -23},
+                "animations": _MAGE_ANIMATIONS,
                 "actions": {
                     "attack": {
                         "name": "Arcane Bolt",
-                        "func": _player_basic_attack,
                         "damage": 18,
                         "mana_cost": 5,
+                        "func": player_attack,
                     },
                     "special": {
                         "name": "Infernal Flame Area",
-                        "func": _character_attack_aoe,
-                        "is_aoe": True,
                         "damage": 50,
                         "mana_cost": 35,
+                        "is_aoe": True,
                         "duration": 1.2,
-                        "on_update": _mage_special_update,
-                        "on_finish": _mage_special_finish,
+                        "func": player_attack_aoe,
+                        "on_update": mage_special_update,
+                        "on_finish": mage_special_finish,
                     },
                 },
-                "combat": {
-                    "attack_damage":         18,
-                    "attack_mana_cost":       5,
-                    "special_damage":        50,
-                    "special_mana_cost":     35,
+            },
+        },
+    },
+
+    "enemies": {
+        "skeleton_sword": {
+            "name":           "Skeleton Guard",
+            "phase":          "green",
+            "default_facing": "right",
+            "hitbox":         {"width": 16, "height": 30},
+            "render_offset":  {"x": -31, "y": -29},
+            "stats": {
+                "max_health":     45.0,
+                "contact_damage": 12.0,
+            },
+            "ai": {
+                "walk_speed":      36.0,
+                "patrol_dist":     80.0,
+                "detect_range":   110.0,
+                "attack_range":    28.0,
+                "attack_reach":    34.0,
+                "attack_timing":   (0.30, 0.50),
+                "attack_duration": 0.60,
+                "attack_cooldown": 1.5,
+            },
+            "animations": _SKELETON_SWORD_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Stab",
+                    "damage":   12.0,
+                    "reach":    34.0,
+                    "timing":   (0.30, 0.50),
+                    "duration": 0.60,
+                    "func":     enemy_melee_attack,
                 },
-                "offsets": {"right": -29, "left": -83, "y": -23},
+                "attack2": {
+                    "name":     "Overhead Slash",
+                    "damage":   16.0,
+                    "reach":    36.0,
+                    "timing":   (0.35, 0.55),
+                    "duration": 0.60,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "monster_eyes": {
+            "name":           "Corrupted Creeper",
+            "phase":          "red",
+            "default_facing": "left",
+            "hitbox":         {"width": 14, "height": 18},
+            "render_offset":  {"x": -17, "y": -14},
+            "stats": {
+                "max_health":     25.0,
+                "contact_damage": 10.0,
+            },
+            "ai": {
+                "walk_speed":      42.0,
+                "patrol_dist":     80.0,
+                "detect_range":    95.0,
+                "attack_range":    24.0,
+                "attack_reach":    28.0,
+                "attack_timing":   (0.45, 0.60),
+                "attack_duration": 0.80,
+                "attack_cooldown": 1.5,
+            },
+            "animations": _MONSTER_EYES_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Bite",
+                    "damage":   10.0,
+                    "reach":    28.0,
+                    "timing":   (0.45, 0.60),
+                    "duration": 0.80,
+                    "func":     enemy_melee_attack,
+                },
+                "attack2": {
+                    "name":     "Claw Rush",
+                    "damage":   14.0,
+                    "reach":    32.0,
+                    "timing":   (0.50, 0.65),
+                    "duration": 0.80,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "cultist_priest": {
+            "name":           "Cultist Priest",
+            "phase":          "red",
+            "default_facing": "right",
+            "hitbox":         {"width": 36, "height": 72},
+            "render_offset":  {"x": -76, "y": -110},
+            "stats": {
+                "max_health":     120.0,
+                "contact_damage":  22.0,
+            },
+            "ai": {
+                "walk_speed":      28.0,
+                "patrol_dist":    100.0,
+                "detect_range":   140.0,
+                "attack_range":    36.0,
+                "attack_reach":    46.0,
+                "attack_timing":   (0.24, 0.48),
+                "attack_duration": 0.65,
+                "attack_cooldown": 1.8,
+            },
+            "animations": _CULTIST_PRIEST_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Dark Evocation",
+                    "damage":   22.0,
+                    "reach":    46.0,
+                    "timing":   (0.24, 0.48),
+                    "duration": 0.65,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "goblin": {
+            "name":           "Goblin Scout",
+            "phase":          "green",
+            "default_facing": "right",
+            "hitbox":         {"width": 16, "height": 18},
+            "render_offset":  {"x": -24, "y": -26},
+            "stats": {
+                "max_health":     20.0,
+                "contact_damage":  8.0,
+            },
+            "ai": {
+                "walk_speed":      48.0,
+                "patrol_dist":     70.0,
+                "detect_range":    90.0,
+                "attack_range":    22.0,
+                "attack_reach":    24.0,
+                "attack_timing":   (0.30, 0.50),
+                "attack_duration": 0.80,
+                "attack_cooldown": 1.2,
+            },
+            "animations": _GOBLIN_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Dagger Slash",
+                    "damage":    8.0,
+                    "reach":    24.0,
+                    "timing":   (0.30, 0.50),
+                    "duration": 0.80,
+                    "func":     enemy_melee_attack,
+                },
+                "attack2": {
+                    "name":     "Low Stab",
+                    "damage":   12.0,
+                    "reach":    26.0,
+                    "timing":   (0.35, 0.55),
+                    "duration": 0.80,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "big_monster": {
+            "name":           "Root Golem",
+            "phase":          "red",
+            "default_facing": "right",
+            "hitbox":         {"width": 32, "height": 38},
+            "render_offset":  {"x": -24, "y": -17},
+            "stats": {
+                "max_health":     120.0,
+                "contact_damage":  18.0,
+            },
+            "ai": {
+                "walk_speed":      30.0,
+                "patrol_dist":    100.0,
+                "detect_range":   160.0,
+                "attack_range":   110.0,
+                "attack_reach":    38.0,
+                "attack_timing":   (0.80, 1.05),
+                "attack_duration": 1.60,
+                "attack_cooldown": 2.0,
+            },
+            "animations": _BIG_MONSTER_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Seismic Stomp",
+                    "damage":   18.0,
+                    "reach":    38.0,
+                    "timing":   (0.80, 1.05),
+                    "duration": 1.60,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "crown": {
+            "name":           "Watcher Crow",
+            "phase":          "green",
+            "default_facing": "right",
+            "hitbox":         {"width": 16, "height": 24},
+            "render_offset":  {"x": -24, "y": -23},
+            "stats": {
+                "max_health":     18.0,
+                "contact_damage":  7.0,
+            },
+            "ai": {
+                "walk_speed":      52.0,
+                "patrol_dist":     80.0,
+                "detect_range":    95.0,
+                "attack_range":    22.0,
+                "attack_reach":    26.0,
+                "attack_timing":   (0.12, 0.32),
+                "attack_duration": 0.55,
+                "attack_cooldown": 1.2,
+                "can_jump":        True,
+                "jump_velocity":   -250.0,
+            },
+            "animations": _CROWN_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Peck",
+                    "damage":    7.0,
+                    "reach":    26.0,
+                    "timing":   (0.12, 0.32),
+                    "duration": 0.55,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "monster2": {
+            "name":           "Shadow Lurker",
+            "phase":          "green",
+            "default_facing": "right",
+            "hitbox":         {"width": 14, "height": 20},
+            "render_offset":  {"x": -17, "y": -12},
+            "stats": {
+                "max_health":     40.0,
+                "contact_damage": 10.0,
+            },
+            "ai": {
+                "walk_speed":      42.0,
+                "patrol_dist":     85.0,
+                "detect_range":   100.0,
+                "attack_range":    24.0,
+                "attack_reach":    26.0,
+                "attack_timing":   (0.35, 0.55),
+                "attack_duration": 0.80,
+                "attack_cooldown": 1.4,
+            },
+            "animations": _MONSTER2_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Shadow Claw",
+                    "damage":   10.0,
+                    "reach":    20.0,
+                    "timing":   (0.35, 0.55),
+                    "duration": 0.80,
+                    "func":     enemy_melee_attack,
+                },
+                "attack2": {
+                    "name":     "Dark Thrust",
+                    "damage":   14.0,
+                    "reach":    28.0,
+                    "timing":   (0.45, 0.65),
+                    "duration": 0.80,
+                    "func":     enemy_melee_attack,
+                },
+            },
+        },
+
+        "monster3": {
+            "name":           "Horned Imp",
+            "phase":          "red",
+            "default_facing": "right",
+            "hitbox":         {"width": 18, "height": 24},
+            "render_offset":  {"x": -23, "y": -24},
+            "stats": {
+                "max_health":     55.0,
+                "contact_damage": 14.0,
+            },
+            "ai": {
+                "walk_speed":      38.0,
+                "patrol_dist":     90.0,
+                "detect_range":   110.0,
+                "attack_range":    28.0,
+                "attack_reach":    36.0,
+                "attack_timing":   (0.27, 0.45),
+                "attack_duration": 0.90,
+                "attack_cooldown": 1.6,
+            },
+            "animations": _MONSTER3_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Gore",
+                    "damage":   14.0,
+                    "reach":    36.0,
+                    "timing":   (0.27, 0.45),
+                    "duration": 0.90,
+                    "func":     enemy_melee_attack,
+                },
+                "attack2": {
+                    "name":     "Horn Charge",
+                    "damage":   18.0,
+                    "reach":    42.0,
+                    "timing":   (0.35, 0.55),
+                    "duration": 0.90,
+                    "func":     enemy_melee_attack,
+                },
             },
         },
     },
 }
 
+ENTITY_DEFS["animations"] = {
+    "player": {
+        "sword": _SWORD_ANIMATIONS,
+        "morph": _MORPH_ANIMATIONS,
+        "mage":  _MAGE_ANIMATIONS,
+    },
+    "enemies": {
+        key: data["animations"] for key, data in ENTITY_DEFS["enemies"].items()
+    },
+}
 
+ENEMY_DEFS = ENTITY_DEFS["enemies"]
