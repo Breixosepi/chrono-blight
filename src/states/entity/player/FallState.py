@@ -3,7 +3,6 @@ Chrono Blight
 """
 
 from src.states.entity.EntityBaseState import EntityBaseState
-from src.definitions import entity as entity_defs
 
 
 class FallState(EntityBaseState):
@@ -12,12 +11,7 @@ class FallState(EntityBaseState):
         self.entity.change_animation("jump")
 
     def update(self, dt: float) -> None:
-        if self.entity.move_direction != 0:
-            self.entity.facing = "left" if self.entity.move_direction < 0 else "right"
-            speed = entity_defs.RUN_SPEED if self.entity.is_running else entity_defs.WALK_SPEED
-            self.entity.vx = speed * self.entity.move_direction
-        else:
-            self.entity.vx = 0.0
+        self.apply_horizontal_movement()
 
         if self.entity.jump_requested and self.entity.jumps_left > 0:
             self.entity.jump_requested = False

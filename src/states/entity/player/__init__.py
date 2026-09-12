@@ -9,15 +9,6 @@ from src.states.entity.player.AttackSpecialState import AttackSpecialState
 from src.states.entity.player.HitState import HitState
 from src.states.entity.player.DeathState import DeathState
 
-PlayerIdleState = IdleState
-PlayerWalkState = WalkState
-PlayerAirborneState = FallState
-PlayerDashState = DashState
-PlayerAttackState = AttackState
-PlayerAttackSpecialState = AttackSpecialState
-PlayerHitState = HitState
-PlayerDeathState = DeathState
-
 __all__ = [
     "IdleState",
     "WalkState",
@@ -28,12 +19,4 @@ __all__ = [
     "AttackSpecialState",
     "HitState",
     "DeathState",
-    "PlayerIdleState",
-    "PlayerWalkState",
-    "PlayerAirborneState",
-    "PlayerDashState",
-    "PlayerAttackState",
-    "PlayerAttackSpecialState",
-    "PlayerHitState",
-    "PlayerDeathState",
 ]

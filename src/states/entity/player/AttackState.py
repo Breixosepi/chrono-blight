@@ -1,24 +1,17 @@
 """
 Chrono Blight
-Plataformas de Accion / Mini-Metroidvania - Fantasia Oscura / Relojeria
-
-Archivo: src/states/entity/player/AttackState.py
-Descripcion: Estado de ataque basico y combos encadenados (basado en intenciones de comandos).
 """
 
 from src.states.entity.EntityBaseState import EntityBaseState
-from src.definitions import entity as entity_defs
 
 
 class AttackState(EntityBaseState):
-    """Estado de ataque con soporte de ataques direccionados (Up) y combos encadenados."""
 
     def enter(self) -> None:
         self.action = self.entity.get_action("attack")
         is_up = self.entity.is_looking_up
         up_anim = self.action.get("up_anim")
 
-        # Seleccionar animación (corte hacia arriba o corte lateral)
         if is_up and up_anim:
             self.entity.change_animation(up_anim)
             self.in_combo_followup = True
@@ -37,20 +30,14 @@ class AttackState(EntityBaseState):
             self.action["on_start"](self.entity)
 
         self.entity.attack_requested = False
+        self.entity.swing_id = getattr(self.entity, "swing_id", 0) + 1
 
     def update(self, dt: float) -> None:
-        # Buffer de combo: el jugador puede registrar el segundo golpe durante el primero
         if self.entity.attack_requested and not self.in_combo_followup:
             self.combo_buffered = True
             self.entity.attack_requested = False
 
-        # Control horizontal durante el ataque
-        if self.entity.move_direction != 0:
-            self.entity.facing = "left" if self.entity.move_direction < 0 else "right"
-            speed = entity_defs.RUN_SPEED if self.entity.is_running else entity_defs.WALK_SPEED
-            self.entity.vx = speed * self.entity.move_direction
-        else:
-            self.entity.vx = 0.0
+        self.apply_horizontal_movement()
 
         if self.action.get("on_update"):
             self.action["on_update"](self.entity, dt)
@@ -61,16 +48,15 @@ class AttackState(EntityBaseState):
 
         is_done = False
 
-        # Si hay definición de combo y estamos en el primer golpe
         if combo_def and not self.in_combo_followup and self.current_anim_name == "attack":
             hit1_limit = combo_def.get("hit1_frames", 7)
             if curr_idx >= hit1_limit:
                 if self.combo_buffered:
                     self.in_combo_followup = True
+                    self.entity.swing_id = getattr(self.entity, "swing_id", 0) + 1
                 else:
                     is_done = True
 
-        # Fin de la animación completa
         if anim and anim.times_played > 0:
             is_done = True
 
@@ -84,3 +70,7 @@ class AttackState(EntityBaseState):
                 self.change_state("walk")
             else:
                 self.change_state("idle")
+
+    def exit(self) -> None:
+        if hasattr(self, "action") and self.action.get("on_finish"):
+            self.action["on_finish"](self.entity)

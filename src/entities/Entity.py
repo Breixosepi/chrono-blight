@@ -56,11 +56,28 @@ class Entity:
         self.animations: Dict[str, Any] = {}
         self.current_animation: Optional[Animation] = None
         self._anim_timer: float = 0.0
-        self._anim_idx: int = 0
         self._last_anim_name: str = "idle"
+
+        self.invulnerable_timer: float = 0.0
+        self.hit_flash_timer: float = 0.0
 
         self._health: float = 100.0
         self._max_health: float = 100.0
+
+    @staticmethod
+    def _create_animations(
+        animation_defs: Dict[str, Dict[str, Any]],
+        frame_source: Any,
+    ) -> Dict[str, Animation]:
+        animations: Dict[str, Animation] = {}
+        for name, anim_data in animation_defs.items():
+            rects = [frame_source[i] for i in anim_data["frames"]]
+            animations[name] = Animation(
+                rects,
+                anim_data["interval"],
+                loops=anim_data.get("loops"),
+            )
+        return animations
 
     @property
     def health(self) -> float:
@@ -83,9 +100,10 @@ class Entity:
         return self.state_name in {"attack", "attack_special", "dash", "hit", "death"}
 
     def change_animation(self, new_anim_name: str) -> None:
+        if new_anim_name == self._last_anim_name and self.current_animation is not None:
+            return
         self._last_anim_name = new_anim_name
         self._anim_timer = 0.0
-        self._anim_idx = 0
         if isinstance(self.animations, dict) and new_anim_name in self.animations:
             self.current_animation = self.animations[new_anim_name]
             if self.current_animation is not None:
@@ -93,15 +111,25 @@ class Entity:
 
     def _tick_anim(self, dt: float) -> None:
         self._anim_timer += dt
-        if self.current_animation is not None:
+        if self.current_animation:
             self.current_animation.update(dt)
-            self._anim_idx = self.current_animation.current_frame_index
 
     def is_animation_finished(self, fallback_duration: Optional[float] = None) -> bool:
         if self.current_animation is not None and self.current_animation.times_played > 0:
             return True
+        if fallback_duration is None and self.current_animation is not None:
+            fallback_duration = self.current_animation.size * self.current_animation.interval
         if fallback_duration is not None and self._anim_timer >= fallback_duration:
             return True
+        return False
+
+    def collides(self, target: Any) -> bool:
+        target_rect = getattr(target, "hitbox", getattr(target, "rect", None))
+        if target_rect is not None:
+            return self.hitbox.colliderect(target_rect)
+        if hasattr(target, "x") and hasattr(target, "y") and hasattr(target, "width") and hasattr(target, "height"):
+            target_rect = pygame.Rect(round(target.x), round(target.y), target.width, target.height)
+            return self.hitbox.colliderect(target_rect)
         return False
 
     def _apply_movement_and_collision(self, dt: float) -> None:
@@ -129,15 +157,17 @@ class Entity:
         else:
             self.on_ground = False
 
-    def _apply_physics(self, dt: float) -> None:
-        self._apply_movement_and_collision(dt)
-
     def on_land(self) -> None:
         current_state = self.state_machine.current if self.state_machine else None
         if hasattr(current_state, "on_land"):
             current_state.on_land()
 
     def update(self, dt: float) -> None:
+        if self.invulnerable_timer > 0.0:
+            self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
+        if self.hit_flash_timer > 0.0:
+            self.hit_flash_timer = max(0.0, self.hit_flash_timer - dt)
+
         current_state = self.state_machine.current if self.state_machine else None
 
         if getattr(current_state, "has_gravity", True):
@@ -157,11 +187,6 @@ class Entity:
             self.change_state("death")
         else:
             self.change_state("hit")
-
-    def heal(self, amount: int) -> None:
-        if self.state_name == "death":
-            return
-        self.health = min(self.MAX_HEALTH, self.health + amount)
 
     def is_dead(self) -> bool:
         return self.health <= 0.0

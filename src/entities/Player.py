@@ -2,7 +2,7 @@
 Chrono Blight
 """
 
-from typing import Any, Optional, Dict, List
+from typing import Optional
 import pygame
 from gale.animation import Animation
 from gale.state import StateMachine
@@ -31,18 +31,7 @@ def _build_animations() -> dict[str, dict[str, Animation]]:
     for skin, anim_dict in player_anim_defs.items():
         for color in ("red", "green"):
             texture_key = f"{skin}_{color}"
-            frame_rects = settings.FRAMES[texture_key]
-
-            state_animations: dict[str, Animation] = {}
-            for state_name, anim_data in anim_dict.items():
-                rects = [frame_rects[i] for i in anim_data["frames"]]
-                state_animations[state_name] = Animation(
-                    rects,
-                    anim_data["interval"],
-                    loops=anim_data.get("loops"),
-                )
-
-            result[texture_key] = state_animations
+            result[texture_key] = Entity._create_animations(anim_dict, settings.FRAMES[texture_key])
 
     return result
 
@@ -83,6 +72,7 @@ class Player(Entity):
             }
 
         self.jumps_left: int = self.form_stats[self.skin]["jumps"]
+        self.swing_id: int = 0
 
         self.animations: dict[str, dict[str, Animation]] = _build_animations()
         self.current_animation: Animation = self.animations["mage_red"]["idle"]
@@ -102,6 +92,9 @@ class Player(Entity):
 
         self.skin_cooldown_max: float = 5.0
         self.skin_cooldown_timer: float = 0.0
+
+        self.invulnerable_max: float = 1.2
+        self.invulnerable_timer: float = 0.0
 
         self.area_circle_idx: int = 0
         self.area_subframe: int = 0
@@ -148,8 +141,10 @@ class Player(Entity):
     def MAX_MANA(self) -> float:
         return self.form_stats[self.skin]["max_mana"]
 
+    def is_dead(self) -> bool:
+        return len(self.available_skins) == 0 and self.state_name == "death"
+
     def on_land(self) -> None:
-        """Reinicia los saltos disponibles según la forma activa al tocar el suelo."""
         super().on_land()
         self.jumps_left = self.form_stats[self.skin]["jumps"]
 
@@ -158,9 +153,6 @@ class Player(Entity):
 
     def get_action(self, action_name: str) -> dict:
         return self.get_form_data().get("actions", {}).get(action_name, {})
-
-    def get_combat_data(self) -> dict:
-        return self.get_form_data().get("combat", {})
 
     def can_dash(self) -> bool:
         action = self.get_action("dash")
@@ -197,7 +189,7 @@ class Player(Entity):
     def change_skin(self, new_skin: str) -> None:
         self.skin = new_skin
         self._anim_timer = 0.0
-        self._anim_idx = 0
+
         self.area_active = False
         self.dash_requested = False
         self.attack_requested = False
@@ -228,8 +220,7 @@ class Player(Entity):
         self.skin_cooldown_timer = self.skin_cooldown_max
         return self.skin
 
-    def toggle_skin(self) -> Optional[str]:
-        return self.cycle_skin(1)
+
 
     def _sync_animation(self) -> None:
         texture_key = f"{self.skin}_{self.phase_color}"
@@ -238,27 +229,107 @@ class Player(Entity):
         self.current_animation = skin_anims.get(anim_name, skin_anims.get("idle"))
 
     def change_animation(self, new_anim_name: str) -> None:
+        if new_anim_name == self._last_anim_name and self.current_animation is not None:
+            return
         self._last_anim_name = new_anim_name
         self._anim_timer = 0.0
-        self._anim_idx = 0
+
         texture_key = f"{self.skin}_{self.phase_color}"
         skin_anims = self.animations.get(texture_key, {})
         self.current_animation = skin_anims.get(new_anim_name, skin_anims.get("idle"))
         if self.current_animation is not None:
             self.current_animation.reset()
 
-    def _get_anim_dict(self) -> dict[str, list[int]]:
-        anim_map = entity_defs.ENTITY_DEFS["animations"]["player"].get(self.skin, {})
-        return {name: data["frames"] for name, data in anim_map.items()}
+
+
+    def is_attack_active(self) -> bool:
+        """Returns True only during the visual strike frames of the attack animation."""
+        if self.state_name not in ("attack", "attack_special"):
+            return False
+        anim = self.current_animation
+        if anim is None:
+            return False
+        idx = anim.current_frame_index
+
+        if self.skin == "sword":
+            if self.state_name == "attack":
+                # Slash 1 is active on frames 2..4; Slash 2 (combo followup) is active on frames 8..10
+                return (2 <= idx <= 4) or (8 <= idx <= 10)
+            elif self.state_name == "attack_special":
+                # Thrust active during dash forward
+                return (1 <= idx <= 4)
+            elif getattr(getattr(self, "state_machine", None), "current", None) and getattr(self.state_machine.current, "current_anim_name", "") == "attack_up":
+                return (2 <= idx <= 4)
+        elif self.skin == "mage":
+            if self.state_name == "attack":
+                # Arcane wave flashes and strikes forward on frames 3..6
+                return (3 <= idx <= 6)
+            elif self.state_name == "attack_special":
+                return False  # Handled via flame pillars
+        elif self.skin == "morph":
+            if self.state_name == "attack":
+                return (2 <= idx <= 4)
+            elif self.state_name == "attack_special":
+                return (2 <= idx <= 4)
+
+        return (2 <= idx <= 4)
+
+    def get_attack_hitbox(self) -> Optional[pygame.Rect]:
+        if not self.is_attack_active():
+            return None
+
+        # Reach configuration according to form and attack type
+        if self.state_name == "attack_special" and self.skin == "sword":
+            reach = 96  # covers 78px dash plus forward sword swing
+            v_expand = 16
+        elif self.skin == "mage":
+            if self.state_name == "attack_special":
+                return None  
+            reach = 54  # broad reach for mage arc
+            v_expand = 14
+        else:
+            reach = 48
+            v_expand = 10
+
+        if self.facing == "right":
+            return pygame.Rect(
+                self.hitbox.right - 4,
+                self.hitbox.top - v_expand,
+                reach,
+                self.hitbox.height + (v_expand * 2),
+            )
+        else:
+            return pygame.Rect(
+                self.hitbox.left - reach + 4,
+                self.hitbox.top - v_expand,
+                reach,
+                self.hitbox.height + (v_expand * 2),
+            )
+
+    def take_damage(self, amount: int, source_x: Optional[float] = None) -> None:
+        is_sword_special = (self.state_name == "attack_special" and self.skin == "sword")
+        if self.state_name in {"hit", "death", "dash"} or is_sword_special or self.invulnerable_timer > 0.0:
+            return
+        self.health = max(0.0, self.health - amount)
+        self.invulnerable_timer = self.invulnerable_max
+
+        if source_x is not None:
+            direction = 1.0 if self.hitbox.centerx >= source_x else -1.0
+        else:
+            direction = -1.0 if self.facing == "right" else 1.0
+
+        self.vx = 140.0 * direction
+        self.vy = -120.0  
+
+        if self.health == 0.0:
+            self.change_state("death")
+        else:
+            self.change_state("hit")
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
-        """Despacha la entrada a través del CommandBindings del jugador."""
         self.command_bindings.dispatch(self, input_id, input_data)
 
-    def update(self, dt: float, commands: Optional[Any] = None) -> None:
-        if commands is not None:
-            self.commands = commands
-
+    def update(self, dt: float) -> None:
         if self.phase_cooldown_timer > 0.0:
             self.phase_cooldown_timer = max(0.0, self.phase_cooldown_timer - dt)
         if self.skin_cooldown_timer > 0.0:
@@ -284,6 +355,10 @@ class Player(Entity):
     ) -> None:
         if self.current_animation is None:
             return
+
+        if self.invulnerable_timer > 0.0:
+            if int(self.invulnerable_timer * 20) % 2 == 0:
+                return
 
         texture_key = f"{self.skin}_{self.phase_color}"
         frame_rect: pygame.Rect = self.current_animation.get_current_frame()

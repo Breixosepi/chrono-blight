@@ -3,7 +3,6 @@ Chrono Blight
 """
 
 from src.states.entity.EntityBaseState import EntityBaseState
-from src.definitions import entity as entity_defs
 
 
 class DashState(EntityBaseState):
@@ -23,20 +22,18 @@ class DashState(EntityBaseState):
         if action.get("func"):
             action["func"](self.entity)
 
-        anim_frames = self.entity._get_anim_dict().get("dash", [0])
-        anim_def = entity_defs.ENTITY_DEFS["animations"]["player"][self.entity.skin].get(
-            "dash", {"interval": 1/10.0}
-        )
-        self.duration = len(anim_frames) * anim_def["interval"]
-
     def update(self, dt: float) -> None:
         self.entity.vx = self.dash_speed if self.entity.facing == "right" else -self.dash_speed
         self.entity.vy = 0.0
 
-        if self.entity.is_animation_finished(fallback_duration=self.duration):
+        if self.entity.is_animation_finished():
             self.entity.vx = 0.0
+            self.entity.invulnerable_timer = max(self.entity.invulnerable_timer, 0.15)
             if self.entity.on_ground:
                 self.change_state("idle")
             else:
                 self.change_state("fall")
+
+    def exit(self) -> None:
+        self.entity.vx = 0.0
 

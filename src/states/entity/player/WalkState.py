@@ -3,17 +3,13 @@ Chrono Blight
 """
 
 from src.states.entity.EntityBaseState import EntityBaseState
-from src.definitions import entity as entity_defs
 
 
 class WalkState(EntityBaseState):
 
     def enter(self) -> None:
-        self.entity.change_animation("walk")
-        if self.entity.move_direction != 0:
-            self.entity.facing = "left" if self.entity.move_direction < 0 else "right"
-            speed = entity_defs.RUN_SPEED if self.entity.is_running else entity_defs.WALK_SPEED
-            self.entity.vx = speed * self.entity.move_direction
+        self.entity.change_animation("run" if self.entity.is_running else "walk")
+        self.apply_horizontal_movement()
 
     def update(self, dt: float) -> None:
         if self.entity.attack_requested:
@@ -45,13 +41,8 @@ class WalkState(EntityBaseState):
             self.change_state("idle")
             return
 
-        self.entity.facing = "left" if self.entity.move_direction < 0 else "right"
-        speed = entity_defs.RUN_SPEED if self.entity.is_running else entity_defs.WALK_SPEED
-        self.entity.vx = speed * self.entity.move_direction
-
-        target_anim = "run" if self.entity.is_running else "walk"
-        if getattr(self.entity, "_last_anim_name", None) != target_anim:
-            self.entity.change_animation(target_anim)
+        self.apply_horizontal_movement()
+        self.entity.change_animation("run" if self.entity.is_running else "walk")
 
         if not self.entity.on_ground:
             self.change_state("fall")
