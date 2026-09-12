@@ -6,15 +6,90 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
-## [Unreleased / Estado Actual] - 2026-09-12
+## [0.6.0] - 2026-09-12
 
 ### Añadido
+- **Capa de Simulación del Mundo (`src/world/Room.py`)**:
+  - Nueva clase `Room` inspirada en la arquitectura de `06-princess` (`Dungeon`/`Room`) y `05-super_martian` (`GameLevel`), encargada de encapsular la geometría del nivel (78x13 tiles / 1248x208 px), el renderizado ambiental (cielo con gradiente por fase, suelo, cuadrícula y paredes), el ciclo de vida y reaparición de los 8 enemigos (cola de 3s), y la física sólida de separación.
+- **Efecto de Sacudida de Pantalla (*Screen Shake*) y Cámara Oficial de Gale (`gale.camera.Camera`)**:
+  - Integración nativa de `gale.camera.Camera` con delimitación automática de límites del mapa (`bounds = pygame.Rect(0, 0, MAP_WIDTH, MAP_HEIGHT)`).
+  - Activación de *Screen Shake* dinámico (`camera.shake(...)`) en impactos cuerpo a cuerpo, combos de espada, pilares de fuego del Mago y al recibir daño por contacto.
+- **Pantalla de Fin de Partida (`src/states/game/GameOverState.py`)**:
+  - Nuevo estado apilado sobre `StateStack` con oscurecimiento ambiental rojizo, activado automáticamente cuando el jugador pierde todas sus formas (`player.is_dead()`), permitiendo reiniciar limpiamente mediante la tecla `Enter`.
+- **Máquina de Estados Desacoplada para Enemigos con Salto Inteligente (`src/states/entity/enemy/`)**:
+  - Desacoplamiento de estados atómicos en Gale: `EnemyPatrolState`, `EnemyChaseState`, `EnemyAttackState`, `EnemyHitState` y `EnemyDeathState`.
+  - Nueva mecánica de persecución 2D con salto inteligente: enemigos con capacidad de salto (`crown` y configurados con `can_jump`) saltan hacia el jugador si este se encuentra en una plataforma superior o en el aire.
+
+### Cambiado / Refactorizado
+- **Simplificación y Desacoplamiento Radical de `PlayState.py`**:
+  - Reducción del archivo de más de 430 líneas a ~60 líneas, transformándolo en un orquestador de estados puro que solo gestiona entradas globales (pausa, cambio de fase, cambio de forma), transiciones a `GameOverState` y proyección del HUD.
+- **Rediseño y Optimización de la Máquina de Estados del Juego (`src/states/game/`)**:
+  - **`TitleState.py`**: Rediseño centrado con título sombreado en dorado, subtítulo estilizado, animación de parpadeo para *"Presiona ENTER para iniciar"* y leyenda completa de controles.
+  - **`PauseState.py` y `PhaseShiftState.py`**: Pre-creación de superficies de superposición (`self.overlay`) en `enter()`, eliminando la creación de `pygame.Surface(..., pygame.SRCALPHA)` y fuentes a 60 FPS en `render()`. Corrección de coordenadas que situaban los textos fuera de pantalla (-40 px).
+  - **`__init__.py`**: Exportación explícita de `TitleState`, `PlayState`, `PauseState`, `PhaseShiftState` y `GameOverState`.
+- **Renderizado Nítido de Fuentes Pixel Art (*Pixel-Crisp Rendering*) (`settings.py`)**:
+  - Configuración del helper de texto con `antialias=False` para la tipografía oficial de assets (`Minimal4.ttf`), erradicando el suavizado difuminado/borroso de FreeType en resolución nativa (320x180) y obteniendo bordes de píxel afilados y fieles al estilo retro.
+- **Centralización del Movimiento Horizontal (`src/states/entity/EntityBaseState.py`)**:
+  - Método `apply_horizontal_movement()` compartido entre `WalkState`, `JumpState`, `FallState` y `AttackState`, eliminando duplicaciones de código de aceleración y desaceleración.
+- **Compatibilidad de Cámara (`src/world/Camera.py`)**:
+  - Adaptación como extensión directa de `gale.camera.Camera` preservando retrocompatibilidad para `get_offset()`.
+
+### Corregido
+- **Animación Estática al Caminar (`Player.change_animation`)**:
+  - Incorporación de cláusula de guarda para evitar reiniciar animaciones idénticas que ya se encuentren en reproducción a 60 FPS, permitiendo que las tres transformaciones (`mage`, `sword`, `morph`) caminen y corran fluidamente en ambas fases.
+- **Sincronización de Ventanas de Daño y Hitboxes Activos (`Player.is_attack_active`)**:
+  - Calibración exacta de frames de windup vs impacto real: el enemigo ya no recibe daño en el frame 0 al presionar el botón de ataque, sino cuando la espada o el báculo conectan visualmente con el objetivo.
+  - Soporte de combo para el segundo golpe de espada con identificación de impacto independiente (`swing_id`) y aplicación de daño de remate (`hit2_damage: 20`).
+- **Prevención de Fuga de Estados en Habilidades Interrumpidas**:
+  - Limpieza forzada de `area_active` en `AttackSpecialState.exit()` si el Mago sufre daño o muere durante la canalización de llamas.
+  - Anulación de velocidad en `DashState.exit()` ante interrupciones.
+
+### Eliminado
+- **Purga de Código Muerto y Archivos Duplicados**:
+  - Eliminación de `PlayerCommands.py` (obsoleto tras la migración al Command Pattern de Gale).
+  - Eliminación de 8 archivos duplicados/huérfanos en `src/states/entity/player/` (`PlayerWalkState.py`, `PlayerAttackState.py`, etc.).
+  - Eliminación de métodos no utilizados en entidades: `Entity.heal()`, `Player.toggle_skin()`, `Player._get_anim_dict()`, `Entity._anim_idx` y superficies no utilizadas de enemigos.
+
+---
+
+## [0.5.0] - 2026-09-12
+
+### Añadido
+- **Sistema Integral de Enemigos e Inteligencia Artificial (`src/entities/Enemy.py` y `src/states/entity/enemy/`)**:
+  - Implementación de la entidad base `Enemy` extendiendo `Entity` con detección de rango de visión, rango de des-aggro (abandono de persecución si el jugador se aleja) y cese de hostilidad cuando el jugador es derrotado (retorno al patrullaje).
+  - Máquina de estados modular y desacoplada para enemigos:
+    - **`EnemyBaseState.py`**: Clase base para los estados de IA de los enemigos.
+    - **`EnemyPatrolState.py`**: Patrullaje horizontal delimitado, persecución reactiva al detectar al jugador y alternancia entre múltiples tipos de ataques (`attack` y `attack2`).
+    - **`EnemyHitState.py`**: Reacción a impactos con aturdimiento temporal, efecto de flash visual y retroceso.
+    - **`EnemyDeathState.py`**: Secuencia de muerte con animación específica, desactivación de colisiones de ataque y remoción limpia del escenario.
+  - **Física de Separación entre Enemigos**: Sistema de colisión y repulsión horizontal mutua para evitar que múltiples enemigos se superpongan o atraviesen al agruparse.
+- **Integración y Calibración de los 8 Tipos de Enemigos (`settings.py` y `src/definitions/entity.py`)**:
+  - **`skeleton_sword` (Espadachín Esqueleto - Fase Pasado / Verde)**: 45 frames con canvas uniforme acolchado (100x65) y pies alineados en (39, 59). Dos ataques cuerpo a cuerpo (estocada y corte alto).
+  - **`monster_eyes` (Creeper de Ojos - Fase Futuro / Rojo)**: Dos ataques (mordisco cercano y embestida con garras), patrulla y persecución con límite de rango.
+  - **`goblin` (Goblin Scout - Fase Pasado / Verde)**: Animaciones de doble daga (corte rápido y puñalada baja).
+  - **`crown` (Cuervo - Fase Pasado / Verde)**: Picotazo rápido, animación de salto y vuelo bajo.
+  - **`big_monster` (Gólem Raíz / Mini-jefe - Fase Futuro / Rojo)**: Animación limpia de pisotón corporal (80x64) y sistema sincronizado de peligros en el suelo (`boss_vines` con variantes `2a`, `2b`, `2c` y `miss` de 48x48) según referencias visuales.
+  - **`monster2` (Shadow Lurker - Fase Pasado / Verde)**: Extracción y calibración de frames desde `pack 2 m1.aseprite` (48x48) con dos variantes de ataque sombrío.
+  - **`monster3` (Horned Imp - Fase Futuro / Rojo)**: Extracción y calibración de frames desde `pack 3 monster 1.aseprite` (64x64) con animaciones completas.
+  - **`cultist_priest` (Sacerdote Cultista - Fase Futuro / Rojo)**: 26 frames individuales en 200x200 con anclaje de pies en `feet_y = 182`, animación de invocación/ataque, impacto y muerte.
+  - Estandarización de la altura de suelo en `floor_y = 160.0` para todos los enemigos según su bounding box.
 - **Comandos Oficiales con Gale (`src/commands.py`)**:
   - Implementación completa del Command Pattern utilizando `CommandBindings` de Gale.
   - Registro de comandos de acción y de estado: `JUMP`, `STOP_JUMP`, `MOVE_LEFT`, `STOP_MOVE_LEFT`, `MOVE_RIGHT`, `STOP_MOVE_RIGHT`, `LOOK_UP`, `STOP_LOOK_UP`, `RUN`, `STOP_RUN`, `ATTACK`, `SPECIAL_ATTACK`, `DASH`, `NEXT_FORM`, `PREV_FORM` y `SHIFT_PHASE`.
   - Mapeo de teclas limpio y desacoplado del bucle principal (`W/A/S/D` y flechas para movimiento, `Espacio` para salto, `J` para ataque, `K` para especial, `C` para dash, `Q`/`E` para cambio de forma, `LShift` para correr).
 - **Pruebas Automatizadas de Físicas y Habilidades Aéreas**:
   - Suite de validación en entorno headless (`dummy` video driver) para verificar aislamiento de gravedad, bloqueo vertical de dash y transiciones entre estados.
+
+### Cambiado
+- **Ajustes de Combate e Invulnerabilidad del Jugador**:
+  - El ataque especial del espadachín (`AttackSpecialState.py`) ahora otorga invulnerabilidad temporal durante su ejecución y un breve margen al concluir (similar al dash de Morph), impidiendo interrupciones por daño en medio del ataque.
+  - Sincronización del frame de impacto: el daño y la animación de `HitState` del jugador ahora se ejecutan exactamente cuando el ataque enemigo impacta visualmente, eliminando el daño anticipado.
+- **Depuración Visual de Cajas de Golpeo**:
+  - Eliminación de los marcos de depuración visual que aparecían en pantalla al asestar golpes, dejando una presentación limpia de los efectos e impactos.
+
+### Eliminado
+- **Limpieza de Spritesheets Temporales Obsoletos**:
+  - Eliminación de las hojas de sprites combinadas sintéticas (`big_monster.png`, `cultist_priest.png`, `skeleton_sword.png`) tras migrar toda la carga a los frames y tiras originales modulares en `assets/graphics/monsters/`.
 
 ### Corregido
 - **Bloqueo de Altura Vertical en Dash Aéreo de Morph (`src/states/entity/player/DashState.py`)**:
