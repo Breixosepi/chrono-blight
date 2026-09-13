@@ -1,12 +1,16 @@
 """
 Chrono Blight - World Room Component
+Integrates Tiled TileMaps, dual-phase backgrounds, ghost platforms, and entity management.
 """
 
-from typing import List
+from typing import Any, Dict, List, Optional, Tuple
+import json
+import pathlib
 import pygame
 
 from gale.camera import Camera
 from gale.text import render_text
+from gale.tilemap import TileMap, load_tiled_map
 
 import settings
 from src.definitions import entity as entity_defs
@@ -17,23 +21,50 @@ from src.entities.Enemy import Enemy
 class Room:
 
     TILE_SIZE: int = settings.TILE_SIZE
-    MAP_COLS: int = 78
-    MAP_ROWS: int = 13
-    MAP_WIDTH: int = MAP_COLS * TILE_SIZE    # 1248 px
-    MAP_HEIGHT: int = MAP_ROWS * TILE_SIZE   # 208 px
-    FLOOR_ROW: int = 10
-    FLOOR_Y: float = float(FLOOR_ROW * TILE_SIZE)
+    DEFAULT_SPAWN_X: float = 48.0
+    DEFAULT_SPAWN_Y: float = 220.0
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        map_name: str = "subida",
+        spawn_x: Optional[float] = None,
+        spawn_y: Optional[float] = None,
+    ) -> None:
+        self.map_name = map_name
+        map_file = settings.BASE_DIR / "assets" / "tilemaps" / f"{map_name}.json"
+
+        # Load raw map JSON for object layers and custom properties
+        with open(str(map_file), "r", encoding="utf-8") as f:
+            self.map_data = json.load(f)
+
+        self.tilemap: TileMap = load_tiled_map(str(map_file))
+
+        self.MAP_COLS = self.tilemap.cols
+        self.MAP_ROWS = self.tilemap.rows
+        self.MAP_WIDTH = self.tilemap.pixel_width
+        self.MAP_HEIGHT = self.tilemap.pixel_height
+
+        # Dynamic spawn resolution: parameter > object layer > map properties > default
+        self.spawn_x, self.spawn_y = self._extract_spawn_point(self.map_data, spawn_x, spawn_y)
+
+        self._preprocess_tilemap()
+
         self.camera = Camera(
             settings.VIRTUAL_WIDTH,
             settings.VIRTUAL_HEIGHT,
             bounds=pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT),
         )
 
-        spawn_x = 48.0
-        spawn_y = float(self.FLOOR_Y - entity_defs.PLAYER_HIT_H)
-        self.player = Player(spawn_x, spawn_y, floor_y=self.FLOOR_Y, map_w=float(self.MAP_WIDTH))
+        self.player = Player(
+            self.spawn_x,
+            self.spawn_y,
+            floor_y=float(self.MAP_HEIGHT),
+            map_w=float(self.MAP_WIDTH),
+        )
+        self.player.tilemap = self.tilemap
+        self.player.phase = settings.PHASE_PAST
+        self.player.phase_color = "green"
+        self.player.active_collision_layers = self._get_active_collision_layers()
 
         self.camera.x = self.player.hitbox.centerx
         self.camera.y = self.player.hitbox.centery
@@ -41,6 +72,14 @@ class Room:
 
         self._init_enemies()
         self._init_graphics()
+
+        self.dust_particles: list[dict] = []
+        old_on_land = self.player.on_land
+        def _on_player_land() -> None:
+            old_on_land()
+            self.spawn_dust(self.player.hitbox.centerx, self.player.hitbox.bottom, count=4)
+        self.player.on_land = _on_player_land
+        self.player.on_jump_effect = lambda: self.spawn_dust(self.player.hitbox.centerx, self.player.hitbox.bottom, count=4)
 
         # Tracking de golpes por swing
         self._hit_this_swing: set = set()
@@ -54,35 +93,111 @@ class Room:
         ox, oy = self.camera.offset
         return (round(ox), round(oy))
 
+    def _extract_spawn_point(
+        self,
+        map_data: dict,
+        override_x: Optional[float] = None,
+        override_y: Optional[float] = None,
+    ) -> Tuple[float, float]:
+        """
+        Resolves the player's initial spawn coordinates with this priority:
+        1. Explicitly passed override_x / override_y
+        2. Tiled object in an 'objectgroup' layer named 'spawn', 'player_spawn', 'player', or 'start'
+        3. Tiled map properties 'spawn_x' and 'spawn_y'
+        4. Class default (DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y)
+        """
+        if override_x is not None and override_y is not None:
+            return (float(override_x), float(override_y))
+
+        # 1. Search object layers
+        for layer in map_data.get("layers", []):
+            if layer.get("type") == "objectgroup":
+                for obj in layer.get("objects", []):
+                    name = str(obj.get("name", "")).lower()
+                    obj_type = str(obj.get("type", "")).lower()
+                    if name in ("spawn", "player_spawn", "player", "start") or obj_type in ("spawn", "player_spawn"):
+                        ox = float(obj.get("x", 0))
+                        oy = float(obj.get("y", 0))
+                        return (ox, oy)
+
+        # 2. Search map properties
+        props = {p.get("name"): p.get("value") for p in map_data.get("properties", []) if "name" in p}
+        if "spawn_x" in props and "spawn_y" in props:
+            return (float(props["spawn_x"]), float(props["spawn_y"]))
+
+        if override_x is not None:
+            return (float(override_x), self.DEFAULT_SPAWN_Y)
+
+        return (self.DEFAULT_SPAWN_X, self.DEFAULT_SPAWN_Y)
+
+    def _preprocess_tilemap(self) -> None:
+        """
+        Strips Tiled flip flags (bits 31, 30, 29) so that Gale tilemap collision
+        and property lookups work flawlessly, while recording the flip flags
+        for visual rendering.
+        """
+        self.flipped_tiles: Dict[Tuple[str, int, int], Tuple[bool, bool, bool]] = {}
+        for layer_name in self.tilemap.layer_names():
+            for r in range(self.tilemap.rows):
+                for c in range(self.tilemap.cols):
+                    raw = self.tilemap.get_gid(layer_name, r, c)
+                    if raw > 100000:
+                        fh = bool(raw & 0x80000000)
+                        fv = bool(raw & 0x40000000)
+                        fd = bool(raw & 0x20000000)
+                        self.flipped_tiles[(layer_name, r, c)] = (fh, fv, fd)
+                        self.tilemap.set_gid(layer_name, r, c, raw & 0x1FFFFFFF)
+
+        self._tile_cache: Dict[Tuple[int, bool, bool, bool], pygame.Surface] = {}
+        self._ghost_tile_cache: Dict[Tuple[int, bool, bool, bool], pygame.Surface] = {}
+
+    def _get_tile_surface(
+        self,
+        gid: int,
+        flip_h: bool = False,
+        flip_v: bool = False,
+        flip_d: bool = False,
+        ghost: bool = False,
+    ) -> Optional[pygame.Surface]:
+        key = (gid, flip_h, flip_v, flip_d)
+        cache = self._ghost_tile_cache if ghost else self._tile_cache
+        if key in cache:
+            return cache[key]
+
+        tileset = self.tilemap.tileset_for_gid(gid)
+        if tileset is None:
+            cache[key] = None
+            return None
+
+        source_rect = tileset.rect_for(gid)
+        sub = tileset.image.subsurface(source_rect)
+
+        if flip_d:
+            sub = pygame.transform.rotate(sub, 270)
+            sub = pygame.transform.flip(sub, True, False)
+        if flip_h or flip_v:
+            sub = pygame.transform.flip(sub, flip_h, flip_v)
+
+        if ghost:
+            ghost_surf = sub.copy()
+            ghost_surf.set_alpha(75)
+            cache[key] = ghost_surf
+            return ghost_surf
+
+        cache[key] = sub
+        return sub
+
+    def _get_active_collision_layers(self) -> List[str]:
+        if self.player.phase_color == "green":
+            return ["ground", "green_ground"]
+        return ["ground", "red_ground"]
+
     def _init_enemies(self) -> None:
-        floor_y = self.FLOOR_Y
-        map_w = float(self.MAP_WIDTH)
-
+        """
+        Enemies disabled for initial map testing as requested.
+        Can be populated from spawn_configs or Tiled object layers later.
+        """
         self.enemies: List[Enemy] = []
-
-        spawn_configs = [
-            ("skeleton_sword", 160.0),  
-            ("monster_eyes",   280.0),  
-            ("goblin",         420.0),  
-            ("crown",          560.0), 
-            ("big_monster",    720.0),  
-            ("monster2",       860.0),  
-            ("monster3",      1000.0),  
-            ("cultist_priest",1120.0),  
-        ]
-
-        for enemy_type, x_pos in spawn_configs:
-            h = entity_defs.ENEMY_DEFS[enemy_type]["hitbox"]["height"]
-            enemy = Enemy(
-                x=x_pos,
-                y=float(floor_y - h),
-                enemy_type=enemy_type,
-                floor_y=floor_y,
-                map_w=map_w,
-            )
-            enemy.player = self.player
-            enemy.on_hazard_hit = self._on_hazard_hit
-            self.enemies.append(enemy)
 
     def _on_hazard_hit(self, hazard: dict) -> None:
         self.camera.shake(2.0, 0.15)
@@ -101,35 +216,153 @@ class Room:
             pygame.draw.circle(surf, (*color_rgb, alpha), (radius, radius), r)
         return surf
 
+    def _load_background_image(self, candidate_name: str) -> Optional[pygame.Surface]:
+        """
+        Dynamically loads a background surface from memory or from assets/graphics/backgrounds.
+        """
+        if not candidate_name:
+            return None
+
+        # 1. Look up in settings.TEXTURES
+        if candidate_name in settings.TEXTURES:
+            return settings.TEXTURES[candidate_name]
+
+        # 2. Look up in assets/graphics/backgrounds
+        bg_dir = settings.BASE_DIR / "assets" / "graphics" / "backgrounds"
+        clean_name = pathlib.Path(candidate_name).stem
+        for p in (
+            bg_dir / candidate_name,
+            bg_dir / f"{candidate_name}.png",
+            bg_dir / f"{candidate_name}.jpg",
+            bg_dir / f"{clean_name}.png",
+            bg_dir / f"{clean_name}.jpg",
+        ):
+            if p.is_file():
+                try:
+                    surf = pygame.image.load(str(p)).convert_alpha()
+                    settings.TEXTURES[candidate_name] = surf
+                    return surf
+                except Exception:
+                    pass
+        return None
+
     def _init_graphics(self) -> None:
-        sky_h = int(self.FLOOR_Y)
-        self.sky_surfaces = {}
-
-        palettes = {
-            "red":   ((42, 28, 36), (78, 50, 62)),
-            "green": ((20, 30, 46), (50, 72, 102)),
-        }
-        for phase, (top_col, bot_col) in palettes.items():
-            sky = pygame.Surface((self.MAP_WIDTH, sky_h))
-            for y in range(sky_h):
-                t = y / max(1, sky_h)
-                r = int(top_col[0] + (bot_col[0] - top_col[0]) * t)
-                g = int(top_col[1] + (bot_col[1] - top_col[1]) * t)
-                b = int(top_col[2] + (bot_col[2] - top_col[2]) * t)
-                pygame.draw.line(sky, (r, g, b), (0, y), (self.MAP_WIDTH, y))
-            self.sky_surfaces[phase] = sky
-
         self.glow_surfaces = {
             "red":   self._create_radial_glow(36, (255, 100, 100), max_alpha=40),
             "green": self._create_radial_glow(36, (70, 230, 140), max_alpha=45),
         }
 
+        # Resolve backgrounds dynamically: Tiled properties > naming convention > default fallback
+        props = {p.get("name"): p.get("value") for p in self.map_data.get("properties", []) if "name" in p}
+        past_bg_target = props.get("bg_past", f"{self.map_name}_past")
+        future_bg_target = props.get("bg_future", f"{self.map_name}_future")
+
+        self.bg_surfaces = {}
+        for phase, bg_target, fallback_key, wash_color in [
+            ("green", past_bg_target, f"{self.map_name}_past", (8, 16, 20, 130)),
+            ("red", future_bg_target, f"{self.map_name}_future", (22, 10, 14, 135)),
+        ]:
+            raw_bg = (
+                self._load_background_image(bg_target)
+                or self._load_background_image(fallback_key)
+                or self._load_background_image(f"abismo_1_{'past' if phase == 'green' else 'future'}")
+            )
+            if raw_bg:
+                bg = raw_bg.copy()
+                wash = pygame.Surface(bg.get_size(), pygame.SRCALPHA)
+                wash.fill(wash_color)
+                bg.blit(wash, (0, 0))
+                self.bg_surfaces[phase] = bg
+
+        # Ambient floating atmospheric particles (motes/embers)
+        import random
+        self._ambient_particles: List[Dict[str, Any]] = [
+            {
+                "x": random.uniform(0, self.MAP_WIDTH),
+                "y": random.uniform(0, self.MAP_HEIGHT),
+                "speed_y": random.uniform(-14.0, -5.0),
+                "speed_x": random.uniform(-4.0, 4.0),
+                "drift_timer": random.uniform(0.0, 6.28),
+                "radius": random.choice([1, 1, 2]),
+                "alpha": random.randint(85, 175),
+            }
+            for _ in range(40)
+        ]
+        self._particles_surface = pygame.Surface(
+            (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
+        )
+
+    def _handle_player_fall_hazard(self) -> None:
+        """Called when player falls into spikes or pits at the bottom of the map."""
+        if self.player.state_name == "death":
+            return
+
+        self.player.take_damage(20)
+        self.camera.shake(4.0, 0.25)
+        self.damage_popups.append({
+            "text": "-20 (SPIKES)",
+            "x": self.player.hitbox.centerx,
+            "y": self.player.hitbox.top - 10,
+            "timer": 0.8,
+            "color": (255, 50, 50),
+        })
+
+        if self.player.state_name != "death":
+            self.player.x = self.spawn_x
+            self.player.y = self.spawn_y
+            self.player.vx = 0.0
+            self.player.vy = 0.0
+            self.player.hitbox.x = int(self.spawn_x)
+            self.player.hitbox.y = int(self.spawn_y)
+            self.player.change_state("fall")
+
+    def spawn_dust(self, x: float, y: float, count: int = 4) -> None:
+        import random
+        for _ in range(count):
+            self.dust_particles.append({
+                "x": x + random.uniform(-5.0, 5.0),
+                "y": y + random.uniform(-1.0, 1.0),
+                "vx": random.uniform(-30.0, 30.0),
+                "vy": random.uniform(-14.0, -4.0),
+                "life": 0.22,
+                "max_life": 0.22,
+                "radius": random.choice([1, 2]),
+            })
+
     def update(self, dt: float) -> None:
+        import math, random
+        # Update ambient particles drifting with wind
+        for p in self._ambient_particles:
+            p["drift_timer"] += dt * 1.5
+            p["y"] += p["speed_y"] * dt
+            p["x"] += (p["speed_x"] + math.sin(p["drift_timer"]) * 6.0) * dt
+            if p["y"] < 0:
+                p["y"] = float(self.MAP_HEIGHT)
+                p["x"] = random.uniform(0, self.MAP_WIDTH)
+            elif p["x"] < 0:
+                p["x"] = float(self.MAP_WIDTH)
+            elif p["x"] > self.MAP_WIDTH:
+                p["x"] = 0.0
+
+        # Update jump/land dust particles
+        for d in self.dust_particles[:]:
+            d["life"] -= dt
+            d["x"] += d["vx"] * dt
+            d["y"] += d["vy"] * dt
+            if d["life"] <= 0.0:
+                self.dust_particles.remove(d)
+
+        self.player.active_collision_layers = self._get_active_collision_layers()
         self.player.update(dt)
 
+        # Update camera following player smoothly
         self.camera.x = self.player.hitbox.centerx
         self.camera.y = self.player.hitbox.centery
         self.camera.update(dt)
+
+        # Check spikes / bottom fall hazard (rows 22-23 spikes begin at y=352)
+        if self.player.hitbox.bottom >= (self.MAP_HEIGHT - 24):
+            self._handle_player_fall_hazard()
 
         currently_attacking = self.player.state_name in ("attack", "attack_special")
         if currently_attacking and not self._prev_attack_state:
@@ -170,26 +403,18 @@ class Room:
                     x=req["spawn_x"],
                     y=req["spawn_y"],
                     enemy_type=req["enemy_type"],
-                    floor_y=self.FLOOR_Y,
+                    floor_y=float(self.MAP_HEIGHT),
                     map_w=float(self.MAP_WIDTH),
                 )
                 new_enemy.player = self.player
                 new_enemy.on_hazard_hit = self._on_hazard_hit
                 self.enemies.append(new_enemy)
-                self.damage_popups.append({
-                    "text": "RESPAWN!",
-                    "x": new_enemy.hitbox.centerx,
-                    "y": new_enemy.hitbox.top - 10,
-                    "timer": 0.8,
-                    "color": (120, 255, 160),
-                })
 
     def _resolve_combat(self, enemy: Enemy) -> None:
         player = self.player
         if player.state_name == "death":
             return
 
-        # Jugador -> Enemigo (Ataque cuerpo a cuerpo / magia directa)
         attack_hb = player.get_attack_hitbox()
         if attack_hb is not None and attack_hb.colliderect(enemy.hitbox):
             hit_key = (id(enemy), getattr(player, "swing_id", 0))
@@ -314,57 +539,115 @@ class Room:
                         e1.hitbox.x = int(e1.x)
                         e2.hitbox.x = int(e2.x)
 
+    def _visible_tile_range(self) -> Tuple[int, int, int, int]:
+        ox, oy = self.camera_offset
+        min_col = max(0, int(ox // self.TILE_SIZE))
+        min_row = max(0, int(oy // self.TILE_SIZE))
+        max_col = min(self.MAP_COLS - 1, int((ox + settings.VIRTUAL_WIDTH) // self.TILE_SIZE) + 1)
+        max_row = min(self.MAP_ROWS - 1, int((oy + settings.VIRTUAL_HEIGHT) // self.TILE_SIZE) + 1)
+        return (min_row, min_col, max_row, max_col)
+
+    def _render_layer(self, layer_name: str, surface: pygame.Surface, ghost: bool = False) -> None:
+        if layer_name not in self.tilemap.layer_names():
+            return
+
+        min_row, min_col, max_row, max_col = self._visible_tile_range()
+        grid = self.tilemap.get_layer(layer_name)
+        cam_x, cam_y = self.camera_offset
+
+        for row in range(min_row, max_row + 1):
+            for col in range(min_col, max_col + 1):
+                gid = grid[row][col]
+                if gid == 0:
+                    continue
+
+                flip_h, flip_v, flip_d = self.flipped_tiles.get(
+                    (layer_name, row, col),
+                    (False, False, False),
+                )
+                tile_surf = self._get_tile_surface(gid, flip_h, flip_v, flip_d, ghost=ghost)
+                if tile_surf is not None:
+                    dest_x = col * self.TILE_SIZE - cam_x
+                    dest_y = row * self.TILE_SIZE - cam_y
+                    surface.blit(tile_surf, (dest_x, dest_y))
+
     def render(self, surface: pygame.Surface) -> None:
         cam_x, cam_y = self.camera_offset
         phase = self.player.phase_color
 
-        if phase == "red":
-            ground_top_color  = (175, 95, 95)
-            ground_body_color = (65, 45, 54)
-            grid_line_color   = (90, 60, 72)
-            wall_color        = (130, 65, 65)
-        else:
-            ground_top_color  = (95, 155, 205)
-            ground_body_color = (36, 52, 74)
-            grid_line_color   = (52, 75, 105)
-            wall_color        = (60, 100, 150)
-
         surface.fill((10, 10, 15))
 
-        room_screen_x = int(0 - cam_x)
-        room_screen_y = int(0 - cam_y)
-        sky_surf = self.sky_surfaces.get(phase)
-        if sky_surf:
-            surface.blit(sky_surf, (room_screen_x, room_screen_y))
+        # 1. Fondo dual correspondiente a la fase activa con velo de profundidad atmosférica
+        bg_key = f"{self.map_name}_past" if phase == "green" else f"{self.map_name}_future"
+        bg_surf = self.bg_surfaces.get(phase, settings.TEXTURES.get(bg_key))
+        if bg_surf:
+            bg_w, bg_h = bg_surf.get_size()
+            if bg_w < self.MAP_WIDTH:
+                # Room is wider than background image: repeat horizontally with smooth parallax
+                scroll_x = -int(cam_x * 0.4) % bg_w - bg_w
+                scroll_y = -cam_y if bg_h >= self.MAP_HEIGHT else -int(cam_y * 0.3)
+                curr_x = scroll_x
+                while curr_x < settings.VIRTUAL_WIDTH:
+                    surface.blit(bg_surf, (curr_x, scroll_y))
+                    curr_x += bg_w
+            else:
+                surface.blit(bg_surf, (-cam_x, -cam_y))
 
-        pygame.draw.rect(surface, wall_color, pygame.Rect(room_screen_x, room_screen_y, 4, self.MAP_HEIGHT))
-        pygame.draw.rect(surface, wall_color, pygame.Rect(room_screen_x + self.MAP_WIDTH - 4, room_screen_y, 4, self.MAP_HEIGHT))
+        # 2. Capas de tiles según la fase activa
+        if phase == "green":
+            # Capas base y del Pasado
+            self._render_layer("ground", surface, ghost=False)
+            self._render_layer("green_ground", surface, ghost=False)
+            self._render_layer("green_decoration", surface, ghost=False)
+            # Plataformas del Futuro en modo fantasma (semitransparentes)
+            self._render_layer("red_ground", surface, ghost=True)
+        else:
+            # Capas base y del Futuro
+            self._render_layer("red_background", surface, ghost=False)
+            self._render_layer("ground", surface, ghost=False)
+            self._render_layer("red_ground", surface, ghost=False)
+            self._render_layer("red_decoration", surface, ghost=False)
+            # Plataformas del Pasado en modo fantasma (semitransparentes)
+            self._render_layer("green_ground", surface, ghost=True)
 
-        floor_screen_y = int(self.FLOOR_Y - cam_y)
-        floor_height   = self.MAP_HEIGHT - int(self.FLOOR_Y)
-        floor_rect     = pygame.Rect(room_screen_x, floor_screen_y, self.MAP_WIDTH, floor_height)
-        pygame.draw.rect(surface, ground_body_color, floor_rect)
-        pygame.draw.line(surface, ground_top_color, (room_screen_x, floor_screen_y), (room_screen_x + self.MAP_WIDTH, floor_screen_y), 2)
+        # 3. Partículas atmosféricas flotantes y polvo de impacto
+        self._particles_surface.fill((0, 0, 0, 0))
+        part_col = (120, 255, 190) if phase == "green" else (255, 135, 80)
+        for p in self._ambient_particles:
+            screen_px = int(p["x"] - cam_x)
+            screen_py = int(p["y"] - cam_y)
+            if 0 <= screen_px < settings.VIRTUAL_WIDTH and 0 <= screen_py < settings.VIRTUAL_HEIGHT:
+                pygame.draw.circle(
+                    self._particles_surface,
+                    (*part_col, p["alpha"]),
+                    (screen_px, screen_py),
+                    p["radius"],
+                )
 
-        start_col = max(0, int(cam_x // self.TILE_SIZE))
-        end_col   = min(self.MAP_COLS, int((cam_x + settings.VIRTUAL_WIDTH) // self.TILE_SIZE) + 2)
-        for col in range(start_col, end_col):
-            tile_screen_x = int(col * self.TILE_SIZE - cam_x)
-            pygame.draw.line(surface, grid_line_color, (tile_screen_x, floor_screen_y), (tile_screen_x, floor_screen_y + floor_height), 1)
-            sub_y = floor_screen_y + self.TILE_SIZE
-            pygame.draw.line(surface, grid_line_color, (tile_screen_x, sub_y), (tile_screen_x + self.TILE_SIZE, sub_y), 1)
+        dust_col = (140, 240, 190) if phase == "green" else (240, 150, 130)
+        for d in self.dust_particles:
+            screen_px = int(d["x"] - cam_x)
+            screen_py = int(d["y"] - cam_y)
+            alpha = int(220 * max(0.0, min(1.0, d["life"] / d["max_life"])))
+            if 0 <= screen_px < settings.VIRTUAL_WIDTH and 0 <= screen_py < settings.VIRTUAL_HEIGHT:
+                pygame.draw.circle(
+                    self._particles_surface,
+                    (*dust_col, alpha),
+                    (screen_px, screen_py),
+                    d["radius"],
+                )
+        surface.blit(self._particles_surface, (0, 0))
 
-        glow_surf = self.glow_surfaces.get(phase)
-        if glow_surf:
-            player_center_x = int(self.player.hitbox.centerx - cam_x)
-            player_center_y = int(self.player.hitbox.centery - cam_y)
-            surface.blit(glow_surf, (player_center_x - 36, player_center_y - 36))
+        # (Player outline already communicates phase color — floor glow removed to avoid
+        #  the bright oval artifact over tiles.)
 
+        # 4. Entidades
         for enemy in self.enemies:
             enemy.render(surface, cam_x, cam_y)
 
         self.player.render(surface, cam_x, cam_y)
 
+        # 5. Popups de daño y efectos
         for p in self.damage_popups:
             render_text(
                 surface,
@@ -376,4 +659,3 @@ class Room:
                 center=True,
                 shadowed=True,
             )
-

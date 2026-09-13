@@ -41,6 +41,9 @@ class Entity:
         self.on_ground: bool = False
         self.facing: str = "right"
 
+        self.tilemap: Optional[Any] = None
+        self.active_collision_layers: list[str] = []
+
         self.move_direction: int = 0
         self.jump_requested: bool = False
         self.jump_held: bool = False
@@ -133,29 +136,85 @@ class Entity:
         return False
 
     def _apply_movement_and_collision(self, dt: float) -> None:
-        self.x += self.vx * dt
-        self.y += self.vy * dt
-        self.hitbox.x = int(self.x)
-        self.hitbox.y = int(self.y)
+        if self.tilemap is not None and self.active_collision_layers:
+            from src.world.tile_collision import move_and_collide_layers, check_on_ground
+            dx = self.vx * dt
+            dy = self.vy * dt
 
-        if self.hitbox.left < 0:
-            self.hitbox.left = 0
-            self.x = float(self.hitbox.x)
-            self.vx = 0.0
-        elif self.hitbox.right > int(self.map_w):
-            self.hitbox.right = int(self.map_w)
-            self.x = float(self.hitbox.x)
-            self.vx = 0.0
+            nx, ny, cx, cy = move_and_collide_layers(
+                self.tilemap,
+                self.active_collision_layers,
+                self.x,
+                self.y,
+                float(self.width),
+                float(self.height),
+                dx,
+                dy,
+            )
 
-        if self.hitbox.bottom >= int(self.floor_y):
-            self.hitbox.bottom = int(self.floor_y)
-            self.y = float(self.hitbox.y)
-            self.vy = 0.0
-            if not self.on_ground:
-                self.on_ground = True
-                self.on_land()
+            self.x = nx
+            self.y = ny
+            self.hitbox.x = int(round(nx))
+            self.hitbox.y = int(round(ny))
+
+            if self.hitbox.left < 0:
+                self.hitbox.left = 0
+                self.x = float(self.hitbox.x)
+                self.vx = 0.0
+            elif self.hitbox.right > int(self.map_w):
+                self.hitbox.right = int(self.map_w)
+                self.x = float(self.hitbox.x)
+                self.vx = 0.0
+
+            if cx:
+                self.vx = 0.0
+
+            if cy:
+                if dy > 0:
+                    self.vy = 0.0
+                    if not self.on_ground:
+                        self.on_ground = True
+                        self.on_land()
+                elif dy < 0:
+                    self.vy = 0.0
+            else:
+                if self.on_ground:
+                    still_on_ground = check_on_ground(
+                        self.tilemap,
+                        self.active_collision_layers,
+                        self.x,
+                        self.y,
+                        float(self.width),
+                        float(self.height),
+                    )
+                    if not still_on_ground:
+                        self.on_ground = False
+                elif dy != 0:
+                    self.on_ground = False
         else:
-            self.on_ground = False
+            self.x += self.vx * dt
+            self.y += self.vy * dt
+            self.hitbox.x = int(self.x)
+            self.hitbox.y = int(self.y)
+
+            if self.hitbox.left < 0:
+                self.hitbox.left = 0
+                self.x = float(self.hitbox.x)
+                self.vx = 0.0
+            elif self.hitbox.right > int(self.map_w):
+                self.hitbox.right = int(self.map_w)
+                self.x = float(self.hitbox.x)
+                self.vx = 0.0
+
+            if self.hitbox.bottom >= int(self.floor_y):
+                self.hitbox.bottom = int(self.floor_y)
+                self.y = float(self.hitbox.y)
+                self.vy = 0.0
+                if not self.on_ground:
+                    self.on_ground = True
+                    self.on_land()
+            else:
+                self.on_ground = False
 
     def on_land(self) -> None:
         current_state = self.state_machine.current if self.state_machine else None
@@ -200,9 +259,15 @@ class Entity:
         outline_color: Tuple[int, int, int, int],
     ) -> None:
         mask = pygame.mask.from_surface(sprite_surf)
-        outline_surf = mask.to_surface(setcolor=outline_color, unsetcolor=(0, 0, 0, 0))
+        r, g, b = outline_color[:3]
+        outer_color = (max(0, r - 30), max(0, g - 30), max(0, b - 30), 65)
+        outer_surf = mask.to_surface(setcolor=outer_color, unsetcolor=(0, 0, 0, 0))
+        for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+            surface.blit(outer_surf, (draw_x + dx, draw_y + dy))
+
+        inner_surf = mask.to_surface(setcolor=outline_color, unsetcolor=(0, 0, 0, 0))
         for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-            surface.blit(outline_surf, (draw_x + dx, draw_y + dy))
+            surface.blit(inner_surf, (draw_x + dx, draw_y + dy))
 
     def render(
         self,

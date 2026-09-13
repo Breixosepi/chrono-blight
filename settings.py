@@ -56,6 +56,14 @@ TEXTURES = {
     "crown":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "monsters" / "crown" / "crow_idle.png"),
     "monster2":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "monsters" / "monster2" / "monster2.png"),
     "monster3":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "monsters" / "monster3" / "monster3.png"),
+    "abismo_1_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_past.png"),
+    "abismo_1_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_future.png"),
+    "abismo_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_past.png"),
+    "abismo_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_future.png"),
+    "sala_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_past.png"),
+    "sala_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_future.png"),
+    "subida_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "subida_past.png"),
+    "subida_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "subida_future.png"),
 }
 
 FRAMES = {

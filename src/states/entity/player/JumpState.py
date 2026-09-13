@@ -9,6 +9,8 @@ from src.definitions import entity as entity_defs
 class JumpState(EntityBaseState):
 
     def enter(self) -> None:
+        if self.entity.on_ground and hasattr(self.entity, "on_jump_effect"):
+            self.entity.on_jump_effect()
         self.entity.change_animation("jump")
         self.entity.vy = entity_defs.JUMP_VELOCITY
         self.entity.jumps_left -= 1

@@ -103,6 +103,7 @@ class Player(Entity):
         self.area_pos_y: float = 0.0
         self.flames: list[dict] = []
 
+
         self.state_machine = StateMachine({
             "idle": lambda sm: IdleState(self, sm),
             "walk": lambda sm: WalkState(self, sm),
@@ -376,7 +377,7 @@ class Player(Entity):
         else:
             sprite_surf = pygame.transform.flip(sub, True, False)
 
-        outline_color = (255, 120, 120, 220) if self.phase_color == "red" else (90, 240, 150, 220)
+        outline_color = (255, 120, 130, 240) if self.phase_color == "red" else (100, 255, 175, 240)
         self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_color)
 
         surface.blit(sprite_surf, (draw_x, draw_y))

@@ -6,6 +6,49 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [0.7.0] - 2026-09-13
+
+### Añadido
+- **Sistema de Salas y Mapas Tiled (`assets/tilemaps/` y `src/world/Room.py`)**:
+  - Integración nativa con mapas exportados desde Tiled en formato JSON mediante `gale.tilemap.load_tiled_map`, permitiendo crear niveles de dimensiones arbitrarias con capas multicapa de tiles y objetos.
+  - Incorporación de 5 nuevas salas/niveles:
+    - **`abismo_1.json`** (50x24 tiles / 800x384 px): Nivel vertical con fosas profundas, plataformas duales y zonas de trampas.
+    - **`abismo_fixed.json`** (50x13 tiles / 800x208 px): Variante reestructurada del abismo con capas optimizadas, punto de spawn explícito y equilibrio de altura.
+    - **`sala_past.json`** (40x13 tiles / 640x208 px): Sala horizontal ambientada en la era del Pasado con vegetación y estructuras verdes predominantes.
+    - **`sala_future.json`** (40x13 tiles / 640x208 px): Sala horizontal ambientada en la era del Futuro con arquitecturas rojas y estética corrupta.
+    - **`subida.json`** (20x40 tiles / 320x640 px): Nivel vertical de escalada y plataformeo ascendente con trampas y alternancia de fases temporales.
+- **Sistema de Físicas y Colisiones Multicapa (`src/world/tile_collision.py`)**:
+  - Nuevo subsistema de colisiones para Gale Tilemaps con soporte de fases temporales: `collision_type_in_layers()`, `move_and_collide_layers()` y `check_on_ground()`.
+  - Detección precisa de barrido AABB en ejes desacoplados X e Y para azulejos sólidos (`solid`) y plataformas atravesables desde abajo (`platform`).
+  - Capas activas dinámicas según la fase temporal del jugador: `["ground", "green_ground"]` en fase Pasado y `["ground", "red_ground"]` en fase Futuro.
+- **Plataformas Fantasma (*Ghost Platforms*) y Renderizado por Fases (`src/world/Room.py`)**:
+  - Renderizado semitransparente (`alpha = 75`) de las capas del plano temporal opuesto (ej. plataformas rojas visibles como fantasmas en la fase verde), permitiendo al jugador anticipar el terreno antes de realizar un *Phase Shift*.
+  - Desempaquetado y soporte de rotaciones/volteos de Tiled (*flip flags* en bits 31, 30 y 29 para flips horizontal, vertical y diagonal) en `_preprocess_tilemap()`.
+  - Culling de azulejos visibles mediante `_visible_tile_range()`, dibujando únicamente los tiles comprendidos dentro de la vista actual de la cámara.
+- **Fondos Duales con Paralaje y Nuevos Tilesets (`settings.py` y `assets/`)**:
+  - Carga y registro de texturas de fondo duales para cada sala en `settings.TEXTURES`: `abismo_1_past/future`, `abismo_past/future`, `sala_past/future` y `subida_past/future`.
+  - Soporte para fondos con desplazamiento de paralaje continuo (*parallax scrolling* suave con factor `0.4` en X y repetición horizontal automática) en salas que superan el ancho del fondo.
+  - Nuevos conjuntos de tilesets gráficos en `assets/graphics/tilesets/`: `InfernoTiles.png`, `Tilesetv3.png`, `Tile_green.png` y `Tile_red.png`.
+- **Efectos de Partículas y Peligros de Caída (`src/world/Room.py`)**:
+  - Sistema de partículas atmosféricas flotantes con deriva sinusoidal dependiente del viento que colorean el ambiente según la fase activa.
+  - Sistema de partículas de polvo (`dust_particles`) en despegues de salto (`on_jump_effect`) y aterrizajes (`on_land`).
+  - Mecánica de caída al abismo (`_handle_player_fall_hazard()`): detecta caídas en el umbral inferior del mapa (`MAP_HEIGHT - 24`), aplica 20 puntos de daño por pinchos con sacudida de pantalla y reubica al jugador en el punto de spawn.
+- **Resolución Dinámica de Punto de Aparición (*Spawn Point*) (`Room._extract_spawn_point`)**:
+  - Detección automática en cascada: parámetro explícito > objetos Tiled en capas `objectgroup` (`spawn`, `player_spawn`, `start`) > propiedades del mapa (`spawn_x`, `spawn_y`) > coordenadas por defecto.
+
+### Cambiado / Refactorizado
+- **Integración de Entidades con Tilemaps (`src/entities/Entity.py`)**:
+  - Adición de los atributos `tilemap` y `active_collision_layers` a la clase base `Entity`.
+  - Adaptación de `_apply_movement_and_collision()` para consultar el motor de colisión multicapa en lugar de depender únicamente de una altura fija de suelo (`floor_y`).
+  - Rediseño de `render_outline()` con técnica de doble pasada: un halo exterior suave (alpha 65) con desplazamiento a 2 píxeles combinado con el contorno interior nítido, aumentando notablemente la legibilidad del personaje sobre fondos contrastados.
+- **Ajustes Visuales y Paleta del Jugador (`src/entities/Player.py`)**:
+  - Incremento del brillo y opacidad en los colores de contorno neón (`(255, 120, 130, 240)` para rojo y `(100, 255, 175, 240)` para verde).
+- **Animación de Caída Dedicada (`FallState.py` y `src/definitions/entity.py`)**:
+  - `FallState` ahora reproduce la animación específica `"fall"` en lugar de reutilizar el ciclo de `"jump"`.
+  - Añadida la animación `"fall"` a la forma Mago en `_MAGE_ANIMATIONS`.
+
+---
+
 ## [0.6.0] - 2026-09-12
 
 ### Añadido

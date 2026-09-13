@@ -8,7 +8,7 @@ from src.states.entity.EntityBaseState import EntityBaseState
 class FallState(EntityBaseState):
 
     def enter(self) -> None:
-        self.entity.change_animation("jump")
+        self.entity.change_animation("fall")
 
     def update(self, dt: float) -> None:
         self.apply_horizontal_movement()
