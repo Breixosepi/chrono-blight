@@ -6,6 +6,31 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [0.8.0] - 2026-09-14
+
+### Añadido
+- **Sistema de Trampas que Caen (`src/world/FallingTrap.py`)**:
+  - Implementación de peligros que caen vinculados a la fase temporal del jugador (`green` o `red`).
+  - Detección de proximidad del jugador en el eje X con tiempo de advertencia/temblor (0.45s) antes de la caída por gravedad.
+  - Soporte para renderizado directo de tiles del tileset mediante propiedades personalizadas en Tiled (`tile_col`, `tile_row`).
+- **Sierras Giratorias y Shurikens (`src/world/SawHazard.py` y `assets/graphics/SawBladeSuriken.png`)**:
+  - Obstáculo de daño por contacto con rotación animada continua.
+  - Soporte de patrullaje configurable en ejes horizontal y vertical (`axis: "x" | "y"`), distancia (`patrol_dist`) y velocidad (`speed`) desde las capas de Tiled.
+- **Spawneo Dinámico de Enemigos desde Tiled (`src/world/Room.py`)**:
+  - Detección y creación automática de cualquier enemigo (`monster2`, `monster3`, `goblin`, `cultist_priest`, `skeleton_sword`, etc.) colocado en capas de objetos (`spawns`, `spwans`, `enemies`).
+  - Asignación de colisión sólida multicapa para que los enemigos colisionen con las plataformas y paredes correspondientes a su fase temporal.
+
+### Cambiado / Refactorizado
+- **Limpieza de Código Muerto y Deduplicación**:
+  - Eliminación de constantes no utilizadas (`PHASE_PAST`, `PHASE_FUTURE`, `TILE_COLS`, `TILE_ROWS`) y texturas huérfanas en `settings.py`.
+  - Creación de `EntityBaseState.handle_buffered_inputs()` para unificar el manejo de buffers de ataque, ataque especial, dash y salto en `IdleState`, `WalkState`, `JumpState` y `FallState`.
+  - Unificación de popups de daño (`_spawn_popup()`), resets a punto de spawn (`_reset_player_to_spawn()`) y tabla de masas de colisión de enemigos en `Room.py`.
+- **Integración de Lava/Magma Ascendente (`src/world/RisingHazard.py` y `src/states/hazard/RisingState.py`)**:
+  - Lectura de la posición inicial $Y$ del objeto `fire` desde las capas de Tiled.
+  - Ajuste del límite superior de ascenso para detenerse a exactamente 2 tiles del techo del mapa.
+
+---
+
 ## [0.7.0] - 2026-09-13
 
 ### Añadido

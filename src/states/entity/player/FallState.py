@@ -1,7 +1,3 @@
-"""
-Chrono Blight
-"""
-
 from src.states.entity.EntityBaseState import EntityBaseState
 
 
@@ -18,21 +14,8 @@ class FallState(EntityBaseState):
             self.change_state("jump")
             return
 
-        if self.entity.dash_requested:
-            self.entity.dash_requested = False
-            if self.entity.can_dash():
-                self.change_state("dash")
-                return
-        elif self.entity.attack_requested:
-            self.entity.attack_requested = False
-            if self.entity.can_attack():
-                self.change_state("attack")
-                return
-        elif self.entity.special_attack_requested:
-            self.entity.special_attack_requested = False
-            if self.entity.skin == "sword" and self.entity.can_special_attack():
-                self.change_state("attack_special")
-                return
+        if self.handle_buffered_inputs(allow_air_special=True):
+            return
 
         if self.entity.on_ground:
             self.on_land()

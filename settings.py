@@ -30,12 +30,7 @@ VIRTUAL_HEIGHT = 180
 WINDOW_WIDTH  = 1280
 WINDOW_HEIGHT = 720
 
-TILE_SIZE = 16  
-TILE_COLS = VIRTUAL_WIDTH  // TILE_SIZE
-TILE_ROWS = VIRTUAL_HEIGHT // TILE_SIZE
-
-PHASE_PAST   = "past"   
-PHASE_FUTURE = "future"  
+TILE_SIZE = 16
 
 TEXTURES = {
     "sword_red":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "Sword.png"),
@@ -58,8 +53,6 @@ TEXTURES = {
     "monster3":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "monsters" / "monster3" / "monster3.png"),
     "abismo_1_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_past.png"),
     "abismo_1_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_future.png"),
-    "abismo_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_past.png"),
-    "abismo_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_future.png"),
     "sala_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_past.png"),
     "sala_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_future.png"),
     "subida_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "subida_past.png"),

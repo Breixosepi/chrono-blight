@@ -19,7 +19,7 @@ from src.entities.Player import Player
 class Enemy(Entity):
     """Base class for all Chrono Blight enemies."""
 
-    GHOST_ALPHA: int = 85
+    GHOST_ALPHA: int = 65
 
     def __init__(
         self,
@@ -215,7 +215,7 @@ class Enemy(Entity):
                     surface.blit(h_surf, (hx, hy))
                 else:
                     ghost = h_surf.copy()
-                    ghost.set_alpha(65)
+                    ghost.set_alpha(self.GHOST_ALPHA)
                     surface.blit(ghost, (hx, hy))
 
         frame = self.current_animation.get_current_frame()
@@ -241,6 +241,6 @@ class Enemy(Entity):
 
         else:
             ghost = sprite_surf.copy()
-            ghost.set_alpha(65)
+            ghost.set_alpha(self.GHOST_ALPHA)
             surface.blit(ghost, (draw_x, draw_y))
 

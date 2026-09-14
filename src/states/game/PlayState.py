@@ -29,6 +29,7 @@ class PlayState(BaseState):
         self.hud = HUD()
 
         self.in_transition: bool = False
+        self.exit_cooldown: float = 0.0
         self.fade_alpha: float = 0.0
         self.fade_surface = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
@@ -42,8 +43,10 @@ class PlayState(BaseState):
             return
 
         self.in_transition = True
+        self.player.move_direction = 0
         self.player.vx = 0.0
         self.player.vy = 0.0
+        self.player.change_state("idle")
 
         from gale.timer import Timer
         Timer.tween(
@@ -60,6 +63,10 @@ class PlayState(BaseState):
             spawn_y=target_spawn_y,
             player=self.player,
         )
+        self.player.move_direction = 0
+        self.player.vx = 0.0
+        self.player.vy = 0.0
+        self.player.change_state("idle")
 
         from gale.timer import Timer
         Timer.tween(
@@ -71,6 +78,7 @@ class PlayState(BaseState):
 
     def _on_transition_finished(self) -> None:
         self.in_transition = False
+        self.exit_cooldown = 0.4
 
     def update(self, dt: float) -> None:
         if self.player.is_dead() and self.player.is_animation_finished():
@@ -82,10 +90,13 @@ class PlayState(BaseState):
 
         self.room.update(dt)
 
-        exit_info = self.room.check_room_exits()
-        if exit_info is not None:
-            target_room, target_x, target_y = exit_info
-            self.change_room(target_room, target_x, target_y)
+        if self.exit_cooldown > 0.0:
+            self.exit_cooldown = max(0.0, self.exit_cooldown - dt)
+        else:
+            exit_info = self.room.check_room_exits()
+            if exit_info is not None:
+                target_room, target_x, target_y = exit_info
+                self.change_room(target_room, target_x, target_y)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if self.in_transition:

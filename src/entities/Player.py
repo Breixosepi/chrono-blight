@@ -109,7 +109,6 @@ class Player(Entity):
             "walk": lambda sm: WalkState(self, sm),
             "jump": lambda sm: JumpState(self, sm),
             "fall": lambda sm: FallState(self, sm),
-            "airborne": lambda sm: FallState(self, sm),
             "dash": lambda sm: DashState(self, sm),
             "attack": lambda sm: AttackState(self, sm),
             "attack_special": lambda sm: AttackSpecialState(self, sm),
