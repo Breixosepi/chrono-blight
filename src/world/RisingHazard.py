@@ -33,15 +33,29 @@ class RisingHazard:
         speed: float = 18.0,
         trigger_x: float = 50.0,
         delay: float = 2.5,
-        escape_y: float = 48.0,
+        escape_y: Optional[float] = None,
     ) -> None:
         self.room = room
         self.speed = speed
         self.trigger_x = trigger_x
         self.delay_max = delay
-        self.escape_y = escape_y
 
-        self.current_y = float(room.MAP_HEIGHT)
+        # 2 tiles antes de acabar la parte superior del mapa
+        tile_size = float(getattr(room, "TILE_SIZE", 16))
+        self.escape_y = escape_y if escape_y is not None else (2.0 * tile_size)
+
+        # Leer la altura inicial desde el objeto 'fire'/'lava' en Tiled si existe
+        fire_start_y = float(room.MAP_HEIGHT)
+        for layer in room.map_data.get("layers", []):
+            if layer.get("type") == "objectgroup" or "objects" in layer:
+                for obj in layer.get("objects", []):
+                    obj_name = (obj.get("name") or "").lower().strip()
+                    if obj_name in ("fire", "lava", "magma", "acid"):
+                        fire_start_y = float(obj.get("y", room.MAP_HEIGHT))
+                        break
+
+        self.start_y = fire_start_y
+        self.current_y = fire_start_y
         self.wave_timer = 0.0
 
         self.liquid_particles: List[Dict[str, Any]] = []

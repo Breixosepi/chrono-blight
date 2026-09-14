@@ -105,15 +105,15 @@
          "objects":[
                 {
                  "height":16,
-                 "id":2,
-                 "name":"spawn",
+                 "id":3,
+                 "name":"cultist_priest",
                  "opacity":1,
                  "rotation":0,
-                 "type":"spawn",
+                 "type":"",
                  "visible":true,
                  "width":16,
-                 "x":592,
-                 "y":160
+                 "x":384,
+                 "y":112
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -122,7 +122,7 @@
          "y":0
         }],
  "nextlayerid":11,
- "nextobjectid":3,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "properties":[
         {

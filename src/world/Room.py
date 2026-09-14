@@ -5,7 +5,9 @@ Integrates Tiled TileMaps, dual-phase backgrounds, ghost platforms, and entity m
 
 from typing import Any, Dict, List, Optional, Tuple
 import json
+import math
 import pathlib
+import random
 import pygame
 
 from gale.camera import Camera
@@ -16,7 +18,21 @@ import settings
 from src.definitions import entity as entity_defs
 from src.entities.Player import Player
 from src.entities.Enemy import Enemy
+from src.world.FallingTrap import FallingTrap
+from src.world.SawHazard import SawHazard
 from src.world.RisingHazard import RisingHazard
+
+
+_ENEMY_MASS: Dict[str, float] = {
+    "big_monster":    3.5,
+    "cultist_priest": 2.5,
+    "monster3":       1.4,
+    "skeleton_sword": 1.2,
+    "monster_eyes":   1.0,
+    "goblin":         0.9,
+    "monster2":       0.85,
+    "crown":          0.8,
+}
 
 
 class Room:
@@ -64,7 +80,7 @@ class Room:
                 floor_y=float(self.MAP_HEIGHT),
                 map_w=float(self.MAP_WIDTH),
             )
-            self.player.phase = settings.PHASE_PAST
+            self.player.phase = "past"
             self.player.phase_color = "green"
         else:
             self.player = player
@@ -104,11 +120,75 @@ class Room:
         self.rising_hazard: Optional[RisingHazard] = (
             RisingHazard(self) if self.map_name == "subida" else None
         )
+        self.falling_traps: list[FallingTrap] = []
+        self.saw_hazards: list[SawHazard] = []
+        self._init_traps(self.map_data)
 
     @property
     def camera_offset(self) -> tuple[float, float]:
         ox, oy = self.camera.offset
         return (round(ox), round(oy))
+
+    def _init_traps(self, map_data: dict) -> None:
+        """Parsea la capa 'traps' y crea las trampas y sierras correspondientes."""
+        trap_layer = next((l for l in map_data.get("layers", []) if l.get("name") == "traps"), None)
+        if trap_layer and "objects" in trap_layer:
+            for obj in trap_layer["objects"]:
+                props = {p.get("name"): p.get("value") for p in obj.get("properties", []) if isinstance(p, dict)}
+                
+                t_name = obj.get("name", "") or str(props.get("name", ""))
+                t_type = obj.get("type", "") or obj.get("class", "") or str(props.get("type", ""))
+                combined_id = f"{t_name} {t_type}".lower()
+                
+                # 1. Sierras y Shurikens
+                if "saw" in combined_id or "shuriken" in combined_id:
+                    h_type = "shuriken" if "shuriken" in combined_id else "saw"
+                    phase = "green" if "green" in combined_id else ("red" if "red" in combined_id else "neutral")
+                    patrol_dist = float(props.get("patrol_dist", 0.0))
+                    axis = str(props.get("axis", "y"))
+                    speed = float(props.get("speed", 50.0))
+                    damage = int(props.get("damage", 15))
+                    
+                    self.saw_hazards.append(
+                        SawHazard(
+                            self,
+                            float(obj.get("x", 0.0)),
+                            float(obj.get("y", 0.0)),
+                            hazard_type=h_type,
+                            phase=phase,
+                            patrol_dist=patrol_dist,
+                            axis=axis,
+                            speed=speed,
+                            damage=damage,
+                        )
+                    )
+                    continue
+
+                # 2. Falling Traps (pasado/futuro)
+                phase = "green" if "green" in combined_id else ("red" if "red" in combined_id else None)
+                if not phase:
+                    continue
+                
+                tile_col = int(props.get("tile_col", props.get("col", 1)))
+                tile_row = int(props.get("tile_row", props.get("row", 2)))
+                
+                width = int(obj.get("width", 16))
+                height = int(obj.get("height", 16))
+                obj_x = float(obj.get("x", 0.0))
+                obj_y = float(obj.get("y", 0.0))
+                
+                self.falling_traps.append(
+                    FallingTrap(
+                        self,
+                        obj_x,
+                        obj_y,
+                        phase,
+                        tile_col=tile_col,
+                        tile_row=tile_row,
+                        width=width,
+                        height=height,
+                    )
+                )
 
     def check_room_exits(self) -> Optional[Tuple[str, float, float]]:
         """Comprueba si el jugador cruza una salida configurada para esta sala."""
@@ -219,22 +299,48 @@ class Room:
             return ["ground", "green_ground"]
         return ["ground", "red_ground"]
 
+    def _get_enemy_collision_layers(self, enemy: Enemy) -> List[str]:
+        if enemy.phase == "green":
+            return ["ground", "green_ground"]
+        elif enemy.phase == "red":
+            return ["ground", "red_ground"]
+        return ["ground", "green_ground", "red_ground"]
+
     def _init_enemies(self) -> None:
-        """
-        Enemies disabled for initial map testing as requested.
-        Can be populated from spawn_configs or Tiled object layers later.
-        """
         self.enemies: List[Enemy] = []
+        spawn_layer_names = {"spawns", "spwans", "enemies", "enemy_spawns"}
+        for layer in self.map_data.get("layers", []):
+            if layer.get("name") in spawn_layer_names and "objects" in layer:
+                for obj in layer["objects"]:
+                    props = {p.get("name"): p.get("value") for p in obj.get("properties", []) if isinstance(p, dict)}
+                    t_name = (obj.get("name", "") or str(props.get("name", ""))).lower().strip()
+                    t_type = (obj.get("type", "") or obj.get("class", "") or str(props.get("enemy_type", ""))).lower().strip()
+                    
+                    if t_name in ("spawn", "player", "start") or t_type in ("spawn", "player", "start"):
+                        continue
+                        
+                    enemy_type = t_name if t_name in entity_defs.ENEMY_DEFS else (t_type if t_type in entity_defs.ENEMY_DEFS else None)
+                    if enemy_type:
+                        x = float(obj.get("x", 0.0))
+                        y = float(obj.get("y", 0.0))
+                        enemy = Enemy(
+                            x,
+                            y,
+                            enemy_type=enemy_type,
+                            floor_y=float(self.MAP_HEIGHT),
+                            map_w=float(self.MAP_WIDTH),
+                        )
+                        enemy.player = self.player
+                        enemy.tilemap = self.tilemap
+                        enemy.active_collision_layers = self._get_enemy_collision_layers(enemy)
+                        enemy.on_hazard_hit = self._on_hazard_hit
+                        self.enemies.append(enemy)
 
     def _on_hazard_hit(self, hazard: dict) -> None:
         self.camera.shake(2.0, 0.15)
-        self.damage_popups.append({
-            "text": f"-{int(hazard['damage'])}",
-            "x": hazard["hitbox"].centerx,
-            "y": hazard["hitbox"].top - 6,
-            "timer": 0.6,
-            "color": (255, 60, 60),
-        })
+        self._spawn_popup(
+            f"-{int(hazard['damage'])}", hazard["hitbox"].centerx, hazard["hitbox"].top - 6, 0.6, (255, 60, 60)
+        )
 
     def _create_radial_glow(self, radius: int, color_rgb: tuple, max_alpha: int = 40) -> pygame.Surface:
         surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
@@ -302,7 +408,6 @@ class Room:
                 self.bg_surfaces[phase] = bg
 
         # Ambient floating atmospheric particles (motes/embers)
-        import random
         self._ambient_particles: List[Dict[str, Any]] = [
             {
                 "x": random.uniform(0, self.MAP_WIDTH),
@@ -319,62 +424,54 @@ class Room:
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
         )
 
+    def _spawn_popup(
+        self,
+        text: str,
+        x: float,
+        y: float,
+        timer: float,
+        color: tuple,
+    ) -> None:
+        self.damage_popups.append({"text": text, "x": x, "y": y, "timer": timer, "color": color})
+
+    def _reset_player_to_spawn(self) -> None:
+        self.player.x = self.spawn_x
+        self.player.y = self.spawn_y
+        self.player.vx = 0.0
+        self.player.vy = 0.0
+        self.player.hitbox.x = int(self.spawn_x)
+        self.player.hitbox.y = int(self.spawn_y)
+        self.player.change_state("idle")
+
     def _handle_player_fall_hazard(self) -> None:
-        """Called when player falls into spikes or pits at the bottom of the map."""
         if self.player.state_name == "death":
             return
 
         self.player.take_damage(20)
         self.camera.shake(4.0, 0.25)
-        self.damage_popups.append({
-            "text": "-20 (SPIKES)",
-            "x": self.player.hitbox.centerx,
-            "y": self.player.hitbox.top - 10,
-            "timer": 0.8,
-            "color": (255, 50, 50),
-        })
+        self._spawn_popup("-20 (SPIKES)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.8, (255, 50, 50))
 
         if self.rising_hazard is not None:
             self.rising_hazard.reset()
 
         if self.player.state_name != "death":
-            self.player.x = self.spawn_x
-            self.player.y = self.spawn_y
-            self.player.vx = 0.0
-            self.player.vy = 0.0
-            self.player.hitbox.x = int(self.spawn_x)
-            self.player.hitbox.y = int(self.spawn_y)
-            self.player.change_state("idle")
+            self._reset_player_to_spawn()
 
     def _handle_player_rising_hazard(self) -> None:
-        """Llamado cuando el jugador entra en contacto con el peligro ascendente."""
         if self.player.state_name == "death":
             return
 
         self.player.take_damage(25)
         self.camera.shake(5.0, 0.3)
-        self.damage_popups.append({
-            "text": "-25 (HAZARD)",
-            "x": self.player.hitbox.centerx,
-            "y": self.player.hitbox.top - 10,
-            "timer": 0.9,
-            "color": (255, 60, 40),
-        })
+        self._spawn_popup("-25 (HAZARD)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.9, (255, 60, 40))
 
         if self.rising_hazard is not None:
             self.rising_hazard.reset()
 
         if self.player.state_name != "death":
-            self.player.x = self.spawn_x
-            self.player.y = self.spawn_y
-            self.player.vx = 0.0
-            self.player.vy = 0.0
-            self.player.hitbox.x = int(self.spawn_x)
-            self.player.hitbox.y = int(self.spawn_y)
-            self.player.change_state("idle")
+            self._reset_player_to_spawn()
 
     def spawn_dust(self, x: float, y: float, count: int = 4) -> None:
-        import random
         for _ in range(count):
             self.dust_particles.append({
                 "x": x + random.uniform(-5.0, 5.0),
@@ -387,7 +484,6 @@ class Room:
             })
 
     def update(self, dt: float) -> None:
-        import math, random
         # Update ambient particles drifting with wind
         for p in self._ambient_particles:
             p["drift_timer"] += dt * 1.5
@@ -412,13 +508,19 @@ class Room:
         self.player.active_collision_layers = self._get_active_collision_layers()
         self.player.update(dt)
 
+        for trap in self.falling_traps:
+            trap.update(dt)
+
+        for saw in self.saw_hazards:
+            saw.update(dt)
+
         # Update camera following player smoothly
         self.camera.x = self.player.hitbox.centerx
         self.camera.y = self.player.hitbox.centery
         self.camera.update(dt)
 
-        # Check spikes / bottom fall hazard (rows 22-23 spikes begin at y=352)
-        if self.player.hitbox.bottom >= (self.MAP_HEIGHT - 24):
+        # Check spikes / bottom fall hazard in pit rooms
+        if self.rising_hazard is None and self.player.hitbox.bottom >= (self.MAP_HEIGHT - 4):
             self._handle_player_fall_hazard()
 
         # Gate collision & rising hazard
@@ -476,6 +578,8 @@ class Room:
                     map_w=float(self.MAP_WIDTH),
                 )
                 new_enemy.player = self.player
+                new_enemy.tilemap = self.tilemap
+                new_enemy.active_collision_layers = self._get_enemy_collision_layers(new_enemy)
                 new_enemy.on_hazard_hit = self._on_hazard_hit
                 self.enemies.append(new_enemy)
 
@@ -507,22 +611,10 @@ class Room:
                     enemy.take_damage(float(dmg))
 
                 self._hit_this_swing.add(hit_key)
-                self.damage_popups.append({
-                    "text": f"-{dmg}",
-                    "x": enemy.hitbox.centerx,
-                    "y": enemy.hitbox.top - 6,
-                    "timer": 0.5,
-                    "color": (255, 230, 80),
-                })
+                self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.5, (255, 230, 80))
             elif not enemy.is_active() and hit_key not in self._hit_this_swing:
                 self._hit_this_swing.add(hit_key)
-                self.damage_popups.append({
-                    "text": "IMMUNE",
-                    "x": enemy.hitbox.centerx,
-                    "y": enemy.hitbox.top - 6,
-                    "timer": 0.4,
-                    "color": (160, 190, 255),
-                })
+                self._spawn_popup("IMMUNE", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.4, (160, 190, 255))
 
         if player.skin == "mage" and player.area_active:
             for f in player.flames:
@@ -538,13 +630,7 @@ class Room:
                         enemy.take_damage(float(dmg))
                     self.camera.shake(2.0, 0.12)
                     self._flame_hits.add(hit_key)
-                    self.damage_popups.append({
-                        "text": f"-{dmg}",
-                        "x": enemy.hitbox.centerx,
-                        "y": enemy.hitbox.top - 8,
-                        "timer": 0.5,
-                        "color": (255, 130, 40),
-                    })
+                    self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.5, (255, 130, 40))
 
         is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
         if (
@@ -558,26 +644,9 @@ class Room:
             dmg = int(enemy.contact_damage)
             player.take_damage(dmg, source_x=enemy.hitbox.centerx)
             self.camera.shake(3.5, 0.2)
-            self.damage_popups.append({
-                "text": f"-{dmg}",
-                "x": player.hitbox.centerx,
-                "y": player.hitbox.top - 8,
-                "timer": 0.6,
-                "color": (255, 75, 75),
-            })
+            self._spawn_popup(f"-{dmg}", player.hitbox.centerx, player.hitbox.top - 8, 0.6, (255, 75, 75))
 
     def _resolve_enemy_collisions(self) -> None:
-        mass_table = {
-            "big_monster":   3.5,
-            "cultist_priest": 2.5,
-            "monster3":       1.4,
-            "skeleton_sword": 1.2,
-            "monster_eyes":   1.0,
-            "goblin":         0.9,
-            "monster2":       0.85,
-            "crown":          0.8,
-        }
-
         active = [
             e for e in self.enemies
             if e.is_active() and e.state_name != "death" and not e.dead
@@ -591,8 +660,8 @@ class Room:
                 if e1.hitbox.colliderect(e2.hitbox):
                     overlap_x = min(e1.hitbox.right, e2.hitbox.right) - max(e1.hitbox.left, e2.hitbox.left)
                     if overlap_x > 0:
-                        m1 = mass_table.get(e1.enemy_type, 1.0)
-                        m2 = mass_table.get(e2.enemy_type, 1.0)
+                        m1 = _ENEMY_MASS.get(e1.enemy_type, 1.0)
+                        m2 = _ENEMY_MASS.get(e2.enemy_type, 1.0)
                         total_m = m1 + m2
 
                         push1 = overlap_x * (m2 / total_m)
@@ -712,6 +781,12 @@ class Room:
 
         # (Player outline already communicates phase color — floor glow removed to avoid
         #  the bright oval artifact over tiles.)
+
+        for trap in self.falling_traps:
+            trap.render(surface, cam_x, cam_y)
+
+        for saw in self.saw_hazards:
+            saw.render(surface, cam_x, cam_y)
 
         # 4. Entidades
         for enemy in self.enemies:

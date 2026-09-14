@@ -228,17 +228,83 @@
                  "width":320,
                  "x":0,
                  "y":608
+                }, 
+                {
+                 "height":16,
+                 "id":7,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"axis",
+                         "type":"string",
+                         "value":"y"
+                        }, 
+                        {
+                         "name":"name",
+                         "type":"string",
+                         "value":"saw"
+                        }, 
+                        {
+                         "name":"patrol_dist",
+                         "type":"int",
+                         "value":64
+                        }, 
+                        {
+                         "name":"speed",
+                         "type":"float",
+                         "value":50
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":112,
+                 "y":288
+                }, 
+                {
+                 "height":16,
+                 "id":8,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"axis",
+                         "type":"string",
+                         "value":"y"
+                        }, 
+                        {
+                         "name":"name",
+                         "type":"string",
+                         "value":"shuriken"
+                        }, 
+                        {
+                         "name":"patrol_dist",
+                         "type":"int",
+                         "value":96
+                        }, 
+                        {
+                         "name":"speed",
+                         "type":"float",
+                         "value":50
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":160,
+                 "y":128
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
         {
          "draworder":"topdown",
          "id":12,
-         "name":"spwans",
+         "name":"spawns",
          "objects":[
                 {
                  "height":16,
@@ -249,8 +315,8 @@
                  "type":"spawn",
                  "visible":true,
                  "width":16,
-                 "x":16,
-                 "y":592
+                 "x":40,
+                 "y":584
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -259,7 +325,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":6,
+ "nextobjectid":23,
  "orientation":"orthogonal",
  "properties":[
         {
