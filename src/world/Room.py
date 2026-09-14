@@ -26,7 +26,7 @@ class Room:
 
     def __init__(
         self,
-        map_name: str = "subida",
+        map_name: str = "sala_future",
         spawn_x: Optional[float] = None,
         spawn_y: Optional[float] = None,
     ) -> None:
@@ -593,10 +593,14 @@ class Room:
             else:
                 surface.blit(bg_surf, (-cam_x, -cam_y))
 
+        self._render_layer("background", surface, ghost=False)
+        self._render_layer("ground", surface, ghost=False)
+        self._render_layer("decoration", surface, ghost=False)
+
         # 2. Capas de tiles según la fase activa
         if phase == "green":
             # Capas base y del Pasado
-            self._render_layer("ground", surface, ghost=False)
+            self._render_layer("green_background", surface, ghost=False)
             self._render_layer("green_ground", surface, ghost=False)
             self._render_layer("green_decoration", surface, ghost=False)
             # Plataformas del Futuro en modo fantasma (semitransparentes)
@@ -604,7 +608,6 @@ class Room:
         else:
             # Capas base y del Futuro
             self._render_layer("red_background", surface, ghost=False)
-            self._render_layer("ground", surface, ghost=False)
             self._render_layer("red_ground", surface, ghost=False)
             self._render_layer("red_decoration", surface, ghost=False)
             # Plataformas del Pasado en modo fantasma (semitransparentes)
