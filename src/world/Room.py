@@ -43,7 +43,7 @@ class Room:
 
     def __init__(
         self,
-        map_name: str = "sala_future",
+        map_name: str = "middle",
         spawn_x: Optional[float] = None,
         spawn_y: Optional[float] = None,
         player: Optional[Player] = None,
