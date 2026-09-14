@@ -16,6 +16,7 @@ import settings
 from src.definitions import entity as entity_defs
 from src.entities.Player import Player
 from src.entities.Enemy import Enemy
+from src.world.RisingHazard import RisingHazard
 
 
 class Room:
@@ -29,6 +30,7 @@ class Room:
         map_name: str = "subida",
         spawn_x: Optional[float] = None,
         spawn_y: Optional[float] = None,
+        player: Optional[Player] = None,
     ) -> None:
         self.map_name = map_name
         map_file = settings.BASE_DIR / "assets" / "tilemaps" / f"{map_name}.json"
@@ -55,15 +57,27 @@ class Room:
             bounds=pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT),
         )
 
-        self.player = Player(
-            self.spawn_x,
-            self.spawn_y,
-            floor_y=float(self.MAP_HEIGHT),
-            map_w=float(self.MAP_WIDTH),
-        )
+        if player is None:
+            self.player = Player(
+                self.spawn_x,
+                self.spawn_y,
+                floor_y=float(self.MAP_HEIGHT),
+                map_w=float(self.MAP_WIDTH),
+            )
+            self.player.phase = settings.PHASE_PAST
+            self.player.phase_color = "green"
+        else:
+            self.player = player
+            self.player.x = self.spawn_x
+            self.player.y = self.spawn_y
+            self.player.hitbox.x = int(self.spawn_x)
+            self.player.hitbox.y = int(self.spawn_y)
+            self.player.vx = 0.0
+            self.player.vy = 0.0
+            self.player.floor_y = float(self.MAP_HEIGHT)
+            self.player.map_w = float(self.MAP_WIDTH)
+
         self.player.tilemap = self.tilemap
-        self.player.phase = settings.PHASE_PAST
-        self.player.phase_color = "green"
         self.player.active_collision_layers = self._get_active_collision_layers()
 
         self.camera.x = self.player.hitbox.centerx
@@ -87,11 +101,24 @@ class Room:
         self._prev_attack_state: bool = False
         self.damage_popups: list[dict] = []
         self.respawn_queue: list[dict] = []
+        self.rising_hazard: Optional[RisingHazard] = (
+            RisingHazard(self) if self.map_name == "subida" else None
+        )
 
     @property
     def camera_offset(self) -> tuple[float, float]:
         ox, oy = self.camera.offset
         return (round(ox), round(oy))
+
+    def check_room_exits(self) -> Optional[Tuple[str, float, float]]:
+        """Comprueba si el jugador cruza una salida configurada para esta sala."""
+        from src.world.room_connections import ROOM_CONNECTIONS
+        exits = ROOM_CONNECTIONS.get(self.map_name, [])
+        for exit_def in exits:
+            if exit_def["check"](self.player, self):
+                target_x, target_y = exit_def["target_spawn"]
+                return (exit_def["target_room"], float(target_x), float(target_y))
+        return None
 
     def _extract_spawn_point(
         self,
@@ -307,6 +334,9 @@ class Room:
             "color": (255, 50, 50),
         })
 
+        if self.rising_hazard is not None:
+            self.rising_hazard.reset()
+
         if self.player.state_name != "death":
             self.player.x = self.spawn_x
             self.player.y = self.spawn_y
@@ -314,7 +344,34 @@ class Room:
             self.player.vy = 0.0
             self.player.hitbox.x = int(self.spawn_x)
             self.player.hitbox.y = int(self.spawn_y)
-            self.player.change_state("fall")
+            self.player.change_state("idle")
+
+    def _handle_player_rising_hazard(self) -> None:
+        """Llamado cuando el jugador entra en contacto con el peligro ascendente."""
+        if self.player.state_name == "death":
+            return
+
+        self.player.take_damage(25)
+        self.camera.shake(5.0, 0.3)
+        self.damage_popups.append({
+            "text": "-25 (HAZARD)",
+            "x": self.player.hitbox.centerx,
+            "y": self.player.hitbox.top - 10,
+            "timer": 0.9,
+            "color": (255, 60, 40),
+        })
+
+        if self.rising_hazard is not None:
+            self.rising_hazard.reset()
+
+        if self.player.state_name != "death":
+            self.player.x = self.spawn_x
+            self.player.y = self.spawn_y
+            self.player.vx = 0.0
+            self.player.vy = 0.0
+            self.player.hitbox.x = int(self.spawn_x)
+            self.player.hitbox.y = int(self.spawn_y)
+            self.player.change_state("idle")
 
     def spawn_dust(self, x: float, y: float, count: int = 4) -> None:
         import random
@@ -363,6 +420,18 @@ class Room:
         # Check spikes / bottom fall hazard (rows 22-23 spikes begin at y=352)
         if self.player.hitbox.bottom >= (self.MAP_HEIGHT - 24):
             self._handle_player_fall_hazard()
+
+        # Gate collision & rising hazard
+        if self.rising_hazard is not None:
+            if self.rising_hazard.gate_current_y >= 570.0:
+                if self.player.hitbox.left < 28 and self.player.hitbox.bottom >= 540:
+                    self.player.x = 28.0
+                    self.player.hitbox.left = 28
+                    self.player.vx = max(0.0, self.player.vx)
+
+            self.rising_hazard.update(dt, self.player)
+            if self.rising_hazard.check_player_hit(self.player):
+                self._handle_player_rising_hazard()
 
         currently_attacking = self.player.state_name in ("attack", "attack_special")
         if currently_attacking and not self._prev_attack_state:
@@ -647,7 +716,11 @@ class Room:
 
         self.player.render(surface, cam_x, cam_y)
 
-        # 5. Popups de daño y efectos
+        # 5. Peligro de Líquido ascendente y Reja en el mundo
+        if self.rising_hazard is not None:
+            self.rising_hazard.render_world(surface, cam_x, cam_y, phase)
+
+        # 6. Popups de daño y efectos
         for p in self.damage_popups:
             render_text(
                 surface,
@@ -659,3 +732,7 @@ class Room:
                 center=True,
                 shadowed=True,
             )
+
+        # 7. Indicador lateral de la torre (HUD)
+        if self.rising_hazard is not None:
+            self.rising_hazard.render_hud(surface, self.player)
