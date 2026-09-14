@@ -64,6 +64,8 @@ TEXTURES = {
     "sala_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_future.png"),
     "subida_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "subida_past.png"),
     "subida_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "subida_future.png"),
+    "middle_past": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "middle_past.png"),
+    "middle_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "middle_future.png"),
 }
 
 FRAMES = {
