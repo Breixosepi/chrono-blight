@@ -11,7 +11,7 @@
             971, 974, 0, 0, 0, 958, 959, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 958, 959, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 1329, 1330, 958, 959, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1047, 1049, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 1346, 1347, 975, 976, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 1346, 1347, 975, 976, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2008, 2008, 2008, 2008, 2008, 2008, 2008,
             920, 920, 920, 920, 920, 920, 920, 920, 920, 923, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1047, 1048, 1049, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             956, 956, 956, 956, 956, 956, 956, 956, 956, 940, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1047, 1049, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             956, 956, 956, 956, 956, 956, 956, 956, 973, 990, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 926, 927, 0, 0, 0, 0, 0,
@@ -83,7 +83,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1931, 1933, 0, 0, 0, 0, 0, 1931, 1933, 0, 0, 0, 0, 1931, 1932, 1933, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1931, 1933, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2007, 2008, 2008, 2008, 2008, 2008, 2008,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1931, 1933, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2041, 2042, 2042, 2042, 2042, 2042, 2042,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2077, 2060, 2042, 2042, 2042, 2042, 2042,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2024, 2042, 2042, 2042, 2042, 2042,
@@ -142,48 +142,12 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":192,
+                 "x":176,
                  "y":0
                 }, 
                 {
                  "height":16,
                  "id":2,
-                 "name":"green_trap",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"int",
-                         "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":240,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":3,
-                 "name":"green_trap",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"int",
-                         "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":288,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":4,
                  "name":"red_trap",
                  "opacity":1,
                  "properties":[
@@ -191,102 +155,22 @@
                          "name":"id",
                          "type":"int",
                          "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":400,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":5,
-                 "name":"red_trap",
-                 "opacity":1,
-                 "properties":[
+                        }, 
                         {
-                         "name":"id",
+                         "name":"tile_col",
                          "type":"int",
-                         "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":464,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":6,
-                 "name":"red_trap",
-                 "opacity":1,
-                 "properties":[
+                         "value":1
+                        }, 
                         {
-                         "name":"id",
+                         "name":"tile_row",
                          "type":"int",
-                         "value":0
+                         "value":2
                         }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":512,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":7,
-                 "name":"red_trap",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"int",
-                         "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":560,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":9,
-                 "name":"red_trap",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"int",
-                         "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":608,
-                 "y":0
-                }, 
-                {
-                 "height":16,
-                 "id":10,
-                 "name":"red_trap",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"int",
-                         "value":0
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":672,
+                 "x":224,
                  "y":0
                 }, 
                 {
@@ -299,17 +183,27 @@
                          "name":"id",
                          "type":"int",
                          "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
                         }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":160,
+                 "x":144,
                  "y":0
                 }, 
                 {
                  "height":16,
-                 "id":12,
+                 "id":23,
                  "name":"green_trap",
                  "opacity":1,
                  "properties":[
@@ -317,12 +211,386 @@
                          "name":"id",
                          "type":"int",
                          "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":176,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":24,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":176,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":25,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":272,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":26,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":304,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":27,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
                         }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
                  "x":336,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":28,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":368,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":29,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":464,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":30,
+                 "name":"green_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":576,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":33,
+                 "name":"red_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":400,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":34,
+                 "name":"red_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":432,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":35,
+                 "name":"red_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":512,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":36,
+                 "name":"red_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":544,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":37,
+                 "name":"red_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":624,
+                 "y":0
+                }, 
+                {
+                 "height":16,
+                 "id":38,
+                 "name":"red_trap",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"tile_col",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"tile_row",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":656,
                  "y":0
                 }],
          "opacity":1,
@@ -355,7 +623,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":16,
+ "nextobjectid":39,
  "orientation":"orthogonal",
  "properties":[
         {
