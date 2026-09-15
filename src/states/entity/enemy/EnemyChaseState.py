@@ -37,21 +37,44 @@ class EnemyChaseState(EnemyBaseState):
             return
 
         dist = e.distance_to_player()
+        direction = e.player_direction()
+        e.facing = "right" if direction > 0 else "left"
 
+        # Comportamiento táctico de tirador a distancia para monster2 (pistolero)
+        is_ranged = (e.enemy_type == "monster2")
+        if is_ranged:
+            min_keep_dist = 68.0
+            if dist < min_keep_dist:
+                # El jugador se acercó demasiado: huir en dirección opuesta (manteniendo la vista en él)
+                e.vx = -e.walk_speed * 1.15 * direction
+                if e.on_ground:
+                    e.change_animation("walk")
+            elif dist <= e.attack_range:
+                # En rango óptimo de tiro: detenerse y disparar si está listo
+                e.vx = 0.0
+                if self.attack_cooldown <= 0:
+                    self.change_state("attack")
+                    return
+                elif e.on_ground:
+                    e.change_animation("idle")
+            else:
+                # Demasiado lejos: avanzar para entrar en rango de disparo
+                e.vx = e.walk_speed * direction
+                if e.on_ground:
+                    e.change_animation("walk")
+            return
+
+        # Comportamiento cuerpo a cuerpo estándar
         if dist <= e.attack_range:
             if self.attack_cooldown <= 0:
                 self.change_state("attack")
                 return
             else:
                 e.vx = 0.0
-                direction = e.player_direction()
-                e.facing = "right" if direction > 0 else "left"
                 if e.on_ground:
                     e.change_animation("idle")
                 return
 
-        direction = e.player_direction()
-        e.facing = "right" if direction > 0 else "left"
         e.vx = e.walk_speed * direction
 
         # Jump behavior 

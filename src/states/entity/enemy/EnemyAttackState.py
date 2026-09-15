@@ -24,6 +24,14 @@ class EnemyAttackState(EnemyBaseState):
             self._current_attack = "attack"
             e.change_animation("attack")
             self._spawn_boss_vines()
+        elif e.enemy_type == "monster2":
+            # Decide entre disparo de pistola o garra según la distancia
+            dist = e.horizontal_distance_to_player()
+            if dist > 36.0:
+                self._current_attack = "attack2"
+            else:
+                self._current_attack = random.choice(["attack", "attack2"])
+            e.change_animation(self._current_attack)
         else:
             possible = ["attack", "attack2"]
             available = [k for k in possible if k in e.animations]
@@ -58,7 +66,11 @@ class EnemyAttackState(EnemyBaseState):
         reach = int(action.get("reach", e.attack_reach))
         dmg = int(action.get("damage", e.contact_damage))
 
-        if t_start <= self._attack_timer <= t_end and not self._damage_dealt and e.player is not None:
+        if action.get("is_projectile") and self._attack_timer >= t_start and not self._damage_dealt:
+            self._damage_dealt = True
+            e.spawn_projectile(speed=150.0, damage=int(dmg))
+
+        elif not action.get("is_projectile") and not action.get("is_spell") and t_start <= self._attack_timer <= t_end and not self._damage_dealt and e.player is not None:
             if e.is_active():
                 if e.facing == "right":
                     atk_rect = pygame.Rect(e.hitbox.right - 2, e.hitbox.top - 4, reach, e.hitbox.height + 8)
@@ -100,21 +112,23 @@ class EnemyAttackState(EnemyBaseState):
                 target_x,
             ]
 
+        base_y = float(e.player.hitbox.bottom if e.player is not None else e.hitbox.bottom)
         variants = ["2a", "2b", "2c"]
         for idx, tx in enumerate(targets):
             var = variants[idx % len(variants)] if len(targets) > 1 else "2c"
             hazard = {
                 "x": tx - 24.0,
-                "y": float(e.floor_y - 48),
+                "y": base_y - 48.0,
                 "timer": 0.0,
                 "duration": 1.6,
                 "interval": 0.10,
                 "variant": var,
                 "damage": 18,
-                "hitbox": pygame.Rect(int(tx - 12), int(e.floor_y - 32), 24, 32),
+                "hitbox": pygame.Rect(int(tx - 12), int(base_y - 32), 24, 32),
                 "resolved": False,
                 "hit": False,
                 "miss": False,
             }
             e.hazards.append(hazard)
+
 
