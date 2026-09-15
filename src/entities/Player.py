@@ -253,13 +253,13 @@ class Player(Entity):
 
         if self.skin == "sword":
             if self.state_name == "attack":
-                # Slash 1 is active on frames 2..4; Slash 2 (combo followup) is active on frames 8..10
-                return (2 <= idx <= 4) or (8 <= idx <= 10)
+                # Slash 1 is active on frames 1..5; Slash 2 (combo followup) is active on frames 7..11
+                return (1 <= idx <= 5) or (7 <= idx <= 11)
             elif self.state_name == "attack_special":
                 # Thrust active during dash forward
-                return (1 <= idx <= 4)
+                return (1 <= idx <= 5)
             elif getattr(getattr(self, "state_machine", None), "current", None) and getattr(self.state_machine.current, "current_anim_name", "") == "attack_up":
-                return (2 <= idx <= 4)
+                return (1 <= idx <= 5)
         elif self.skin == "mage":
             if self.state_name == "attack":
                 # Arcane wave flashes and strikes forward on frames 3..6
