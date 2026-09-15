@@ -6,6 +6,40 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [0.9.0] - 2026-09-14
+
+### Añadido
+- **Sistema y Jerarquía de Jefes (`src/entities/Boss.py` y `src/states/entity/boss/`)**:
+  - Creación de la clase dedicada `Boss` que extiende `Enemy`, encapsulando el manejo de fases, escudos arcanos, temporizadores de inmunidad y proyectiles especiales.
+  - Implementación de la máquina de estados desacoplada para jefes: `BossBaseState`, `BossIdleState`, `BossChaseState` y `BossAttackState`.
+  - Separación explícita de `BOSS_DEFS` y `ENEMY_DEFS` en `src/definitions/entity.py`.
+- **Combate de Arena Multifase (`src/world/ArenaManager.py` y `src/world/LavaShower.py`)**:
+  - Sistema de sala de arena con barrera mágica que sella la salida y lluvia de lava ambiental en el techo.
+  - Gestión de 3 fases de combate con oleadas dinámicas de esbirros:
+    - **Fase 1**: Jefe protegido por escudo lanzando ondas de choque terrestres mientras el jugador enfrenta esbirros.
+    - **Fase 2 (70% HP)**: Desbloqueo del Orbe del Vacío con rastreo inteligente y nueva oleada de esbirros.
+    - **Fase 3 (30% HP)**: Furia total combinando onda terrestre y orbe simultáneamente junto al Gólem Raíz.
+  - Escudo protector activo mientras haya esbirros vivos; al eliminarlos, el escudo se rompe permitiendo dañar al jefe.
+- **Efectos y Spritesheets de Habilidades (`assets/graphics/effects/` y `Boss.py`)**:
+  - Integración de spritesheets dedicados para las habilidades del Sumo Sacerdote: `void_orb.png` y `ground_shockwave.png` (variante morada, fila 2).
+  - Máquina de estados interna para proyectiles (`spawn`, `travel`, `despawn`) con volteo dinámico horizontal según dirección.
+  - IA de rastreo activo (*homing*) para el Orbe del Vacío (duración de 5s con estela de partículas).
+  - Hitboxes calibradas para permitir esquivar la onda rasante mediante saltos o plataformas superiores.
+
+### Cambiado / Refactorizado
+- **Reorganización Estructural de Assets (`assets/graphics/`)**:
+  - Nueva taxonomía de carpetas siguiendo los estándares del motor Gale:
+    - `player/{sword, morph, mage}/`
+    - `entity/enemies/{goblin, monster2, monster3, monster_eyes, skeleton_sword, crown}/`
+    - `entity/bosses/{cultist_priest, big_monster}/`
+    - `effects/`
+  - Actualización de `settings.TEXTURES` y generadores de recortes en `src/definitions/frames.py`.
+- **Desacoplamiento de `Enemy.py`**:
+  - Purga de lógica específica de jefes en `Enemy.py`, `EnemyAttackState.py` y `EnemyChaseState.py`, dejando los estados de enemigos regulares limpios y enfocados en su IA estándar.
+  - Reparación y actualización de rutas de sprites para `SawHazard.py`.
+
+---
+
 ## [0.8.0] - 2026-09-14
 
 ### Añadido
