@@ -353,6 +353,9 @@ class Player(Entity):
         camera_x: float = 0.0,
         camera_y: float = 0.0,
     ) -> None:
+        if getattr(self, "hidden", False):
+            return
+            
         if self.current_animation is None:
             return
 

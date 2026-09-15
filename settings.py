@@ -68,6 +68,13 @@ TEXTURES = {
     # --- Efectos de habilidades ---
     "void_orb":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "void_orb.png"),
     "ground_shockwave":  pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "ground_shockwave.png"),
+    # --- Trampas y Peligros ---
+    "saw_blade":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "saws" / "saw_blade.png"),
+    "destructible_block": pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "blocks" / "Brick1.png"),
+    "moving_platform":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "platforms" / "Moving Platfrom_A.png"),
+    "elevator_open":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "13.png"),
+    "elevator_closed":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "12.png"),
+    "elevator_rope":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "22.png"),
 }
 
 FRAMES = {
@@ -81,6 +88,9 @@ FRAMES = {
     "mage_atk2_green": frames.generate_frames(TEXTURES["mage_atk2_green"], 128, 64),
     "flame_purple":    frames.generate_frames(TEXTURES["flame_purple"], 64, 64),
     "flame_green":     frames.generate_frames(TEXTURES["flame_green"],   64, 64),
+    "saw_blade":          frames.generate_frames(TEXTURES["saw_blade"], 32, 32),
+    "destructible_block": frames.generate_frames(TEXTURES["destructible_block"], 32, 32),
+    "moving_platform":    frames.generate_frames(TEXTURES["moving_platform"], 32, 16),
     **generate_enemy_frames(BASE_DIR, TEXTURES),
 }
 

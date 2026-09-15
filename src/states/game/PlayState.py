@@ -25,6 +25,7 @@ class PlayState(BaseState):
         spawn_x, spawn_y = params.get("spawn_point", DEFAULT_START_SPAWN)
 
         self.room = Room(map_name=start_room, spawn_x=spawn_x, spawn_y=spawn_y)
+        self.room.play_state = self
         self.player = self.room.player
         self.hud = HUD()
 
@@ -63,6 +64,7 @@ class PlayState(BaseState):
             spawn_y=target_spawn_y,
             player=self.player,
         )
+        self.room.play_state = self
         self.player.move_direction = 0
         self.player.vx = 0.0
         self.player.vy = 0.0
@@ -126,8 +128,9 @@ class PlayState(BaseState):
 
     def render(self, surface: pygame.Surface) -> None:
         self.room.render(surface)
-
         cam_x, cam_y = self.room.camera_offset
+        self.player.render(surface, cam_x, cam_y)
+
         self.hud.render(surface, self.player, cam_x, cam_y)
 
         if self.fade_alpha > 0.0:

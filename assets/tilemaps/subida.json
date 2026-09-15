@@ -276,7 +276,7 @@
                         {
                          "name":"name",
                          "type":"string",
-                         "value":"shuriken"
+                         "value":"saw"
                         }, 
                         {
                          "name":"patrol_dist",
@@ -294,6 +294,39 @@
                  "width":16,
                  "x":160,
                  "y":128
+                }, 
+                {
+                 "height":16,
+                 "id":23,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"axis",
+                         "type":"string",
+                         "value":"y"
+                        }, 
+                        {
+                         "name":"name",
+                         "type":"string",
+                         "value":"saw"
+                        }, 
+                        {
+                         "name":"patrol_dist",
+                         "type":"int",
+                         "value":80
+                        }, 
+                        {
+                         "name":"speed",
+                         "type":"float",
+                         "value":65
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":145.68782161235,
+                 "y":402.219373476573
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -325,7 +358,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":23,
+ "nextobjectid":24,
  "orientation":"orthogonal",
  "properties":[
         {

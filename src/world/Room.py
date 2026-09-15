@@ -21,6 +21,7 @@ from src.entities.Enemy import Enemy
 from src.world.FallingTrap import FallingTrap
 from src.world.SawHazard import SawHazard
 from src.world.RisingHazard import RisingHazard
+from src.world.Elevator import Elevator
 from src.world.ArenaManager import ArenaManager
 
 
@@ -127,6 +128,7 @@ class Room:
         )
         self.falling_traps: list[FallingTrap] = []
         self.saw_hazards: list[SawHazard] = []
+        self.elevators: list[Elevator] = []
         self.enemy_projectiles: list[dict] = []
         self._init_traps(self.map_data)
         self.arena: Optional[ArenaManager] = (
@@ -169,6 +171,33 @@ class Room:
                             axis=axis,
                             speed=speed,
                             damage=damage,
+                        )
+                    )
+                    continue
+
+                # 4. Ascensores
+                elif "elevator" in combined_id:
+                    dest_map = str(props.get("dest_map", ""))
+                    start_state = str(props.get("start_state", "hidden"))
+                    
+                    if start_state == "arriving":
+                        if getattr(self.player, "arriving_via_elevator", False):
+                            # The player actually arrived via elevator!
+                            self.player.arriving_via_elevator = False
+                            # Temporarily hide player while elevator descends
+                            self.player.active = False
+                            self.player.state_machine.change("idle")
+                        else:
+                            # Not arriving via elevator, so hide it forever
+                            start_state = "hidden_permanently"
+                    
+                    self.elevators.append(
+                        Elevator(
+                            self,
+                            float(obj.get("x", 0.0)),
+                            float(obj.get("y", 0.0)),
+                            dest_map=dest_map,
+                            start_state=start_state,
                         )
                     )
                     continue
@@ -541,6 +570,9 @@ class Room:
 
         for trap in self.falling_traps:
             trap.update(dt)
+            
+        for elevator in self.elevators:
+            elevator.update(dt)
 
         for saw in self.saw_hazards:
             saw.update(dt)
@@ -877,6 +909,9 @@ class Room:
         for trap in self.falling_traps:
             trap.render(surface, cam_x, cam_y)
 
+        for elevator in self.elevators:
+            elevator.render(surface, cam_x, cam_y)
+
         for saw in self.saw_hazards:
             saw.render(surface, cam_x, cam_y)
 
@@ -903,7 +938,7 @@ class Room:
             pygame.draw.ellipse(bullet_surf, (255, 100, 30, 220), (0, 0, 14, 8))
             pygame.draw.ellipse(bullet_surf, (255, 250, 180, 255), (3, 1, 8, 6))
             surface.blit(bullet_surf, (px - 7, py - 4))
-
+        # Renderizado del jugador
         self.player.render(surface, cam_x, cam_y)
 
         # 5. Peligro de Líquido ascendente y Reja en el mundo

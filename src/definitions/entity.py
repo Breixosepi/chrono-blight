@@ -302,7 +302,7 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "mana_regen":   3.5,
                     "jumps":        1,
                 },
-                "offsets": {"right": -29, "left": -83, "y": -23},
+                "offsets": {"right": -29, "left": -83, "y": -25},
                 "animations": _MAGE_ANIMATIONS,
                 "actions": {
                     "attack": {

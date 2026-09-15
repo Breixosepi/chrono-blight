@@ -8,18 +8,25 @@ class SawHazard:
 
     @classmethod
     def _get_frames(cls, hazard_type: str) -> List[pygame.Surface]:
+        if hazard_type == "saw":
+            if "saw" not in cls._FRAMES_CACHE:
+                tex = settings.TEXTURES["saw_blade"]
+                rects = settings.FRAMES["saw_blade"]
+                cls._FRAMES_CACHE["saw"] = [tex.subsurface(r) for r in rects]
+            return cls._FRAMES_CACHE["saw"]
+        
+        # Keep old shuriken logic if needed, or adapt
         if hazard_type not in cls._FRAMES_CACHE:
             path = settings.BASE_DIR / "assets" / "graphics" / "player" / "sword" / "SawBladeSuriken.png"
-            surf = pygame.image.load(str(path)).convert_alpha()
-            if hazard_type == "shuriken":
+            try:
+                surf = pygame.image.load(str(path)).convert_alpha()
                 cls._FRAMES_CACHE["shuriken"] = [
                     surf.subsurface((i * 25 + 4, 36, 24, 24)) for i in range(2)
                 ]
-            else:
-                cls._FRAMES_CACHE["saw"] = [
-                    surf.subsurface((i * 24 + 4, 4, 24, 24)) for i in range(4)
-                ]
-        return cls._FRAMES_CACHE[hazard_type]
+            except Exception:
+                pass
+        
+        return cls._FRAMES_CACHE.get(hazard_type, [])
 
     def __init__(
         self,
@@ -38,9 +45,14 @@ class SawHazard:
         self.start_y = y
         self.x = x
         self.y = y
-        self.width = 24
-        self.height = 24
-        self.hitbox = pygame.Rect(int(x), int(y), self.width, self.height)
+        self.width = 32
+        self.height = 32
+        
+        # Fair hitbox (e.g. 24x24 centered in 32x32)
+        hitbox_size = 24
+        offset = (32 - hitbox_size) // 2
+        self.hitbox = pygame.Rect(int(x) + offset, int(y) + offset, hitbox_size, hitbox_size)
+        self.hitbox_offset = offset
         self.hazard_type = hazard_type
         self.phase = phase
         self.patrol_dist = patrol_dist
@@ -83,7 +95,7 @@ class SawHazard:
                     self.x = self.start_x
                     self.direction = 1
 
-        self.hitbox.topleft = (int(self.x), int(self.y))
+        self.hitbox.topleft = (int(self.x) + self.hitbox_offset, int(self.y) + self.hitbox_offset)
 
         # Colisión con el jugador
         player = self.room.player
