@@ -1,7 +1,6 @@
 """
-Chrono Blight
+Chrono Blight - EnemyAttackState
 """
-
 import math
 import random
 import pygame
@@ -10,125 +9,153 @@ from src.states.entity.enemy.EnemyBaseState import EnemyBaseState
 
 class EnemyAttackState(EnemyBaseState):
     def enter(self, *args, **kwargs) -> None:
-        e = self.entity
-        self.has_gravity = (e.float_amplitude == 0.0)
-        self._attack_timer: float = 0.0
-        self._damage_dealt: bool = False
-        e.vx = 0.0
 
-        if e.player is not None:
-            direction = e.player_direction()
-            e.facing = "right" if direction > 0 else "left"
+        enemy = self.entity
+        self.has_gravity = (enemy.float_amplitude == 0.0)
+        self.attack_timer: float = 0.0
+        self.damage_dealt: bool = False
+        enemy.vx = 0.0
 
-        if e.enemy_type == "big_monster":
-            self._current_attack = "attack"
-            e.change_animation("attack")
+        if enemy.player is not None:
+            direction = enemy.player_direction()
+            enemy.facing = "right" if direction > 0 else "left"
+
+        self._melee_hitbox = pygame.Rect(0, 0, 0, 0)
+        self._select_and_start_attack()
+
+    def _select_and_start_attack(self) -> None:
+        enemy = self.entity
+
+        if enemy.enemy_type == "big_monster":
+            self.current_attack_name = "attack"
+            enemy.change_animation("attack")
             self._spawn_boss_vines()
-        elif e.enemy_type == "monster2":
-            # Decide entre disparo de pistola o garra según la distancia
-            dist = e.horizontal_distance_to_player()
-            if dist > 36.0:
-                self._current_attack = "attack2"
+
+        elif enemy.enemy_type == "monster2":
+            distance_to_player = enemy.horizontal_distance_to_player()
+            if distance_to_player > 36.0:
+                self.current_attack_name = "attack2"
             else:
-                self._current_attack = random.choice(["attack", "attack2"])
-            e.change_animation(self._current_attack)
+                self.current_attack_name = random.choice(["attack", "attack2"])
+            enemy.change_animation(self.current_attack_name)
+
         else:
-            possible = ["attack", "attack2"]
-            available = [k for k in possible if k in e.animations]
-            self._current_attack = random.choice(available) if available else "attack"
-            e.change_animation(self._current_attack)
+            possible_attacks = ["attack", "attack2"]
+            available_attacks = [name for name in possible_attacks if name in enemy.animations]
+            self.current_attack_name = (
+                random.choice(available_attacks) if available_attacks else "attack"
+            )
+            enemy.change_animation(self.current_attack_name)
+
+    def _update_floating_oscillation(self, dt: float) -> None:
+        enemy = self.entity
+        enemy.float_timer += dt
+        enemy.y = enemy.spawn_y + math.sin(enemy.float_timer * enemy.float_speed * math.pi) * enemy.float_amplitude
+        enemy.hitbox.y = int(enemy.y)
+        enemy.vy = 0.0
+
+    def _execute_projectile_attack(self, damage: int) -> None:
+        enemy = self.entity
+        self.damage_dealt = True
+        enemy.spawn_projectile(speed=150.0, damage=damage)
+
+    def _check_melee_hit(self, reach: int, damage: int) -> None:
+        enemy = self.entity
+        player = enemy.player
+        if player is None or not enemy.is_active():
+            return
+
+        hitbox_width = reach
+        hitbox_height = enemy.hitbox.height + 8
+        hitbox_top = enemy.hitbox.top - 4
+
+        if enemy.facing == "right":
+            hitbox_left = enemy.hitbox.right - 2
+        else:
+            hitbox_left = enemy.hitbox.left - reach + 2
+
+        self._melee_hitbox.update(hitbox_left, hitbox_top, hitbox_width, hitbox_height)
+
+        if self._melee_hitbox.colliderect(player.hitbox) or enemy.hitbox.colliderect(player.hitbox):
+            player.take_damage(damage, source_x=enemy.hitbox.centerx)
+            self.damage_dealt = True
 
     def update(self, dt: float) -> None:
-        e = self.entity
+        enemy = self.entity
 
         if not self.is_player_alive():
             self.change_state("patrol")
             return
 
-        # Floating oscillation (e.g. monster_eyes)
-        if e.float_amplitude > 0:
-            e.float_timer += dt
-            e.y = e.spawn_y + math.sin(e.float_timer * e.float_speed * math.pi) * e.float_amplitude
-            e.hitbox.y = int(e.y)
-            e.vy = 0.0
+        if enemy.float_amplitude > 0:
+            self._update_floating_oscillation(dt)
 
-        self._attack_timer += dt
+        self.attack_timer += dt
+        if self.attack_timer < 0.2 and enemy.player is not None:
+            direction = enemy.player_direction()
+            enemy.facing = "right" if direction > 0 else "left"
 
-        if self._attack_timer < 0.2 and e.player is not None:
-            direction = e.player_direction()
-            e.facing = "right" if direction > 0 else "left"
+        enemy.vx = 0.0
 
-        e.vx = 0.0
+        action_def = enemy.get_action(self.current_attack_name)
+        window_start, window_end = action_def.get("timing", enemy.attack_timing)
+        reach_distance = int(action_def.get("reach", enemy.attack_reach))
+        damage_amount = int(action_def.get("damage", enemy.contact_damage))
 
-        curr_atk = getattr(self, "_current_attack", "attack")
-        action = e.get_action(curr_atk)
-        t_start, t_end = action.get("timing", e.attack_timing)
-        reach = int(action.get("reach", e.attack_reach))
-        dmg = int(action.get("damage", e.contact_damage))
+        if action_def.get("is_projectile") and self.attack_timer >= window_start and not self.damage_dealt:
+            self._execute_projectile_attack(damage_amount)
+        elif (
+            not action_def.get("is_projectile")
+            and not action_def.get("is_spell")
+            and window_start <= self.attack_timer <= window_end
+            and not self.damage_dealt
+        ):
+            self._check_melee_hit(reach_distance, damage_amount)
 
-        if action.get("is_projectile") and self._attack_timer >= t_start and not self._damage_dealt:
-            self._damage_dealt = True
-            e.spawn_projectile(speed=150.0, damage=int(dmg))
-
-        elif not action.get("is_projectile") and not action.get("is_spell") and t_start <= self._attack_timer <= t_end and not self._damage_dealt and e.player is not None:
-            if e.is_active():
-                if e.facing == "right":
-                    atk_rect = pygame.Rect(e.hitbox.right - 2, e.hitbox.top - 4, reach, e.hitbox.height + 8)
-                else:
-                    atk_rect = pygame.Rect(e.hitbox.left - reach + 2, e.hitbox.top - 4, reach, e.hitbox.height + 8)
-
-                if atk_rect.colliderect(e.player.hitbox) or e.hitbox.colliderect(e.player.hitbox):
-                    attack_func = action.get("func")
-                    if attack_func:
-                        attack_func(e, e.player, curr_atk)
-                    else:
-                        e.player.take_damage(dmg, source_x=e.hitbox.centerx)
-                    self._damage_dealt = True
-
-        if e.is_animation_finished(fallback_duration=e.attack_duration):
-            e.vx = 0.0
-            if self.is_player_alive() and e.distance_to_player() <= e.detect_range:
-                self.change_state("chase", cooldown=e.attack_cooldown)
+        if enemy.is_animation_finished(fallback_duration=enemy.attack_duration):
+            enemy.vx = 0.0
+            if self.is_player_alive() and enemy.distance_to_player() <= enemy.detect_range:
+                self.change_state("chase", cooldown=enemy.attack_cooldown)
             else:
                 self.change_state("patrol")
 
     def _spawn_boss_vines(self) -> None:
-        e = self.entity
-        if e.player is None:
+        enemy = self.entity
+        
+        if enemy.player is None:
             return
 
-        target_x = float(e.player.hitbox.centerx)
+        target_center_x = float(enemy.player.hitbox.centerx)
         pattern = random.choice([0, 1, 2])
+
         if pattern == 0:
-            targets = [target_x]
+            target_positions = [target_center_x]
         elif pattern == 1:
-            mid_x = (e.hitbox.centerx + target_x) / 2.0
-            targets = [mid_x, target_x]
+            mid_x = (enemy.hitbox.centerx + target_center_x) / 2.0
+            target_positions = [mid_x, target_center_x]
         else:
-            step = (target_x - e.hitbox.centerx) / 3.0
-            targets = [
-                e.hitbox.centerx + step,
-                e.hitbox.centerx + 2.0 * step,
-                target_x,
+            step = (target_center_x - enemy.hitbox.centerx) / 3.0
+            target_positions = [
+                enemy.hitbox.centerx + step,
+                enemy.hitbox.centerx + 2.0 * step,
+                target_center_x,
             ]
 
-        base_y = float(e.player.hitbox.bottom if e.player is not None else e.hitbox.bottom)
-        variants = ["2a", "2b", "2c"]
-        for idx, tx in enumerate(targets):
-            var = variants[idx % len(variants)] if len(targets) > 1 else "2c"
-            hazard = {
-                "x": tx - 24.0,
+        base_y = float(enemy.player.hitbox.bottom if enemy.player is not None else enemy.hitbox.bottom)
+        variant_names = ["2a", "2b", "2c"]
+
+        for index, vine_x in enumerate(target_positions):
+            variant = variant_names[index % len(variant_names)] if len(target_positions) > 1 else "2c"
+            enemy.hazards.append({
+                "x": vine_x - 24.0,
                 "y": base_y - 48.0,
                 "timer": 0.0,
                 "duration": 1.6,
                 "interval": 0.10,
-                "variant": var,
+                "variant": variant,
                 "damage": 18,
-                "hitbox": pygame.Rect(int(tx - 12), int(base_y - 32), 24, 32),
+                "hitbox": pygame.Rect(int(vine_x - 12), int(base_y - 32), 24, 32),
                 "resolved": False,
                 "hit": False,
                 "miss": False,
-            }
-            e.hazards.append(hazard)
-
-
+            })

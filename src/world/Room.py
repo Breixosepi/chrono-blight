@@ -697,74 +697,71 @@ class Room:
         if player.state_name == "death":
             return
 
-        attack_hb = player.get_attack_hitbox()
-        if attack_hb is not None and attack_hb.colliderect(enemy.hitbox):
-            hit_key = (id(enemy), getattr(player, "swing_id", 0))
-            if enemy.is_active() and hit_key not in self._hit_this_swing:
+        attack_hitbox = player.get_attack_hitbox()
+        if attack_hitbox is not None and attack_hitbox.colliderect(enemy.hitbox):
+            hit_identifier = (id(enemy), getattr(player, "swing_id", 0))
+
+            if enemy.is_active() and hit_identifier not in self._hit_this_swing:
                 is_shielded = getattr(enemy, "shield_active", False) or getattr(enemy, "invulnerable", False)
                 if is_shielded:
-                    self._hit_this_swing.add(hit_key)
+                    self._hit_this_swing.add(hit_identifier)
                     self.camera.shake(1.8, 0.1)
                     self._spawn_popup("ESCUDO", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.45, (220, 110, 255))
                 else:
                     action_name = "special" if player.state_name == "attack_special" else "attack"
-                    action = player.get_action(action_name)
-                    combo = action.get("combo", {})
-                    current_state = player.state_machine.current if player.state_machine else None
+                    action_def = player.get_action(action_name)
+                    combo_data = action_def.get("combo", {})
+                    current_player_state = player.state_machine.current if player.state_machine else None
 
-                    if getattr(current_state, "in_combo_followup", False) and "hit2_damage" in combo:
-                        dmg = int(combo["hit2_damage"])
+                    if getattr(current_player_state, "in_combo_followup", False) and "hit2_damage" in combo_data:
+                        damage_dealt = int(combo_data["hit2_damage"])
                         self.camera.shake(3.0, 0.15)
                     else:
-                        dmg = int(action.get("damage", 10))
+                        damage_dealt = int(action_def.get("damage", 10))
                         self.camera.shake(1.5, 0.1)
 
-                    atk_func = action.get("func")
-                    if atk_func:
-                        atk_func(player, enemy, action_name)
-                    else:
-                        enemy.take_damage(float(dmg))
+                    enemy.take_damage(float(damage_dealt))
+                    self._hit_this_swing.add(hit_identifier)
+                    self._spawn_popup(f"-{damage_dealt}", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.5, (255, 230, 80))
 
-                    self._hit_this_swing.add(hit_key)
-                    self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.5, (255, 230, 80))
-            elif not enemy.is_active() and hit_key not in self._hit_this_swing:
-                self._hit_this_swing.add(hit_key)
+            elif not enemy.is_active() and hit_identifier not in self._hit_this_swing:
+                self._hit_this_swing.add(hit_identifier)
                 self._spawn_popup("IMMUNE", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.4, (160, 190, 255))
 
         if player.skin == "mage" and player.area_active:
-            for f in player.flames:
-                flame_rect = pygame.Rect(int(f["x"]) - 32, int(f["y"]) - 56, 64, 56)
-                hit_key = (id(enemy), f["idx"])
-                if enemy.is_active() and flame_rect.colliderect(enemy.hitbox) and hit_key not in self._flame_hits:
+            for flame in player.flames:
+                flame_hitbox = pygame.Rect(int(flame["x"]) - 32, int(flame["y"]) - 56, 64, 56)
+                flame_hit_identifier = (id(enemy), flame["idx"])
+
+                if enemy.is_active() and flame_hitbox.colliderect(enemy.hitbox) and flame_hit_identifier not in self._flame_hits:
                     is_shielded = getattr(enemy, "shield_active", False) or getattr(enemy, "invulnerable", False)
                     if is_shielded:
-                        self._flame_hits.add(hit_key)
+                        self._flame_hits.add(flame_hit_identifier)
                         self._spawn_popup("ESCUDO", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.45, (220, 110, 255))
                     else:
-                        action = player.get_action("special")
-                        dmg = int(action.get("damage", 25))
-                        atk_func = action.get("func")
-                        if atk_func:
-                            atk_func(player, enemy, "special")
-                        else:
-                            enemy.take_damage(float(dmg))
+                        special_action_def = player.get_action("special")
+                        flame_damage = int(special_action_def.get("damage", 25))
+                        enemy.take_damage(float(flame_damage))
+
                         self.camera.shake(2.0, 0.12)
-                        self._flame_hits.add(hit_key)
-                        self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.5, (255, 130, 40))
+                        self._flame_hits.add(flame_hit_identifier)
+                        self._spawn_popup(f"-{flame_damage}", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.5, (255, 130, 40))
 
         is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
-        if (
+        can_take_contact_damage = (
             enemy.is_active()
             and enemy.state_name not in ("hit", "death")
             and player.state_name not in ("hit", "death", "dash")
             and not is_sword_special
             and player.invulnerable_timer <= 0.0
             and enemy.hitbox.colliderect(player.hitbox)
-        ):
-            dmg = int(enemy.contact_damage)
-            player.take_damage(dmg, source_x=enemy.hitbox.centerx)
+        )
+
+        if can_take_contact_damage:
+            contact_damage = int(enemy.contact_damage)
+            player.take_damage(contact_damage, source_x=enemy.hitbox.centerx)
             self.camera.shake(3.5, 0.2)
-            self._spawn_popup(f"-{dmg}", player.hitbox.centerx, player.hitbox.top - 8, 0.6, (255, 75, 75))
+            self._spawn_popup(f"-{contact_damage}", player.hitbox.centerx, player.hitbox.top - 8, 0.6, (255, 75, 75))
 
     def _resolve_enemy_collisions(self) -> None:
         active = [

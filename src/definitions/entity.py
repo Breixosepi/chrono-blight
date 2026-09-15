@@ -6,7 +6,6 @@ from typing import Any, Dict
 
 PLAYER_HIT_W = 16
 PLAYER_HIT_H = 24
-
 GRAVITY = 700.0
 JUMP_VELOCITY = -280.0
 WALK_SPEED = 80.0
@@ -19,82 +18,7 @@ MAGE_AREA_CIRCLES = [
     [12, 13, 14, 15, 16, 17],
 ]
 
-
-def player_attack(entity, target=None, action_name: str = "attack", *args, **kwargs) -> int:
-    action = entity.get_action(action_name) if hasattr(entity, "get_action") else {}
-    damage = int(action.get("damage", 10))
-    if target is not None:
-        target_list = [target] if hasattr(target, "take_damage") else target
-        for t in target_list:
-            if hasattr(t, "take_damage"):
-                t.take_damage(float(damage))
-    return damage
-
-
-def player_attack_aoe(entity, targets=None, action_name: str = "special", *args, **kwargs) -> tuple[int, int]:
-    action = entity.get_action(action_name) if hasattr(entity, "get_action") else {}
-    damage = int(action.get("damage", 25))
-    hit_count = 0
-    if targets is not None:
-        target_list = [targets] if hasattr(targets, "take_damage") else targets
-        for target in target_list:
-            if hasattr(target, "take_damage"):
-                target.take_damage(float(damage))
-                hit_count += 1
-    return damage, hit_count
-
-
-def sword_special_finish(entity) -> None:
-    dash_distance = 78.0
-    if entity.facing == "right":
-        entity.x += dash_distance
-    else:
-        entity.x -= dash_distance
-    entity.hitbox.x = int(entity.x)
-    entity.invulnerable_timer = max(entity.invulnerable_timer, 0.25)
-
-
-def mage_special_update(entity, dt: float) -> None:
-    entity.area_active = True
-    circle_fps = 12.0
-    total_area_frame = int(entity._anim_timer * circle_fps)
-    new_circle_idx = min(2, total_area_frame // 6)
-    entity.area_subframe = total_area_frame % 6
-
-    if new_circle_idx != entity.area_circle_idx or (
-        new_circle_idx == 0 and total_area_frame == 0 and entity._anim_timer <= dt
-    ):
-        offsets_x = [45, 105, 175]
-        base_offset = offsets_x[new_circle_idx]
-        circle_offset_x = base_offset if entity.facing == "right" else -base_offset
-        spawn_x = entity.hitbox.centerx + circle_offset_x
-        spawn_y = entity.hitbox.bottom
-
-        entity.flames.append({
-            "x":     spawn_x,
-            "y":     spawn_y,
-            "idx":   new_circle_idx,
-            "timer": 0.0,
-        })
-
-    entity.area_circle_idx = new_circle_idx
-
-
-def mage_special_finish(entity) -> None:
-    entity.area_active = False
-
-
-def morph_dash(entity) -> None:
-    entity.dash_speed = 220.0
-
-
-def enemy_melee_attack(entity, target=None, action_name: str = "attack", *args, **kwargs) -> int:
-    action = entity.get_action(action_name) if hasattr(entity, "get_action") else {}
-    damage = int(action.get("damage", getattr(entity, "contact_damage", 10)))
-    if target is not None and hasattr(target, "take_damage"):
-        target.take_damage(damage, source_x=entity.hitbox.centerx)
-    return damage
-
+# Player animations
 
 _SWORD_ANIMATIONS = {
     "idle":           {"frames": [0, 1, 2, 3, 4, 5, 6], "interval": 1/5.0,  "loops": None},
@@ -102,7 +26,7 @@ _SWORD_ANIMATIONS = {
     "run":            {"frames": [42, 43, 44, 45, 46, 47, 48], "interval": 1/10.0, "loops": None},
     "jump":           {"frames": [15], "interval": 1.0,  "loops": 1},
     "fall":           {"frames": [16], "interval": 1.0,  "loops": 1},
-    "attack":         {"frames": [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69], "interval": 1/11.0, "loops": 1},
+    "attack":         {"frames": [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69], "interval": 1/15.0, "loops": 1},
     "attack_up":      {"frames": [63, 64, 65, 66, 67, 68, 69], "interval": 1/11.0, "loops": 1},
     "attack_special": {"frames": [70, 71, 72, 73, 74, 75, 76], "interval": 1/9.0, "loops": 1},
     "hit":            {"frames": [84, 85], "interval": 1/6.0,  "loops": 1},
@@ -132,6 +56,8 @@ _MAGE_ANIMATIONS = {
     "hit":            {"frames": [40], "interval": 1/6.0,  "loops": 1},
     "death":          {"frames": [50, 51, 52, 53, 54, 55, 56, 57], "interval": 1/7.0, "loops": 1},
 }
+
+# Enemy Animations
 
 _SKELETON_SWORD_ANIMATIONS = {
     "idle":    {"frames": [0, 1, 2],                 "interval": 1/5.0, "loops": None},
@@ -213,6 +139,8 @@ _MONSTER3_ANIMATIONS = {
     "awakening": {"frames": list(range(108, 126)), "interval": 1/10.0, "loops": 1},
 }
 
+# Entity Definitions (Data Only)
+
 ENTITY_DEFS: Dict[str, Any] = {
     "player": {
         "hitbox": {"width": PLAYER_HIT_W, "height": PLAYER_HIT_H},
@@ -245,7 +173,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                         "name": "Sword Slash Combo",
                         "damage": 15,
                         "mana_cost": 0,
-                        "func": player_attack,
                         "combo": {
                             "hit1_frames": 7,
                             "hit2_damage": 20,
@@ -256,8 +183,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                         "name": "Thrust Dash",
                         "damage": 30,
                         "mana_cost": 20,
-                        "func": None,
-                        "on_finish": sword_special_finish,
                     },
                 },
             },
@@ -277,7 +202,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                         "name": "Beast Claw",
                         "damage": 12,
                         "mana_cost": 0,
-                        "func": player_attack,
                     },
                     "special": {
                         "name": "Primal Impact",
@@ -289,7 +213,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                         "name": "Beast Dash",
                         "dash_speed": 220.0,
                         "mana_cost": 10,
-                        "func": morph_dash,
                     },
                 },
             },
@@ -309,7 +232,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                         "name": "Arcane Bolt",
                         "damage": 18,
                         "mana_cost": 4,
-                        "func": player_attack,
                     },
                     "special": {
                         "name": "Infernal Flame Area",
@@ -317,9 +239,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                         "mana_cost": 28,
                         "is_aoe": True,
                         "duration": 1.2,
-                        "func": player_attack_aoe,
-                        "on_update": mage_special_update,
-                        "on_finish": mage_special_finish,
                     },
                 },
             },
@@ -355,7 +274,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    34.0,
                     "timing":   (0.30, 0.50),
                     "duration": 0.60,
-                    "func":     enemy_melee_attack,
                 },
                 "attack2": {
                     "name":     "Overhead Slash",
@@ -363,7 +281,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    36.0,
                     "timing":   (0.35, 0.55),
                     "duration": 0.60,
-                    "func":     enemy_melee_attack,
                 },
             },
         },
@@ -396,7 +313,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    28.0,
                     "timing":   (0.45, 0.60),
                     "duration": 0.80,
-                    "func":     enemy_melee_attack,
                 },
                 "attack2": {
                     "name":     "Claw Rush",
@@ -404,7 +320,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    32.0,
                     "timing":   (0.50, 0.65),
                     "duration": 0.80,
-                    "func":     enemy_melee_attack,
                 },
             },
         },
@@ -471,7 +386,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    24.0,
                     "timing":   (0.30, 0.50),
                     "duration": 0.80,
-                    "func":     enemy_melee_attack,
                 },
                 "attack2": {
                     "name":     "Low Stab",
@@ -479,7 +393,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    26.0,
                     "timing":   (0.35, 0.55),
                     "duration": 0.80,
-                    "func":     enemy_melee_attack,
                 },
             },
         },
@@ -512,7 +425,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    38.0,
                     "timing":   (0.80, 1.05),
                     "duration": 1.60,
-                    "func":     enemy_melee_attack,
                 },
             },
         },
@@ -547,7 +459,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    26.0,
                     "timing":   (0.12, 0.32),
                     "duration": 0.55,
-                    "func":     enemy_melee_attack,
                 },
             },
         },
@@ -580,7 +491,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    20.0,
                     "timing":   (0.35, 0.55),
                     "duration": 0.80,
-                    "func":     enemy_melee_attack,
                 },
                 "attack2": {
                     "name":     "Plasma Gunshot",
@@ -622,7 +532,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    36.0,
                     "timing":   (0.27, 0.45),
                     "duration": 0.90,
-                    "func":     enemy_melee_attack,
                 },
                 "attack2": {
                     "name":     "Horn Charge",
@@ -630,7 +539,6 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "reach":    42.0,
                     "timing":   (0.35, 0.55),
                     "duration": 0.90,
-                    "func":     enemy_melee_attack,
                 },
             },
         },
@@ -648,18 +556,14 @@ ENTITY_DEFS["animations"] = {
     },
 }
 
-# ---------------------------------------------------------------------------
-# Vistas planas de definiciones por tipo de entidad
-# ---------------------------------------------------------------------------
+# Flat views for entity mapping
 
-# Jefes — tienen su propia clase (Boss) y carpeta de assets (entity/bosses/)
 _BOSS_KEYS = {"cultist_priest"}
 
 BOSS_DEFS: Dict[str, Any] = {
     k: v for k, v in ENTITY_DEFS["enemies"].items() if k in _BOSS_KEYS
 }
 
-# Enemigos regulares — excluyendo los jefes
 ENEMY_DEFS: Dict[str, Any] = {
     k: v for k, v in ENTITY_DEFS["enemies"].items() if k not in _BOSS_KEYS
 }
