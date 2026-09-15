@@ -1,12 +1,4 @@
 { "compressionlevel":-1,
- "editorsettings":
-    {
-     "export":
-        {
-         "format":"json",
-         "target":"..\/..\/..\/OneDrive\/Documentos\/videojuegos1\/videojuegos\/tile\/big_room.json"
-        }
-    },
  "height":18,
  "infinite":false,
  "layers":[
