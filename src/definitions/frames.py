@@ -29,8 +29,12 @@ def pad_skeleton_frame(surf_50x48: pygame.Surface) -> pygame.Surface:
     return canvas
 
 
+# ---------------------------------------------------------------------------
+# Jefes
+# ---------------------------------------------------------------------------
+
 def load_big_monster_frames(base_dir: pathlib.Path) -> tuple[list[pygame.Surface], dict[str, list[pygame.Surface]]]:
-    bm_dir = base_dir / "assets" / "graphics" / "monsters" / "big monster"
+    bm_dir = base_dir / "assets" / "graphics" / "entity" / "bosses" / "big_monster"
     idle   = pygame.image.load(bm_dir / "dark fantasy big boss idle.png")
     walk   = pygame.image.load(bm_dir / "dark fantasy big boss walk.png")
     atk    = pygame.image.load(bm_dir / "dark fantasy big boss attack 2.png")
@@ -44,7 +48,7 @@ def load_big_monster_frames(base_dir: pathlib.Path) -> tuple[list[pygame.Surface
     body_frames = (
         slice_strips(idle, 80, 64)    # 0..15: idle
         + slice_strips(walk, 80, 64)   # 16..31: walk
-        + slice_strips(atk, 80, 64)    # 32..47: attack 
+        + slice_strips(atk, 80, 64)    # 32..47: attack
         + slice_strips(hit, 80, 64)    # 48..50: hit
         + slice_strips(death, 80, 64)  # 51..66: death
     )
@@ -59,8 +63,56 @@ def load_big_monster_frames(base_dir: pathlib.Path) -> tuple[list[pygame.Surface
     return body_frames, vines_frames
 
 
+def load_cultist_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
+    cp_dir = base_dir / "assets" / "graphics" / "entity" / "bosses" / "cultist_priest"
+    return (
+        load_image_sequence(cp_dir, "cultist_priest_idle", 5)
+        + load_image_sequence(cp_dir, "cultist_priest_walk", 6)
+        + load_image_sequence(cp_dir, "cultist_priest_attack", 5)
+        + load_image_sequence(cp_dir, "cultist_priest_takehit", 4)
+        + load_image_sequence(cp_dir, "cultist_priest_die", 6)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Efectos de habilidades del jefe cultista
+# Spritesheet: grids de 64x64 px. Fila 2 (y_offset=64) = color morado/violeta.
+# void_orb:         960 x 576  →  15 cols × 9 filas
+# ground_shockwave: 896 x 576  →  14 cols × 9 filas
+# ---------------------------------------------------------------------------
+
+def load_void_orb_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
+    """Extrae la fila 2 (morado) del spritesheet void_orb.png (64x64 px/frame)."""
+    sheet = pygame.image.load(base_dir / "assets" / "graphics" / "effects" / "void_orb.png")
+    frame_w, frame_h = 64, 64
+    row_y = frame_h  # fila 2 (índice 1) → y = 64
+    n_cols = sheet.get_width() // frame_w  # 15
+    return [
+        sheet.subsurface(pygame.Rect(col * frame_w, row_y, frame_w, frame_h))
+        for col in range(n_cols)
+    ]
+
+
+def load_ground_shockwave_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
+    """Extrae la fila 2 (morado) del spritesheet ground_shockwave.png (64x64 px/frame).
+    La animación va de izquierda a derecha; al disparar hacia la izquierda se flipea en render.
+    """
+    sheet = pygame.image.load(base_dir / "assets" / "graphics" / "effects" / "ground_shockwave.png")
+    frame_w, frame_h = 64, 64
+    row_y = frame_h  # fila 2 (índice 1) → y = 64
+    n_cols = sheet.get_width() // frame_w  # 14
+    return [
+        sheet.subsurface(pygame.Rect(col * frame_w, row_y, frame_w, frame_h))
+        for col in range(n_cols)
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Enemigos regulares
+# ---------------------------------------------------------------------------
+
 def load_crown_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
-    crown_dir = base_dir / "assets" / "graphics" / "monsters" / "crown"
+    crown_dir = base_dir / "assets" / "graphics" / "entity" / "enemies" / "crown"
     idle   = pygame.image.load(crown_dir / "crow_idle.png")
     walk   = pygame.image.load(crown_dir / "crow_walk.png")
     jump   = pygame.image.load(crown_dir / "crow_jump.png")
@@ -81,7 +133,7 @@ def load_crown_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
 
 
 def load_skeleton_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
-    sk_dir = base_dir / "assets" / "graphics" / "monsters" / "skeleton_sword"
+    sk_dir = base_dir / "assets" / "graphics" / "entity" / "enemies" / "skeleton_sword"
     return (
         load_image_sequence(sk_dir, "ready", 3, pad_skeleton_frame)
         + load_image_sequence(sk_dir, "walk", 6, pad_skeleton_frame)
@@ -95,31 +147,22 @@ def load_skeleton_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
     )
 
 
-def load_cultist_frames(base_dir: pathlib.Path) -> list[pygame.Surface]:
-    cp_dir = base_dir / "assets" / "graphics" / "monsters" / "cultist_priest"
-    return (
-        load_image_sequence(cp_dir, "cultist_priest_idle", 5)
-        + load_image_sequence(cp_dir, "cultist_priest_walk", 6)
-        + load_image_sequence(cp_dir, "cultist_priest_attack", 5)
-        + load_image_sequence(cp_dir, "cultist_priest_takehit", 4)
-        + load_image_sequence(cp_dir, "cultist_priest_die", 6)
-    )
-
-
 def generate_enemy_frames(
     base_dir: pathlib.Path, textures: dict[str, pygame.Surface]
 ) -> dict[str, Any]:
     bm_body, bm_vines = load_big_monster_frames(base_dir)
 
     return {
-        "skeleton_sword": load_skeleton_frames(base_dir),
-        "monster_eyes":   frames.generate_frames(textures["monster_eyes"], 48, 48),
-        "cultist_priest": load_cultist_frames(base_dir),
-        "goblin":         frames.generate_frames(textures["goblin"], 64, 64),
-        "big_monster":    bm_body,
-        "crown":          load_crown_frames(base_dir),
-        "boss_vines":     bm_vines,
-        "monster2":       frames.generate_frames(textures["monster2"], 48, 48),
-        "monster3":       frames.generate_frames(textures["monster3"], 64, 64),
+        "skeleton_sword":    load_skeleton_frames(base_dir),
+        "monster_eyes":      frames.generate_frames(textures["monster_eyes"], 48, 48),
+        "cultist_priest":    load_cultist_frames(base_dir),
+        "goblin":            frames.generate_frames(textures["goblin"], 64, 64),
+        "big_monster":       bm_body,
+        "crown":             load_crown_frames(base_dir),
+        "boss_vines":        bm_vines,
+        "monster2":          frames.generate_frames(textures["monster2"], 48, 48),
+        "monster3":          frames.generate_frames(textures["monster3"], 64, 64),
+        # Efectos de habilidades del jefe cultista (fila 2 = morado)
+        "void_orb_frames":          load_void_orb_frames(base_dir),
+        "ground_shockwave_frames":  load_ground_shockwave_frames(base_dir),
     }
-

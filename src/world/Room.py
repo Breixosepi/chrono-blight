@@ -21,6 +21,7 @@ from src.entities.Enemy import Enemy
 from src.world.FallingTrap import FallingTrap
 from src.world.SawHazard import SawHazard
 from src.world.RisingHazard import RisingHazard
+from src.world.ArenaManager import ArenaManager
 
 
 _ENEMY_MASS: Dict[str, float] = {
@@ -93,6 +94,10 @@ class Room:
             self.player.floor_y = float(self.MAP_HEIGHT)
             self.player.map_w = float(self.MAP_WIDTH)
 
+        if self.map_name == "sala_future":
+            self.player.phase_color = "red"
+            self.player.phase = "future"
+
         self.player.tilemap = self.tilemap
         self.player.active_collision_layers = self._get_active_collision_layers()
 
@@ -122,7 +127,11 @@ class Room:
         )
         self.falling_traps: list[FallingTrap] = []
         self.saw_hazards: list[SawHazard] = []
+        self.enemy_projectiles: list[dict] = []
         self._init_traps(self.map_data)
+        self.arena: Optional[ArenaManager] = (
+            ArenaManager(self) if self.map_name == "sala_future" else None
+        )
 
     @property
     def camera_offset(self) -> tuple[float, float]:
@@ -192,6 +201,9 @@ class Room:
 
     def check_room_exits(self) -> Optional[Tuple[str, float, float]]:
         """Comprueba si el jugador cruza una salida configurada para esta sala."""
+        if self.arena is not None and self.arena.is_locked():
+            return None
+
         from src.world.room_connections import ROOM_CONNECTIONS
         exits = ROOM_CONNECTIONS.get(self.map_name, [])
         for exit_def in exits:
@@ -330,11 +342,30 @@ class Room:
                             floor_y=float(self.MAP_HEIGHT),
                             map_w=float(self.MAP_WIDTH),
                         )
+                        enemy.room = self
                         enemy.player = self.player
                         enemy.tilemap = self.tilemap
                         enemy.active_collision_layers = self._get_enemy_collision_layers(enemy)
                         enemy.on_hazard_hit = self._on_hazard_hit
                         self.enemies.append(enemy)
+
+    def spawn_enemy_projectile(
+        self,
+        x: float,
+        y: float,
+        vx: float,
+        damage: int = 12,
+        color: tuple = (255, 220, 80),
+    ) -> None:
+        self.enemy_projectiles.append({
+            "x": float(x),
+            "y": float(y),
+            "vx": float(vx),
+            "damage": int(damage),
+            "life": 2.2,
+            "color": color,
+            "trail": [],
+        })
 
     def _on_hazard_hit(self, hazard: dict) -> None:
         self.camera.shake(2.0, 0.15)
@@ -514,6 +545,51 @@ class Room:
         for saw in self.saw_hazards:
             saw.update(dt)
 
+        # Actualizar proyectiles de enemigos a nivel de sala
+        for p in self.enemy_projectiles[:]:
+            p["life"] -= dt
+            p["x"] += p["vx"] * dt
+            p["trail"].append({"x": p["x"], "y": p["y"], "life": 0.14})
+            for tr in p["trail"][:]:
+                tr["life"] -= dt
+                if tr["life"] <= 0:
+                    p["trail"].remove(tr)
+
+            # Colisión con jugador
+            p_rect = pygame.Rect(int(p["x"] - 6), int(p["y"] - 4), 12, 8)
+            is_sword_special = (self.player.state_name == "attack_special" and self.player.skin == "sword")
+            if (
+                not self.player.is_dead()
+                and self.player.state_name not in ("hit", "death", "dash")
+                and not is_sword_special
+                and self.player.invulnerable_timer <= 0.0
+                and p_rect.colliderect(self.player.hitbox)
+            ):
+                self.player.take_damage(int(p["damage"]), source_x=p["x"])
+                self.camera.shake(2.5, 0.15)
+                self._spawn_popup(
+                    f"-{int(p['damage'])}",
+                    self.player.hitbox.centerx,
+                    self.player.hitbox.top - 8,
+                    0.6,
+                    (255, 60, 60),
+                )
+                if p in self.enemy_projectiles:
+                    self.enemy_projectiles.remove(p)
+                continue
+
+            # Despawn al salir del mapa
+            if p["x"] <= 12.0 or p["x"] >= float(self.MAP_WIDTH) - 12.0:
+                if p in self.enemy_projectiles:
+                    self.enemy_projectiles.remove(p)
+                continue
+
+            if p["life"] <= 0 and p in self.enemy_projectiles:
+                self.enemy_projectiles.remove(p)
+
+        if self.arena is not None:
+            self.arena.update(dt)
+
         # Update camera following player smoothly
         self.camera.x = self.player.hitbox.centerx
         self.camera.y = self.player.hitbox.centery
@@ -556,12 +632,13 @@ class Room:
         active_enemies = []
         for e in self.enemies:
             if e.dead:
-                self.respawn_queue.append({
-                    "enemy_type": e.enemy_type,
-                    "spawn_x": e.spawn_x,
-                    "spawn_y": e.spawn_y,
-                    "timer": 3.0,
-                })
+                if not getattr(e, "in_arena", False) and self.map_name != "sala_future" and self.arena is None:
+                    self.respawn_queue.append({
+                        "enemy_type": e.enemy_type,
+                        "spawn_x": e.spawn_x,
+                        "spawn_y": e.spawn_y,
+                        "timer": 3.0,
+                    })
             else:
                 active_enemies.append(e)
         self.enemies = active_enemies
@@ -592,26 +669,32 @@ class Room:
         if attack_hb is not None and attack_hb.colliderect(enemy.hitbox):
             hit_key = (id(enemy), getattr(player, "swing_id", 0))
             if enemy.is_active() and hit_key not in self._hit_this_swing:
-                action_name = "special" if player.state_name == "attack_special" else "attack"
-                action = player.get_action(action_name)
-                combo = action.get("combo", {})
-                current_state = player.state_machine.current if player.state_machine else None
-
-                if getattr(current_state, "in_combo_followup", False) and "hit2_damage" in combo:
-                    dmg = int(combo["hit2_damage"])
-                    self.camera.shake(3.0, 0.15)
+                is_shielded = getattr(enemy, "shield_active", False) or getattr(enemy, "invulnerable", False)
+                if is_shielded:
+                    self._hit_this_swing.add(hit_key)
+                    self.camera.shake(1.8, 0.1)
+                    self._spawn_popup("ESCUDO", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.45, (220, 110, 255))
                 else:
-                    dmg = int(action.get("damage", 10))
-                    self.camera.shake(1.5, 0.1)
+                    action_name = "special" if player.state_name == "attack_special" else "attack"
+                    action = player.get_action(action_name)
+                    combo = action.get("combo", {})
+                    current_state = player.state_machine.current if player.state_machine else None
 
-                atk_func = action.get("func")
-                if atk_func:
-                    atk_func(player, enemy, action_name)
-                else:
-                    enemy.take_damage(float(dmg))
+                    if getattr(current_state, "in_combo_followup", False) and "hit2_damage" in combo:
+                        dmg = int(combo["hit2_damage"])
+                        self.camera.shake(3.0, 0.15)
+                    else:
+                        dmg = int(action.get("damage", 10))
+                        self.camera.shake(1.5, 0.1)
 
-                self._hit_this_swing.add(hit_key)
-                self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.5, (255, 230, 80))
+                    atk_func = action.get("func")
+                    if atk_func:
+                        atk_func(player, enemy, action_name)
+                    else:
+                        enemy.take_damage(float(dmg))
+
+                    self._hit_this_swing.add(hit_key)
+                    self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.5, (255, 230, 80))
             elif not enemy.is_active() and hit_key not in self._hit_this_swing:
                 self._hit_this_swing.add(hit_key)
                 self._spawn_popup("IMMUNE", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.4, (160, 190, 255))
@@ -621,16 +704,21 @@ class Room:
                 flame_rect = pygame.Rect(int(f["x"]) - 32, int(f["y"]) - 56, 64, 56)
                 hit_key = (id(enemy), f["idx"])
                 if enemy.is_active() and flame_rect.colliderect(enemy.hitbox) and hit_key not in self._flame_hits:
-                    action = player.get_action("special")
-                    dmg = int(action.get("damage", 25))
-                    atk_func = action.get("func")
-                    if atk_func:
-                        atk_func(player, enemy, "special")
+                    is_shielded = getattr(enemy, "shield_active", False) or getattr(enemy, "invulnerable", False)
+                    if is_shielded:
+                        self._flame_hits.add(hit_key)
+                        self._spawn_popup("ESCUDO", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.45, (220, 110, 255))
                     else:
-                        enemy.take_damage(float(dmg))
-                    self.camera.shake(2.0, 0.12)
-                    self._flame_hits.add(hit_key)
-                    self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.5, (255, 130, 40))
+                        action = player.get_action("special")
+                        dmg = int(action.get("damage", 25))
+                        atk_func = action.get("func")
+                        if atk_func:
+                            atk_func(player, enemy, "special")
+                        else:
+                            enemy.take_damage(float(dmg))
+                        self.camera.shake(2.0, 0.12)
+                        self._flame_hits.add(hit_key)
+                        self._spawn_popup(f"-{dmg}", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.5, (255, 130, 40))
 
         is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
         if (
@@ -654,8 +742,12 @@ class Room:
 
         for i in range(len(active)):
             e1 = active[i]
+            if e1.enemy_type == "monster2":
+                continue
             for j in range(i + 1, len(active)):
                 e2 = active[j]
+                if e2.enemy_type == "monster2":
+                    continue
 
                 if e1.hitbox.colliderect(e2.hitbox):
                     overlap_x = min(e1.hitbox.right, e2.hitbox.right) - max(e1.hitbox.left, e2.hitbox.left)
@@ -788,15 +880,39 @@ class Room:
         for saw in self.saw_hazards:
             saw.render(surface, cam_x, cam_y)
 
-        # 4. Entidades
+        # 4. Entidades y Proyectiles
         for enemy in self.enemies:
             enemy.render(surface, cam_x, cam_y)
+
+        # Renderizar proyectiles de enemigos
+        for p in self.enemy_projectiles:
+            px = int(p["x"] - cam_x)
+            py = int(p["y"] - cam_y)
+            # Rastro
+            for tr in p.get("trail", []):
+                tx = int(tr["x"] - cam_x)
+                ty = int(tr["y"] - cam_y)
+                tr_alpha = int(180 * (tr["life"] / 0.14))
+                tr_surf = pygame.Surface((8, 6), pygame.SRCALPHA)
+                base_c = p.get("color", (255, 120, 40))
+                pygame.draw.ellipse(tr_surf, (*base_c[:3], tr_alpha), (0, 0, 8, 6))
+                surface.blit(tr_surf, (tx - 4, ty - 3))
+
+            # Núcleo de bala brillante
+            bullet_surf = pygame.Surface((14, 8), pygame.SRCALPHA)
+            pygame.draw.ellipse(bullet_surf, (255, 100, 30, 220), (0, 0, 14, 8))
+            pygame.draw.ellipse(bullet_surf, (255, 250, 180, 255), (3, 1, 8, 6))
+            surface.blit(bullet_surf, (px - 7, py - 4))
 
         self.player.render(surface, cam_x, cam_y)
 
         # 5. Peligro de Líquido ascendente y Reja en el mundo
         if self.rising_hazard is not None:
             self.rising_hazard.render_world(surface, cam_x, cam_y, phase)
+
+        # 5b. Barrera mágica de la Arena
+        if self.arena is not None:
+            self.arena.render(surface, cam_x, cam_y)
 
         # 6. Popups de daño y efectos
         for p in self.damage_popups:
@@ -814,3 +930,7 @@ class Room:
         # 7. Indicador lateral de la torre (HUD)
         if self.rising_hazard is not None:
             self.rising_hazard.render_hud(surface, self.player)
+
+        # 8. Anuncios de la Arena (HUD)
+        if self.arena is not None:
+            self.arena.render_hud(surface)

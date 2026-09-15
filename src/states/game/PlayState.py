@@ -106,6 +106,10 @@ class PlayState(BaseState):
             self.state_machine.push(PauseState(self.state_machine))
 
         elif input_id == "phase_shift" and input_data.pressed:
+            if self.room.map_name == "sala_future" or (
+                self.room.arena is not None and self.room.arena.state == "active"
+            ):
+                return
             if self.player.toggle_phase():
                 self.state_machine.push(
                     PhaseShiftState(self.state_machine), phase_color=self.player.phase_color

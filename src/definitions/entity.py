@@ -102,8 +102,8 @@ _SWORD_ANIMATIONS = {
     "run":            {"frames": [42, 43, 44, 45, 46, 47, 48], "interval": 1/10.0, "loops": None},
     "jump":           {"frames": [15], "interval": 1.0,  "loops": 1},
     "fall":           {"frames": [16], "interval": 1.0,  "loops": 1},
-    "attack":         {"frames": [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69], "interval": 1/14.0, "loops": 1},
-    "attack_up":      {"frames": [63, 64, 65, 66, 67, 68, 69], "interval": 1/14.0, "loops": 1},
+    "attack":         {"frames": [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69], "interval": 1/11.0, "loops": 1},
+    "attack_up":      {"frames": [63, 64, 65, 66, 67, 68, 69], "interval": 1/11.0, "loops": 1},
     "attack_special": {"frames": [70, 71, 72, 73, 74, 75, 76], "interval": 1/9.0, "loops": 1},
     "hit":            {"frames": [84, 85], "interval": 1/6.0,  "loops": 1},
     "death":          {"frames": [98, 99, 100, 101, 102, 103, 104, 105, 106], "interval": 1/7.0, "loops": 1},
@@ -298,8 +298,8 @@ ENTITY_DEFS: Dict[str, Any] = {
                 "name": "Phase Mage",
                 "stats": {
                     "max_health":  50.0,
-                    "max_mana":   100.0,
-                    "mana_regen":  10.0,
+                    "max_mana":    60.0,
+                    "mana_regen":   3.5,
                     "jumps":        1,
                 },
                 "offsets": {"right": -29, "left": -83, "y": -23},
@@ -308,13 +308,13 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "attack": {
                         "name": "Arcane Bolt",
                         "damage": 18,
-                        "mana_cost": 5,
+                        "mana_cost": 4,
                         "func": player_attack,
                     },
                     "special": {
                         "name": "Infernal Flame Area",
                         "damage": 50,
-                        "mana_cost": 35,
+                        "mana_cost": 28,
                         "is_aoe": True,
                         "duration": 1.2,
                         "func": player_attack_aoe,
@@ -413,31 +413,32 @@ ENTITY_DEFS: Dict[str, Any] = {
             "name":           "Cultist Priest",
             "phase":          "red",
             "default_facing": "right",
-            "hitbox":         {"width": 36, "height": 72},
-            "render_offset":  {"x": -76, "y": -110},
+            "hitbox":         {"width": 30, "height": 64},
+            "render_offset":  {"x": -79, "y": -118},
             "stats": {
                 "max_health":     120.0,
-                "contact_damage":  22.0,
+                "contact_damage":  14.0,
             },
             "ai": {
-                "walk_speed":      28.0,
+                "walk_speed":      32.0,
                 "patrol_dist":    100.0,
-                "detect_range":   140.0,
-                "attack_range":    36.0,
-                "attack_reach":    46.0,
+                "detect_range":   350.0,
+                "attack_range":   320.0,
+                "attack_reach":    20.0,
                 "attack_timing":   (0.24, 0.48),
-                "attack_duration": 0.65,
-                "attack_cooldown": 1.8,
+                "attack_duration": 0.75,
+                "attack_cooldown": 2.4,
             },
             "animations": _CULTIST_PRIEST_ANIMATIONS,
             "actions": {
                 "attack": {
-                    "name":     "Dark Evocation",
-                    "damage":   22.0,
-                    "reach":    46.0,
+                    "name":     "Void Casting",
+                    "damage":   14.0,
+                    "reach":    20.0,
+                    "is_spell": True,
                     "timing":   (0.24, 0.48),
-                    "duration": 0.65,
-                    "func":     enemy_melee_attack,
+                    "duration": 0.75,
+                    "func":     None,
                 },
             },
         },
@@ -564,12 +565,12 @@ ENTITY_DEFS: Dict[str, Any] = {
             "ai": {
                 "walk_speed":      42.0,
                 "patrol_dist":     85.0,
-                "detect_range":   100.0,
-                "attack_range":    24.0,
+                "detect_range":   160.0,
+                "attack_range":   130.0,
                 "attack_reach":    26.0,
                 "attack_timing":   (0.35, 0.55),
                 "attack_duration": 0.80,
-                "attack_cooldown": 1.4,
+                "attack_cooldown": 1.5,
             },
             "animations": _MONSTER2_ANIMATIONS,
             "actions": {
@@ -582,12 +583,13 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "func":     enemy_melee_attack,
                 },
                 "attack2": {
-                    "name":     "Dark Thrust",
-                    "damage":   14.0,
-                    "reach":    28.0,
-                    "timing":   (0.45, 0.65),
+                    "name":     "Plasma Gunshot",
+                    "damage":   12.0,
+                    "reach":    180.0,
+                    "timing":   (0.35, 0.55),
                     "duration": 0.80,
-                    "func":     enemy_melee_attack,
+                    "is_projectile": True,
+                    "func":     None,
                 },
             },
         },
@@ -646,4 +648,18 @@ ENTITY_DEFS["animations"] = {
     },
 }
 
-ENEMY_DEFS = ENTITY_DEFS["enemies"]
+# ---------------------------------------------------------------------------
+# Vistas planas de definiciones por tipo de entidad
+# ---------------------------------------------------------------------------
+
+# Jefes — tienen su propia clase (Boss) y carpeta de assets (entity/bosses/)
+_BOSS_KEYS = {"cultist_priest"}
+
+BOSS_DEFS: Dict[str, Any] = {
+    k: v for k, v in ENTITY_DEFS["enemies"].items() if k in _BOSS_KEYS
+}
+
+# Enemigos regulares — excluyendo los jefes
+ENEMY_DEFS: Dict[str, Any] = {
+    k: v for k, v in ENTITY_DEFS["enemies"].items() if k not in _BOSS_KEYS
+}

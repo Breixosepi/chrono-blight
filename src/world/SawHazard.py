@@ -9,7 +9,7 @@ class SawHazard:
     @classmethod
     def _get_frames(cls, hazard_type: str) -> List[pygame.Surface]:
         if hazard_type not in cls._FRAMES_CACHE:
-            path = settings.BASE_DIR / "assets" / "graphics" / "SawBladeSuriken.png"
+            path = settings.BASE_DIR / "assets" / "graphics" / "player" / "sword" / "SawBladeSuriken.png"
             surf = pygame.image.load(str(path)).convert_alpha()
             if hazard_type == "shuriken":
                 cls._FRAMES_CACHE["shuriken"] = [

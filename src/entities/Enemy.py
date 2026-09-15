@@ -1,4 +1,5 @@
 import math
+import random
 from typing import Any, Dict, Optional
 
 import pygame
@@ -42,7 +43,7 @@ class Enemy(Entity):
         )
 
         self.enemy_type: str = enemy_type
-        self.phase: str = defn["phase"]                         
+        self.phase: str = defn["phase"]
 
         # Render offset so the art is centred on the hitbox
         ro = defn["render_offset"]
@@ -98,11 +99,45 @@ class Enemy(Entity):
 
         self.player: Optional["Player"] = None
         self.hazards: list[dict] = []
+        self.projectiles: list[dict] = []
+        self.cultist_corruptions: list[dict] = []
         self.on_hazard_hit: Optional[Any] = None
         self.dead: bool = False
+        self.in_arena: bool = False
 
+    def spawn_projectile(self, speed: float = 160.0, damage: int = 12) -> None:
+        direction = 1.0 if self.facing == "right" else -1.0
+        spawn_x = float(self.hitbox.right + 6 if direction > 0 else self.hitbox.left - 6)
+        spawn_y = float(self.hitbox.centery - 2.0)
+        col = (255, 220, 70) if self.phase == "green" else (255, 80, 80)
+        if hasattr(self, "room") and self.room is not None:
+            self.room.spawn_enemy_projectile(spawn_x, spawn_y, speed * direction, damage, col)
+        else:
+            self.projectiles.append({
+                "x": spawn_x,
+                "y": spawn_y,
+                "vx": speed * direction,
+                "damage": damage,
+                "life": 2.5,
+                "color": col,
+                "trail": [],
+            })
+
+    def spawn_cultist_corruption(self, tx: float, base_y: float, delay: float = 0.0, damage: int = 14) -> None:
+        self.cultist_corruptions.append({
+            "x": tx,
+            "base_y": base_y,
+            "timer": -delay,
+            "duration": 0.65,
+            "damage": damage,
+            "hitbox": pygame.Rect(int(tx - 12), int(base_y - 36), 24, 36),
+            "resolved": False,
+            "particles": [],
+        })
 
     def is_active(self) -> bool:
+        if self.phase == "neutral" or self.in_arena:
+            return True
         if self.player is None:
             return True
         return self.player.phase_color == self.phase
@@ -161,8 +196,48 @@ class Enemy(Entity):
         if self.float_amplitude > 0:
             self.float_timer += dt
 
+        # Actualizar proyectiles / balas
+        for p in self.projectiles[:]:
+            p["life"] -= dt
+            p["x"] += p["vx"] * dt
+            p["trail"].append({"x": p["x"], "y": p["y"], "life": 0.12})
+            for tr in p["trail"][:]:
+                tr["life"] -= dt
+                if tr["life"] <= 0:
+                    p["trail"].remove(tr)
+
+            # Colisión con el jugador
+            player = self.player
+            if player is not None and not player.is_dead() and self.is_active():
+                p_rect = pygame.Rect(int(p["x"] - 5), int(p["y"] - 3), 10, 6)
+                is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
+                if (
+                    player.state_name not in ("hit", "death", "dash")
+                    and not is_sword_special
+                    and player.invulnerable_timer <= 0.0
+                    and p_rect.colliderect(player.hitbox)
+                ):
+                    player.take_damage(int(p["damage"]), source_x=p["x"])
+                    if self.on_hazard_hit:
+                        self.on_hazard_hit({"damage": p["damage"], "hitbox": p_rect})
+                    if p in self.projectiles:
+                        self.projectiles.remove(p)
+                    continue
+
+            # Despawn al salir del mapa o impactar los bordes de la sala
+            if p["x"] <= 16.0 or p["x"] >= float(settings.VIRTUAL_WIDTH if not hasattr(self, "map_w") else self.map_w) - 16.0:
+                if p in self.projectiles:
+                    self.projectiles.remove(p)
+                continue
+
+            if p["life"] <= 0 and p in self.projectiles:
+                self.projectiles.remove(p)
+
+        # Actualizar raíces del jefe
         for h in list(self.hazards):
             h["timer"] += dt
+            if h["timer"] < 0.0:
+                continue
             if not h.get("resolved", False) and h["timer"] >= 0.80:
                 h["resolved"] = True
                 p = self.player
@@ -186,7 +261,7 @@ class Enemy(Entity):
         self.hazards = [h for h in self.hazards if h["timer"] < h["duration"]]
 
         if not self.is_active():
-            # Ghost mode: tick animation but freeze AI 
+            # Ghost mode: tick animation but freeze AI
             self._tick_anim(dt)
             return
 
@@ -198,7 +273,10 @@ class Enemy(Entity):
         camera_x: float = 0.0,
         camera_y: float = 0.0,
     ) -> None:
+        # Renderizar raíces del jefe (big_monster vines)
         for h in self.hazards:
+            if h["timer"] < 0.0:
+                continue
             frame_idx = min(15, int(h["timer"] / h["interval"]))
             v_frames = settings.FRAMES.get("boss_vines", {})
             if h.get("miss"):
@@ -218,6 +296,25 @@ class Enemy(Entity):
                     ghost.set_alpha(self.GHOST_ALPHA)
                     surface.blit(ghost, (hx, hy))
 
+        # Renderizar proyectiles / balas
+        for p in self.projectiles:
+            px = int(p["x"] - camera_x)
+            py = int(p["y"] - camera_y)
+            # Rastro
+            for tr in p.get("trail", []):
+                tx = int(tr["x"] - camera_x)
+                ty = int(tr["y"] - camera_y)
+                tr_alpha = int(180 * (tr["life"] / 0.12))
+                tr_surf = pygame.Surface((6, 4), pygame.SRCALPHA)
+                pygame.draw.ellipse(tr_surf, (255, 120, 40, tr_alpha), (0, 0, 6, 4))
+                surface.blit(tr_surf, (tx - 3, ty - 2))
+
+            # Núcleo de plasma
+            bullet_surf = pygame.Surface((10, 6), pygame.SRCALPHA)
+            pygame.draw.ellipse(bullet_surf, (255, 90, 40, 200), (0, 0, 10, 6))
+            pygame.draw.ellipse(bullet_surf, (255, 245, 160, 255), (2, 1, 6, 4))
+            surface.blit(bullet_surf, (px - 5, py - 3))
+
         frame = self.current_animation.get_current_frame()
         draw_x = self.hitbox.x + self.render_offset_x - camera_x
         draw_y = self.hitbox.y + self.render_offset_y - camera_y
@@ -227,7 +324,7 @@ class Enemy(Entity):
         else:
             sub = settings.TEXTURES[self.enemy_type].subsurface(frame)
 
-        default_facing = entity_defs.ENEMY_DEFS[self.enemy_type].get("default_facing", "right")
+        default_facing = self.defn.get("default_facing", "right")
         needs_flip = (self.facing != default_facing)
         if needs_flip:
             sprite_surf = pygame.transform.flip(sub, True, False)
@@ -238,9 +335,7 @@ class Enemy(Entity):
             outline_col = (255, 90, 90, 200) if self.phase == "red" else (90, 240, 150, 200)
             self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_col)
             surface.blit(sprite_surf, (draw_x, draw_y))
-
         else:
             ghost = sprite_surf.copy()
             ghost.set_alpha(self.GHOST_ALPHA)
             surface.blit(ghost, (draw_x, draw_y))
-
