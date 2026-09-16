@@ -163,6 +163,8 @@ class RisingHazard:
                 self.liquid_particles.remove(p)
 
     def check_player_hit(self, player: "Player") -> bool:
+        if getattr(self, "is_pool", False):
+            return player.hitbox.bottom >= (self.current_y + 4)
         if self.state in (self.STATE_INACTIVE, self.STATE_ESCAPED):
             return False
         if player.hitbox.bottom >= (self.current_y + 4):
@@ -197,6 +199,8 @@ class RisingHazard:
                 pygame.draw.circle(surface, part_color, (px, py), p["radius"])
 
     def _render_gate(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
+        if getattr(self, "is_pool", False):
+            return
         gx = int(self.gate_x - cam_x)
         gy = int(self.gate_current_y - cam_y)
         gw = int(self.gate_width)

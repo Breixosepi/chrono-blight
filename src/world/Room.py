@@ -84,13 +84,13 @@ class Room:
         self.damage_popups: List[Dict[str, Any]] = []
         self.respawn_queue: List[Dict[str, Any]] = []
         self.combat_resolver = CombatResolver(self)
+        self.rising_hazard = RisingHazard(self) if self.map_name == "subida" else None
 
         self._init_enemies()
         self._init_traps()
         self._init_graphics()
 
-        self.rising_hazard = RisingHazard(self) if self.map_name == "subida" else None
-        self.arena = ArenaManager(self) if self.map_name == "sala_future" else None
+        self.arena = ArenaManager(self) if self.map_name in ("sala_future", "sala_past") else None
 
     def _check_cleared_events(self) -> None:
         cleared = getattr(self.play_state, "cleared_events", set()) if hasattr(self, "play_state") and self.play_state else set()
@@ -98,6 +98,19 @@ class Room:
         if "boss_cultist_defeated" in cleared and self.map_name == "sala_future":
             self.arena = None
             self.enemies = []
+            for elev in self.elevators:
+                elev.state = "open"
+                elev.image = elev.tex_open
+                elev.y = elev.start_y - elev.height
+                elev.hitbox.y = int(elev.y)
+
+        if "survival_boss_defeated" in cleared and self.map_name == "sala_past":
+            self.arena = None
+            self.enemies = []
+            self.rising_hazard = None
+            self.lava_rising = False
+            for saw in self.saw_hazards:
+                saw.stop()
             for elev in self.elevators:
                 elev.state = "open"
                 elev.image = elev.tex_open
@@ -178,6 +191,8 @@ class Room:
 
         if override_x is not None:
             return float(override_x), self.DEFAULT_SPAWN_Y
+        if self.map_name == "sala_past":
+            return 580.0, 136.0
         return self.DEFAULT_SPAWN_X, self.DEFAULT_SPAWN_Y
 
     def _init_enemies(self) -> None:
@@ -187,7 +202,7 @@ class Room:
             t_name = (obj.get("name", "") or str(props.get("name", ""))).lower().strip()
             t_type = (obj.get("type", "") or obj.get("class", "") or str(props.get("enemy_type", ""))).lower().strip()
             
-            if t_name in ("spawn", "player", "start") or t_type in ("spawn", "player", "start"):
+            if t_name in ("spawn", "player", "start", "arena_trigger", "boss_survival", "safe_point") or t_type in ("spawn", "player", "start", "arena_trigger", "boss_survival", "safe_point"):
                 continue
 
             enemy_type = t_name if t_name in entity_defs.ENEMY_DEFS else (t_type if t_type in entity_defs.ENEMY_DEFS else None)
@@ -196,7 +211,10 @@ class Room:
 
     def _init_traps(self) -> None:
         self.altars: list = []
-        for obj in self._get_tiled_objects({"traps", "objects", "interactables"}):
+        self.safe_point_x = 543.0
+        self.safe_point_y = 136.0
+        
+        for obj in self._get_tiled_objects({"traps", "objects", "interactables", "spawns", "spwans"}):
             props = self._parse_props(obj)
             t_name = obj.get("name", "") or str(props.get("name", ""))
             t_type = obj.get("type", "") or obj.get("class", "") or str(props.get("type", ""))
@@ -211,10 +229,14 @@ class Room:
             elif "saw" in combined_id or "shuriken" in combined_id:
                 h_type = "shuriken" if "shuriken" in combined_id else "saw"
                 phase = "green" if "green" in combined_id else ("red" if "red" in combined_id else "neutral")
+                init_dir = int(props.get("initial_direction", props.get("direction", props.get("dir", 0))))
+                if init_dir == 0:
+                    init_dir = -1 if x > 300 else 1
                 self.saw_hazards.append(SawHazard(
                     self, x, y, hazard_type=h_type, phase=phase,
                     patrol_dist=float(props.get("patrol_dist", 0.0)), axis=str(props.get("axis", "y")),
-                    speed=float(props.get("speed", 50.0)), damage=int(props.get("damage", 15))
+                    speed=float(props.get("speed", 50.0)), damage=int(props.get("damage", 15)),
+                    initial_direction=init_dir
                 ))
             elif "elevator" in combined_id:
                 start_state = str(props.get("start_state", "hidden"))
@@ -229,6 +251,19 @@ class Room:
             elif "green" in combined_id or "red" in combined_id:
                 phase = "green" if "green" in combined_id else "red"
                 self.falling_traps.append(FallingTrap(self, x, y, phase))
+            elif "lava" in combined_id:
+                self.lava_target_y = y
+                if not self.rising_hazard:
+                    self.rising_hazard = RisingHazard(self, speed=0.0)
+                    self.rising_hazard.is_pool = True
+                    self.rising_hazard.start_y = float(self.MAP_HEIGHT)
+                    self.rising_hazard.current_y = float(self.MAP_HEIGHT)
+                    self.rising_hazard.alert_timer = 0.0
+                    self.rising_hazard.alert_text = ""
+                    self.rising_hazard.state = RisingHazard.STATE_MOVING
+            elif "safe_point" in combined_id:
+                self.safe_point_x = x
+                self.safe_point_y = y
 
     def _preprocess_tilemap(self) -> None:
         self.flipped_tiles: Dict[Tuple[str, int, int], Tuple[bool, bool, bool]] = {}
@@ -305,6 +340,7 @@ class Room:
         for elev in self.elevators: elev.update(dt)
         for saw in self.saw_hazards: saw.update(dt)
         for altar in self.altars: altar.update(dt, self.player)
+        for b in getattr(self, "crumbling_blocks", []): b["timer"] = max(0.0, b["timer"] - dt)
 
         if self.arena:
             self.arena.update(dt)
@@ -377,17 +413,69 @@ class Room:
                 if self.player.state_name != "death": self._reset_player_to_spawn()
 
         if self.rising_hazard:
-            if self.rising_hazard.gate_current_y >= 570.0 and self.player.hitbox.left < 28 and self.player.hitbox.bottom >= 540:
+            if getattr(self, "lava_rising", False) and self.map_name == "sala_past":
+                if self.rising_hazard.current_y > self.lava_target_y:
+                    self.rising_hazard.current_y -= dt * 28.0
+                    if self.rising_hazard.current_y <= self.lava_target_y:
+                        self.rising_hazard.current_y = self.lava_target_y
+                        self.lava_rising = False
+
+            if self.map_name != "sala_past" and self.rising_hazard.gate_current_y >= 570.0 and self.player.hitbox.left < 28 and self.player.hitbox.bottom >= 540:
                 self.player.x, self.player.hitbox.left = 28.0, 28
                 self.player.vx = max(0.0, self.player.vx)
                 
             self.rising_hazard.update(dt, self.player)
-            if self.rising_hazard.check_player_hit(self.player) and self.player.state_name != "death":
-                self.player.take_damage(25)
-                self.camera.shake(5.0, 0.3)
-                self._spawn_popup("-25 (HAZARD)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.9, (255, 60, 40))
-                self.rising_hazard.reset()
-                if self.player.state_name != "death": self._reset_player_to_spawn()
+            
+            if self.rising_hazard.check_player_hit(self.player) and self.player.state_name != "death" and self.player.invulnerable_timer <= 0:
+                if self.map_name == "sala_past":
+                    self.player.take_damage(20)
+                    self.camera.shake(4.0, 0.25)
+                    self._spawn_popup("-20 (LAVA)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.8, (255, 50, 50))
+                    if self.player.state_name != "death":
+                        col = int(self.safe_point_x // self.TILE_SIZE)
+                        row = 6
+                        
+                        # Position player squarely on top of the solid platform
+                        self.player.x = float(col * self.TILE_SIZE)
+                        self.player.y = float(row * self.TILE_SIZE - self.player.height)
+                        self.player.hitbox.topleft = (int(self.player.x), int(self.player.y))
+                        self.player.vx = 0.0
+                        self.player.vy = 0.0
+                        self.player.on_ground = True
+                        self.player.change_state("idle")
+                        self.player.invulnerable_timer = 2.0
+                        
+                        cols = [col - 1, col, col + 1, col + 2]
+                        valid_cols = [c for c in cols if 0 <= c < self.MAP_COLS]
+                        
+                        if 0 <= row < self.MAP_ROWS:
+                            orig_gids = {c: self.tilemap.get_gid("ground", row, c) for c in valid_cols}
+                            solid_gid = 20 if self.player.phase_color == "green" else 904
+                            for c in valid_cols:
+                                self.tilemap.set_gid("ground", row, c, solid_gid)
+                            
+                            # Add 2 crumbling 32x32 blocks to room for rendering and shaking
+                            self.crumbling_blocks = [
+                                {"x": float((col - 1) * self.TILE_SIZE), "y": float(row * self.TILE_SIZE), "timer": 2.0},
+                                {"x": float((col + 1) * self.TILE_SIZE), "y": float(row * self.TILE_SIZE), "timer": 2.0},
+                            ]
+                            
+                            def remove_blocks():
+                                if hasattr(self, "tilemap"):
+                                    for c, gid in orig_gids.items():
+                                        self.tilemap.set_gid("ground", row, c, gid)
+                                    self.crumbling_blocks = []
+                                    self.spawn_dust((col - 1) * 16 + 16, row * 16 + 16, count=8)
+                                    self.spawn_dust((col + 1) * 16 + 16, row * 16 + 16, count=8)
+                                    
+                            from gale.timer import Timer
+                            Timer.after(2.0, remove_blocks)
+                else:
+                    self.player.take_damage(25)
+                    self.camera.shake(5.0, 0.3)
+                    self._spawn_popup("-25 (HAZARD)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.9, (255, 60, 40))
+                    self.rising_hazard.reset()
+                    if self.player.state_name != "death": self._reset_player_to_spawn()
 
     def _update_enemies_and_combat(self, dt: float) -> None:
         self.combat_resolver.update()
@@ -581,6 +669,17 @@ class Room:
             surface.blit(self._bullet_surf, (px - 7, py - 4))
 
         self.player.render(surface, cam_x, cam_y)
+        
+        if hasattr(self, "crumbling_blocks") and self.crumbling_blocks:
+            tex = settings.TEXTURES.get("destructible_block")
+            frames = settings.FRAMES.get("destructible_block", [])
+            if tex and frames:
+                idle_surf = tex.subsurface(frames[0])
+                for b in self.crumbling_blocks:
+                    shaking = b["timer"] < 1.2
+                    offset_x = random.uniform(-2, 2) if shaking else 0.0
+                    offset_y = random.uniform(-1, 1) if shaking else 0.0
+                    surface.blit(idle_surf, (b["x"] - cam_x + offset_x, b["y"] - cam_y + offset_y))
 
         if self.rising_hazard: self.rising_hazard.render_world(surface, cam_x, cam_y, phase)
         if self.arena: self.arena.render(surface, cam_x, cam_y)

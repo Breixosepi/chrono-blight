@@ -19,6 +19,7 @@ class SawHazard:
         axis: str = "y",
         speed: float = 50.0,
         damage: int = 15,
+        initial_direction: int = 1,
     ):
         self.room = room
         self.start_x = x
@@ -43,7 +44,8 @@ class SawHazard:
         self.axis = axis.lower()
         self.speed = speed
         self.damage = damage
-        self.direction = 1
+        self.direction = initial_direction
+        self.initial_direction = initial_direction
         
         tex_key = "saw_blade" if self.hazard_type in ("saw", "shuriken") else self.hazard_type
         tex = settings.TEXTURES.get(tex_key)
@@ -57,8 +59,15 @@ class SawHazard:
             
         self.fallback_image = pygame.Surface((self.width, self.height))
         self.fallback_image.fill((150, 150, 150))
+        self.stopped: bool = False
+
+    def stop(self) -> None:
+        self.stopped = True
+        self.speed = 0.0
 
     def update(self, dt: float) -> None:
+        if self.stopped:
+            return
         if self.phase != "neutral" and self.room.player.phase_color != self.phase:
             return
             
@@ -67,27 +76,31 @@ class SawHazard:
 
         if self.patrol_dist > 0:
             if self.axis == "y":
+                min_y = self.start_y if self.initial_direction == 1 else self.start_y - self.patrol_dist
+                max_y = self.start_y + self.patrol_dist if self.initial_direction == 1 else self.start_y
                 self.y += self.direction * self.speed * dt
-                if self.direction > 0 and self.y >= self.start_y + self.patrol_dist:
-                    self.y = self.start_y + self.patrol_dist
+                if self.direction > 0 and self.y >= max_y:
+                    self.y = max_y
                     self.direction = -1
-                elif self.direction < 0 and self.y <= self.start_y:
-                    self.y = self.start_y
+                elif self.direction < 0 and self.y <= min_y:
+                    self.y = min_y
                     self.direction = 1
             else:
+                min_x = self.start_x if self.initial_direction == 1 else self.start_x - self.patrol_dist
+                max_x = self.start_x + self.patrol_dist if self.initial_direction == 1 else self.start_x
                 self.x += self.direction * self.speed * dt
-                if self.direction > 0 and self.x >= self.start_x + self.patrol_dist:
-                    self.x = self.start_x + self.patrol_dist
+                if self.direction > 0 and self.x >= max_x:
+                    self.x = max_x
                     self.direction = -1
-                elif self.direction < 0 and self.x <= self.start_x:
-                    self.x = self.start_x
+                elif self.direction < 0 and self.x <= min_x:
+                    self.x = min_x
                     self.direction = 1
                     
         self.hitbox.topleft = (int(self.x) + self.hitbox_offset, int(self.y) + self.hitbox_offset)
 
         player = self.room.player
         if not player.is_dead() and self.hitbox.colliderect(player.hitbox):
-            if player.invulnerable_timer <= 0:
+            if player.state_name != "dash" and player.invulnerable_timer <= 0:
                 player.take_damage(self.damage)
                 self.room.camera.shake(3.0, 0.2)
                 self.room._spawn_popup(

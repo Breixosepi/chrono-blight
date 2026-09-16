@@ -129,6 +129,16 @@ _MONSTER2_ANIMATIONS = {
     "death2":  {"frames": list(range(30, 38)), "interval": 1/8.0, "loops": 1},
 }
 
+_MONSTER2_BOSS_ANIMATIONS = {
+    "idle":    {"frames": list(range(0, 8)),    "interval": 1/8.0, "loops": None},
+    "walk":    {"frames": list(range(10, 18)),  "interval": 1/8.0, "loops": None},
+    "attack":  {"frames": list(range(40, 48)),  "interval": 1/10.0, "loops": 1},
+    "attack2": {"frames": list(range(50, 60)),  "interval": 1/10.0, "loops": 1},
+    "cast":    {"frames": list(range(40, 48)),  "interval": 1/10.0, "loops": 1},
+    "hit":     {"frames": [20, 21, 22],         "interval": 1/8.0, "loops": 1},
+    "death":   {"frames": list(range(20, 30)),  "interval": 1/7.0, "loops": 1},
+}
+
 _MONSTER3_ANIMATIONS = {
     "idle":      {"frames": list(range(0, 8)),     "interval": 1/8.0, "loops": None},
     "walk":      {"frames": list(range(18, 26)),   "interval": 1/8.0, "loops": None},
@@ -566,6 +576,50 @@ ENTITY_DEFS: Dict[str, Any] = {
                 },
             },
         },
+
+        "monster2_boss": {
+            "name":           "El Acechador Temporal",
+            "phase":          "green",
+            "default_facing": "right",
+            "hitbox":         {"width": 48, "height": 68},
+            "render_offset":  {"x": -19, "y": -18},
+            "stats": {
+                "max_health":     80.0,
+                "contact_damage": 10.0,
+                "knockback_speed":  0.0,  
+                "hit_duration":      0.20, 
+                "death_duration":    2.50, 
+            },
+            "ai": {
+                "walk_speed":       0.0,
+                "patrol_dist":      0.0,
+                "detect_range":   600.0,
+                "attack_range":   500.0,
+                "attack_reach":    40.0,
+                "attack_timing":   (0.30, 0.60),
+                "attack_duration": 1.0,
+                "attack_cooldown": 2.2,
+            },
+            "animations": _MONSTER2_BOSS_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Temporal Burst",
+                    "damage":   14.0,
+                    "reach":    500.0,
+                    "is_spell": True,
+                    "timing":   (0.30, 0.60),
+                    "duration": 1.0,
+                },
+                "attack2": {
+                    "name":     "Side Sweep",
+                    "damage":   10.0,
+                    "reach":    500.0,
+                    "is_spell": True,
+                    "timing":   (0.30, 0.60),
+                    "duration": 1.0,
+                },
+            },
+        },
     },
 }
 
@@ -580,9 +634,8 @@ ENTITY_DEFS["animations"] = {
     },
 }
 
-# Flat views for entity mapping
 
-_BOSS_KEYS = {"cultist_priest"}
+_BOSS_KEYS = {"cultist_priest", "monster2_boss"}
 
 BOSS_DEFS: Dict[str, Any] = {
     k: v for k, v in ENTITY_DEFS["enemies"].items() if k in _BOSS_KEYS

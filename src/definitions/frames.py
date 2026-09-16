@@ -125,6 +125,14 @@ def load_skeleton_frames(base_dir: pathlib.Path) -> List[pygame.Surface]:
     )
 
 
+def load_monster2_boss_frames(textures: Dict[str, pygame.Surface]) -> List[pygame.Surface]:
+    tex = textures.get("monster2")
+    if not tex:
+        return []
+    rects = frames.generate_frames(tex, 48, 48)
+    return [pygame.transform.scale(tex.subsurface(r), (86, 86)) for r in rects]
+
+
 def generate_enemy_frames(
     base_dir: pathlib.Path, textures: Dict[str, pygame.Surface]
 ) -> Dict[str, Any]:
@@ -140,7 +148,10 @@ def generate_enemy_frames(
         "crown":                    load_crown_frames(base_dir),
         "boss_vines":               bm_vines,
         "monster2":                 frames.generate_frames(textures["monster2"], 48, 48),
+        "monster2_boss":            load_monster2_boss_frames(textures),
         "monster3":                 frames.generate_frames(textures["monster3"], 64, 64),
         "void_orb_frames":          load_effect_row(effects_dir / "void_orb.png", 64, 64, row_idx=1),
         "ground_shockwave_frames":  load_effect_row(effects_dir / "ground_shockwave.png", 64, 64, row_idx=1),
+        "burst_frames":             load_effect_row(effects_dir / "burst.png", 64, 64, row_idx=5),
+        "side_shoot_frames":        load_effect_row(effects_dir / "side_shoot.png", 64, 64, row_idx=5),
     }

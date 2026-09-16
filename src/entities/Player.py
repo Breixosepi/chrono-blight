@@ -2,7 +2,7 @@
 Chrono Blight
 """
 
-from typing import Optional
+from typing import Optional, Any
 import pygame
 from gale.animation import Animation
 from gale.state import StateMachine
@@ -87,7 +87,7 @@ class Player(Entity):
         self.command_bindings.bind("special", press=commands.ATTACK_SPECIAL)
         self.command_bindings.bind("dash", press=commands.DASH)
 
-        self.phase_cooldown_max: float = 2.0
+        self.phase_cooldown_max: float = 1.0
         self.phase_cooldown_timer: float = 0.0
 
         self.skin_cooldown_max: float = 5.0
@@ -241,6 +241,13 @@ class Player(Entity):
             self.current_animation.reset()
 
 
+
+    def take_damage(self, amount: int, *args: Any, **kwargs: Any) -> None:
+        if self.state_name in {"hit", "death", "dash"}:
+            return
+        if self.invulnerable_timer > 0.0:
+            return
+        super().take_damage(amount)
 
     def is_attack_active(self) -> bool:
         """Returns True only during the visual strike frames of the attack animation."""

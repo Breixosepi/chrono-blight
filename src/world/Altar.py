@@ -26,7 +26,7 @@ class Altar:
 
         self._init_shared_surfaces()
 
-        self.anim_obelisk = Animation(self._SCALED_FRAMES, 0.11, loops=1)
+        self.anim_obelisk = Animation(self._SCALED_FRAMES, 0.18, loops=1)
         self.anim_arrow = Animation(self._ARROW_FRAMES, 0.16)
         self.anim_save = Animation(self._SAVE_FRAMES, 0.08)
 

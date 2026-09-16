@@ -18,6 +18,8 @@ from src.states.entity.enemy.EnemyHitState import EnemyHitState
 from src.states.entity.enemy.EnemyDeathState import EnemyDeathState
 from src.states.entity.boss.cultist.CultistChaseState import CultistChaseState
 from src.states.entity.boss.cultist.CultistAttackState import CultistAttackState
+from src.states.entity.boss.lurker.LurkerIdleState import LurkerIdleState
+from src.states.entity.boss.lurker.LurkerAttackState import LurkerAttackState
 
 
 class Boss(Enemy):
@@ -49,6 +51,9 @@ class Boss(Enemy):
         if enemy_type == "cultist_priest":
             boss_states["chase"] = lambda sm: CultistChaseState(self, sm)
             boss_states["attack"] = lambda sm: CultistAttackState(self, sm)
+        elif enemy_type == "monster2_boss":
+            boss_states["idle"] = lambda sm: LurkerIdleState(self, sm)
+            boss_states["attack"] = lambda sm: LurkerAttackState(self, sm)
 
         self.state_machine = StateMachine(boss_states)
         self.change_state("idle")
@@ -60,9 +65,13 @@ class Boss(Enemy):
 
         self.ground_shockwaves: list[dict] = []
         self.void_orbs: list[dict] = []
+        self.burst_hazards: list[dict] = []
+        self.side_shoots: list[dict] = []
 
         self._sw_frames: list[pygame.Surface] = settings.FRAMES.get("ground_shockwave_frames", [])
         self._orb_frames: list[pygame.Surface] = settings.FRAMES.get("void_orb_frames", [])
+        self._burst_frames: list[pygame.Surface] = settings.FRAMES.get("burst_frames", [])
+        self._side_shoot_frames: list[pygame.Surface] = settings.FRAMES.get("side_shoot_frames", [])
         self._sw_anim_timer: float = 0.0
         self._orb_anim_timer: float = 0.0
         self._EFFECT_FPS: float = 1.0 / 12.0
@@ -115,16 +124,47 @@ class Boss(Enemy):
             "vy":       vy,
             "speed":    speed,
             "damage":   damage,
-            "life":     5.0,   # Persigue por 5 segundos
+            "life":     5.0,   
             "anim_t":   0.0,
-            "state":    "spawn", # spawn, travel, despawn
+            "state":    "spawn", 
             "resolved": False,
             "trail":    [],
         })
 
-    # ------------------------------------------------------------------
-    # Update
-    # ------------------------------------------------------------------
+    def spawn_burst(
+        self,
+        target_x: float,
+        target_y: float,
+        damage: int = 14,
+    ) -> None:
+        self.burst_hazards.append({
+            "x": target_x,
+            "y": target_y,
+            "damage": damage,
+            "timer": 0.0,
+            "state": "warning",
+            "resolved": False,
+        })
+
+    def spawn_side_shoot(
+        self,
+        y: float,
+        direction: float,
+        start_x: float,
+        speed: float = 160.0,
+        damage: int = 10,
+    ) -> None:
+        self.side_shoots.append({
+            "x": start_x,
+            "y": y,
+            "direction": direction,
+            "vx": speed * direction,
+            "damage": damage,
+            "anim_t": 0.0,
+            "life": 4.5,
+            "resolved": False,
+        })
+
 
     def update(self, dt: float) -> None:
         if self.shield_active:
@@ -236,12 +276,65 @@ class Boss(Enemy):
                     if self.on_hazard_hit:
                         self.on_hazard_hit({"damage": orb["damage"], "hitbox": orb_rect})
 
-        # Delegar al Enemy base (que llama a super().update incluyendo Entity.update)
-        super().update(dt)
+        for b in self.burst_hazards[:]:
+            b["timer"] += dt
+            if b["state"] == "warning":
+                if b["timer"] >= 1.0:
+                    b["state"] = "damage"
+                    b["timer"] = 0.0
+            elif b["state"] == "damage":
+                if not b["resolved"]:
+                    player = self.player
+                    is_sword_special = (player is not None and player.state_name == "attack_special" and player.skin == "sword")
+                    b_rect = pygame.Rect(int(b["x"] - 24), int(b["y"] - 24), 48, 48)
+                    if (
+                        self.is_active()
+                        and player is not None
+                        and not player.is_dead()
+                        and player.state_name not in ("hit", "death", "dash")
+                        and not is_sword_special
+                        and player.invulnerable_timer <= 0.0
+                        and b_rect.colliderect(player.hitbox)
+                    ):
+                        b["resolved"] = True
+                        player.take_damage(int(b["damage"]), source_x=b["x"])
+                        if self.on_hazard_hit:
+                            self.on_hazard_hit({"damage": b["damage"], "hitbox": b_rect})
+                if b["timer"] >= 1.0:
+                    if b in self.burst_hazards:
+                        self.burst_hazards.remove(b)
 
-    # ------------------------------------------------------------------
-    # Render
-    # ------------------------------------------------------------------
+        for s in self.side_shoots[:]:
+            s["anim_t"] += dt
+            s["x"] += s["vx"] * dt
+            s["life"] -= dt
+            
+            player = self.player
+            is_sword_special = (player is not None and player.state_name == "attack_special" and player.skin == "sword")
+            s_rect = pygame.Rect(int(s["x"] - 16), int(s["y"] - 16), 32, 32)
+            if (
+                self.is_active()
+                and player is not None
+                and not player.is_dead()
+                and player.state_name not in ("hit", "death", "dash")
+                and not is_sword_special
+                and player.invulnerable_timer <= 0.0
+                and not s["resolved"]
+                and s_rect.colliderect(player.hitbox)
+            ):
+                s["resolved"] = True
+                player.take_damage(int(s["damage"]), source_x=s["x"])
+                if self.on_hazard_hit:
+                    self.on_hazard_hit({"damage": s["damage"], "hitbox": s_rect})
+                if s in self.side_shoots:
+                    self.side_shoots.remove(s)
+                continue
+
+            if s["life"] <= 0 or s["x"] < -100.0 or s["x"] > map_w + 100.0:
+                if s in self.side_shoots:
+                    self.side_shoots.remove(s)
+
+        super().update(dt)
 
     def render(
         self,
@@ -318,14 +411,32 @@ class Boss(Enemy):
             oy = int(orb["y"] - camera_y) - orb_surf.get_height() // 2
             surface.blit(orb_surf, (ox, oy))
 
-        # --- Sprite del jefe (heredado de Enemy.render) ---
-        # Llamamos directamente al render de Enemy que ya maneja el sprite,
-        # outline y escudo. Los projectiles del Enemy base también se renderizan ahí.
-        super().render(surface, camera_x, camera_y)
+        burst_frames = self._burst_frames
+        for b in self.burst_hazards:
+            if burst_frames and len(burst_frames) >= 16:
+                if b["state"] == "warning":
+                    f_idx = min(3, int((b["timer"] / 1.0) * 4))
+                else:
+                    f_idx = 4 + min(11, int((b["timer"] / 1.0) * 12))
+                
+                f_idx = min(f_idx, len(burst_frames) - 1)
+                b_surf = burst_frames[f_idx]
+                bx = int(b["x"] - camera_x) - b_surf.get_width() // 2
+                by = int(b["y"] - camera_y) - b_surf.get_height() // 2
+                surface.blit(b_surf, (bx, by))
 
-    # ------------------------------------------------------------------
-    # Override take_damage para respetar el escudo
-    # ------------------------------------------------------------------
+        side_frames = self._side_shoot_frames
+        for s in self.side_shoots:
+            if side_frames:
+                f_idx = int(s["anim_t"] / 0.08) % len(side_frames)
+                s_surf = side_frames[f_idx]
+                if s["direction"] < 0:
+                    s_surf = pygame.transform.flip(s_surf, True, False)
+                sx = int(s["x"] - camera_x) - s_surf.get_width() // 2
+                sy = int(s["y"] - camera_y) - s_surf.get_height() // 2
+                surface.blit(s_surf, (sx, sy))
+
+        super().render(surface, camera_x, camera_y)
 
     def take_damage(self, amount: float) -> None:
         if not self.is_active():

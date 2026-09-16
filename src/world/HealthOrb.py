@@ -20,13 +20,13 @@ class HealthOrb:
         self.vx = random.uniform(-40.0, 40.0)
         self.vy = random.uniform(-100.0, -150.0)
         self.room = room
-        self.width = 16
-        self.height = 16
+        self.width = 12
+        self.height = 12
 
         self._init_shared_frames()
         self.animation = Animation(self._FRAMES, 0.10)
 
-        self.hitbox = pygame.Rect(int(x + 2), int(y + 2), 12, 12)
+        self.hitbox = pygame.Rect(int(x + 2), int(y + 2), 8, 8)
         self.is_dead = False
         self.heal_amount = 20
 
@@ -35,7 +35,7 @@ class HealthOrb:
         if cls._FRAMES is None:
             tex = settings.TEXTURES["animated_items"]
             cls._FRAMES = [
-                pygame.transform.scale(tex.subsurface(pygame.Rect(i * 32, 32, 32, 32)), (16, 16))
+                pygame.transform.scale(tex.subsurface(pygame.Rect(i * 32, 32, 32, 32)), (12, 12))
                 for i in range(6)
             ]
 

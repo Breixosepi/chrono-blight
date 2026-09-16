@@ -10,6 +10,8 @@ class MovingState(HazardBaseState):
 
     def enter(self, *args: Any, **kwargs: Any) -> None:
         hazard = self.hazard
+        if getattr(hazard, "is_pool", False):
+            return
         hazard.alert_text = getattr(hazard, "moving_text", "¡EL LÍQUIDO SUBE!")
         hazard.alert_timer = 2.0
         
@@ -24,6 +26,8 @@ class MovingState(HazardBaseState):
 
     def update_with_player(self, dt: float, player: Any) -> None:
         hazard = self.hazard
+        if getattr(hazard, "is_pool", False):
+            return
         velocity = getattr(hazard, "velocity_y", -hazard.speed) 
 
         escaped = False

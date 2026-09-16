@@ -122,11 +122,10 @@ class PlayState(BaseState):
         if input_id == "pause" and input_data.pressed:
             self.state_machine.push(PauseState(self.state_machine))
         elif input_id == "phase_shift" and input_data.pressed:
-            arena_is_active = (self.room.arena is not None and self.room.arena.state == "active")
-            if self.room.map_name == "sala_future" or arena_is_active:
+            if self.room.map_name == "sala_future":
                 return
             if self.player.toggle_phase():
-                self.state_machine.push(PhaseShiftState(self.state_machine),phase_color=self.player.phase_color,)
+                self.state_machine.push(PhaseShiftState(self.state_machine), phase_color=self.player.phase_color)
         elif input_id == "prev_form" and input_data.pressed:
             self.player.cycle_skin(-1)
         elif input_id in ("next_form", "toggle_morph") and input_data.pressed:
