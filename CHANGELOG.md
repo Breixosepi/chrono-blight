@@ -4,6 +4,35 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.11.0] - 2026-09-16
+
+### Añadido
+- **Altares de Guardado y Restauración (`src/world/Altar.py`)**:
+  - Monumento ancestral interactivo con gráficos de obelisco animado.
+  - Interacción mediante tecla `[↑]` con prompt visual situado directamente sobre la cabeza del jugador.
+  - Al activarse: reproduce su animación de encendido, cura al 100% de HP y Maná a todas las formas, resucita a las formas caídas y guarda el estado en el slot activo mediante `SaveManager`.
+- **Sistema de Ranuras de Guardado y Menú Principal (`src/states/game/SlotSelectState.py` y `TitleState.py`)**:
+  - Menú interactivo en la pantalla de inicio con opciones: *Nueva Partida*, *Cargar Partida* y *Salir*.
+  - Selector para 3 ranuras independientes (`slot_1`, `slot_2`, `slot_3`).
+  - Muestra detalles de partida (sala, forma, vida y fecha/hora de guardado).
+  - Soporte para iniciar nueva partida, cargar partidas previas, modal de confirmación para sobrescribir y borrado de partidas con tecla de ataque especial `[X]`.
+- **Orbes de Vida Coleccionables (`src/world/HealthOrb.py`)**:
+  - Drop con probabilidad de 25% al eliminar enemigos comunes.
+  - Físicas con gravedad, rebote suave en el suelo y recuperación de +20 HP al contacto con texto flotante.
+- **Persistencia de Eventos y Desafíos**:
+  - Registro de eventos superados (`cleared_events`) en el archivo de guardado (`.sav`).
+  - Desactiva reaparición de jefes derrotados (Sumo Sacerdote en `sala_future`) y trampas de parkour superadas (`subida`).
+
+### Cambiado / Corregido
+- **Mapeo de Entradas y Navegación en Menús**:
+  - Incorporación de `KEY_DOWN` (`"down"`) y `KEY_BACKSPACE` (`"back"`) en `settings.py`.
+  - Manejo jerárquico de `ESC` en `ChronoBlight.py` para permitir retroceder menús sin cerrar la aplicación de forma abrupta.
+- **Reubicación Arquitectónica**:
+  - Migración de `HealthOrb` de `src/entities/` a `src/world/` para respetar la separación entre actores con máquinas de estado y objetos coleccionables.
+  - Reducción del tamaño del corazón a escala pixel art de 16x16 (1 tile).
+
+---
+
 ## [0.10.0] - 2026-09-15
 
 ### Añadido
