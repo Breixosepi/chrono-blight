@@ -1,11 +1,15 @@
 """
 Chrono Blight - Multi-Layer Tilemap Collision System
-Based on gale.tilemap.collision with multi-layer phase support.
 """
-
-from typing import Iterator, List, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 from gale.tilemap import TileMap
-from gale.tilemap.collision import CollisionType, DEFAULT_COLLISION_PROPERTY, _EPSILON, _overlapping_cells
+from gale.tilemap.collision import (
+    CollisionType,
+    DEFAULT_COLLISION_PROPERTY,
+    _overlapping_cells,
+)
+
+TILE_GID_MASK = 0x1FFFFFFF
 
 
 def collision_type_in_layers(
@@ -15,12 +19,6 @@ def collision_type_in_layers(
     col: int,
     collision_property: str = DEFAULT_COLLISION_PROPERTY,
 ) -> str:
-    """
-    Checks the collision type of a cell across multiple tile layers.
-    Returns CollisionType.SOLID if any layer is solid.
-    Returns CollisionType.PLATFORM if any layer is a one-way platform (and none is solid).
-    Otherwise returns CollisionType.NONE.
-    """
     if not tilemap.in_bounds(row, col):
         return CollisionType.NONE
 
@@ -29,7 +27,10 @@ def collision_type_in_layers(
         gid = tilemap.get_gid(layer_name, row, col)
         if gid == 0:
             continue
-        val = tilemap.properties_of_gid(gid).get(collision_property, CollisionType.NONE)
+
+        clean_gid = gid & TILE_GID_MASK
+        val = tilemap.properties_of_gid(clean_gid).get(collision_property, CollisionType.NONE)
+
         if val == CollisionType.SOLID:
             return CollisionType.SOLID
         elif val == CollisionType.PLATFORM:
@@ -53,6 +54,7 @@ def _find_blocking_column_layers(
         ctype = collision_type_in_layers(tilemap, layers, row, col, collision_property)
         if ctype != CollisionType.SOLID:
             continue
+
         if blocking is None or (col < blocking if moving_right else col > blocking):
             blocking = col
     return blocking
@@ -72,11 +74,12 @@ def _find_blocking_row_layers(
     blocking: Optional[int] = None
     for row, col in _overlapping_cells(tilemap, left, top, right, bottom):
         ctype = collision_type_in_layers(tilemap, layers, row, col, collision_property)
+
         if ctype == CollisionType.SOLID:
             blocks = True
         elif ctype == CollisionType.PLATFORM and moving_down:
             tile_top = row * tilemap.tile_height
-            blocks = original_bottom <= (tile_top + 1.0)
+            blocks = original_bottom <= (tile_top + 2.0)
         else:
             blocks = False
 
@@ -99,18 +102,15 @@ def move_and_collide_layers(
     dy: float,
     collision_property: str = DEFAULT_COLLISION_PROPERTY,
 ) -> Tuple[float, float, bool, bool]:
-    """
-    Moves an entity bounding box by (dx, dy) against multiple layers.
-    Returns (new_x, new_y, collided_x, collided_y).
-    """
     collided_x = False
     collided_y = False
 
-    if dx != 0:
-        moving_right = dx > 0
+    if dx != 0.0:
+        moving_right = dx > 0.0
         new_x = x + dx
         left = min(x, new_x)
         right = max(x + width, new_x + width)
+
         blocking_col = _find_blocking_column_layers(
             tilemap,
             layers,
@@ -129,14 +129,14 @@ def move_and_collide_layers(
                 else (blocking_col + 1) * tilemap.tile_width
             )
             collided_x = True
-
         x = new_x
 
-    if dy != 0:
-        moving_down = dy > 0
+    if dy != 0.0:
+        moving_down = dy > 0.0
         new_y = y + dy
         top = min(y, new_y)
         bottom = max(y + height, new_y + height)
+
         blocking_row = _find_blocking_row_layers(
             tilemap,
             layers,
@@ -156,7 +156,6 @@ def move_and_collide_layers(
                 else (blocking_row + 1) * tilemap.tile_height
             )
             collided_y = True
-
         y = new_y
 
     return x, y, collided_x, collided_y
@@ -171,10 +170,6 @@ def check_on_ground(
     height: float,
     collision_property: str = DEFAULT_COLLISION_PROPERTY,
 ) -> bool:
-    """
-    Checks if an entity at (x, y) with (width, height) is resting on solid ground or a platform.
-    Tests 1 pixel below the feet.
-    """
     _, _, _, collided_y = move_and_collide_layers(
         tilemap,
         layers,
@@ -187,4 +182,3 @@ def check_on_ground(
         collision_property,
     )
     return collided_y
-

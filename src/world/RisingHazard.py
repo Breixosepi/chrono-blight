@@ -1,17 +1,20 @@
+"""
+Chrono Blight - Liquid Hazard (Rising / Falling)
+"""
 from typing import TYPE_CHECKING, List, Dict, Any, Optional
 import math
 import random
 import pygame
-
 from gale.state import StateMachine
 from gale.particle_system import ParticleSystem
 from gale.text import render_text
+
 import settings
 from src.states.hazard import (
     HazardBaseState,
     InactiveState,
     TriggeredState,
-    RisingState,
+    MovingState,
     EscapedState,
 )
 
@@ -19,12 +22,10 @@ if TYPE_CHECKING:
     from src.world.Room import Room
     from src.entities.Player import Player
 
-
 class RisingHazard:
-
     STATE_INACTIVE = "inactive"
     STATE_TRIGGERED = "triggered"
-    STATE_RISING = "rising"
+    STATE_MOVING = "moving"  
     STATE_ESCAPED = "escaped"
 
     def __init__(
@@ -40,27 +41,42 @@ class RisingHazard:
         self.trigger_x = trigger_x
         self.delay_max = delay
 
-        # 2 tiles antes de acabar la parte superior del mapa
         tile_size = float(getattr(room, "TILE_SIZE", 16))
         self.escape_y = escape_y if escape_y is not None else (2.0 * tile_size)
 
-        # Leer la altura inicial desde el objeto 'fire'/'lava' en Tiled si existe
+        self.velocity_y = -self.speed  
+        self.triggered_text = "¡TRAMPA ACTIVADA!"
+        self.moving_text = "¡EL LÍQUIDO SUBE!"
+        self.escaped_text = "¡ESCAPASTE!"
+        self.escaped_timer_duration = 5.0
+        self.target_color = None
+
+        self.trigger_rect = pygame.Rect(int(trigger_x), 550, 1000, 200)
+
         fire_start_y = float(room.MAP_HEIGHT)
+
         for layer in room.map_data.get("layers", []):
             if layer.get("type") == "objectgroup" or "objects" in layer:
                 for obj in layer.get("objects", []):
                     obj_name = (obj.get("name") or "").lower().strip()
+                    
                     if obj_name in ("fire", "lava", "magma", "acid"):
                         fire_start_y = float(obj.get("y", room.MAP_HEIGHT))
-                        break
+                        
+                    elif obj_name == "hazard_trigger":
+                        self.trigger_rect = pygame.Rect(
+                            int(obj.get("x", 0)),
+                            int(obj.get("y", 0)),
+                            int(obj.get("width", 16)),
+                            int(obj.get("height", 16))
+                        )
 
         self.start_y = fire_start_y
         self.current_y = fire_start_y
         self.wave_timer = 0.0
-
         self.liquid_particles: List[Dict[str, Any]] = []
-        self.gate_particle_system: Optional[ParticleSystem] = None
 
+        self.gate_particle_system: Optional[ParticleSystem] = None
         self.gate_x = 4.0
         self.gate_width = 24.0
         self.gate_open_y = 540.0
@@ -79,7 +95,7 @@ class RisingHazard:
         self.state_machine = StateMachine({
             self.STATE_INACTIVE: lambda sm: InactiveState(self, sm),
             self.STATE_TRIGGERED: lambda sm: TriggeredState(self, sm),
-            self.STATE_RISING: lambda sm: RisingState(self, sm),
+            self.STATE_MOVING: lambda sm: MovingState(self, sm),
             self.STATE_ESCAPED: lambda sm: EscapedState(self, sm),
         })
         self.state_machine.change(self.STATE_INACTIVE)
@@ -112,7 +128,6 @@ class RisingHazard:
 
     def update(self, dt: float, player: "Player") -> None:
         self.wave_timer += dt * 3.5
-
         if self.alert_timer > 0.0:
             self.alert_timer = max(0.0, self.alert_timer - dt)
 
@@ -128,7 +143,7 @@ class RisingHazard:
         self._update_liquid_particles(dt, player.phase_color)
 
     def _update_liquid_particles(self, dt: float, phase: str) -> None:
-        if self.state in (self.STATE_RISING, self.STATE_TRIGGERED, self.STATE_ESCAPED):
+        if self.state in (self.STATE_MOVING, self.STATE_TRIGGERED, self.STATE_ESCAPED):
             if random.random() < 0.4:
                 self.liquid_particles.append({
                     "x": random.uniform(0, self.room.MAP_WIDTH),
@@ -150,7 +165,6 @@ class RisingHazard:
     def check_player_hit(self, player: "Player") -> bool:
         if self.state in (self.STATE_INACTIVE, self.STATE_ESCAPED):
             return False
-
         if player.hitbox.bottom >= (self.current_y + 4):
             return True
         return False
@@ -160,7 +174,7 @@ class RisingHazard:
 
     def render_world(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:
         self._render_gate(surface, cam_x, cam_y)
-
+        
         if self.gate_particle_system is not None:
             for particle in self.gate_particle_system.particles:
                 if self.gate_particle_system.timer < particle.life_time:
@@ -187,7 +201,6 @@ class RisingHazard:
         gy = int(self.gate_current_y - cam_y)
         gw = int(self.gate_width)
         gh = 36
-
         pygame.draw.rect(surface, (45, 48, 55), (gx, gy, gw, 3))
         pygame.draw.rect(surface, (70, 75, 85), (gx, gy, gw, 1))
 
@@ -202,7 +215,6 @@ class RisingHazard:
                 (bx + 1, gy + gh + 4),
                 (bx + 3, gy + gh),
             ])
-
         pygame.draw.rect(surface, (50, 54, 62), (gx, gy + gh // 2, gw, 2))
 
     def _render_liquid(
@@ -218,7 +230,12 @@ class RisingHazard:
         if fill_height <= 0:
             return
 
-        if phase == "green":
+        if self.target_color:
+            body_color = (*self.target_color, 240)
+            crest_bright = (min(255, self.target_color[0]+50), min(255, self.target_color[1]+50), min(255, self.target_color[2]+50))
+            crest_dark = (max(0, self.target_color[0]-50), max(0, self.target_color[1]-50), max(0, self.target_color[2]-50))
+            glow_color = (*self.target_color, 75)
+        elif phase == "green":
             body_color = (12, 44, 28, 235)
             crest_bright = (100, 255, 160)
             crest_dark = (25, 170, 85)
@@ -272,7 +289,7 @@ class RisingHazard:
                     shadowed=True,
                 )
 
-        if self.state in (self.STATE_TRIGGERED, self.STATE_RISING, self.STATE_ESCAPED):
+        if self.state in (self.STATE_TRIGGERED, self.STATE_MOVING, self.STATE_ESCAPED):
             ix = self.hud_x
             iy = self.hud_y
             iw = self.hud_w
@@ -288,22 +305,27 @@ class RisingHazard:
 
             lava_progress = max(0.0, min(1.0, (map_h - self.current_y) / map_h))
             lava_bar_h = int(lava_progress * ih)
+
             if lava_bar_h > 0:
-                lava_col = (50, 220, 110) if phase == "green" else (240, 70, 50)
+                if self.target_color:
+                    lava_col = self.target_color
+                    crest_col = (min(255, lava_col[0]+50), min(255, lava_col[1]+50), min(255, lava_col[2]+50))
+                else:
+                    lava_col = (50, 220, 110) if phase == "green" else (240, 70, 50)
+                    crest_col = (180, 255, 200) if phase == "green" else (255, 200, 100)
+                    
                 pygame.draw.rect(surface, lava_col, (ix, iy + ih - lava_bar_h, iw, lava_bar_h))
-                crest_col = (180, 255, 200) if phase == "green" else (255, 200, 100)
                 pygame.draw.rect(surface, crest_col, (ix, iy + ih - lava_bar_h, iw, 1))
 
             player_progress = max(0.0, min(1.0, (map_h - player.hitbox.centery) / map_h))
             player_py = iy + ih - int(player_progress * ih)
 
             dist = self.current_y - player.hitbox.bottom
-            is_close = (dist < 45.0) and (self.state == self.STATE_RISING)
-
+            is_close = (dist < 45.0) and (self.state == self.STATE_MOVING)
+            
             if is_close and (int(pygame.time.get_ticks() / 150) % 2 == 0):
                 pygame.draw.rect(surface, (255, 50, 50), (ix - 2, player_py - 1, iw + 4, 3))
             else:
                 marker_col = (80, 200, 255)
                 pygame.draw.rect(surface, marker_col, (ix - 1, player_py - 1, iw + 2, 3))
                 pygame.draw.rect(surface, (255, 255, 255), (ix, player_py, iw, 1))
-

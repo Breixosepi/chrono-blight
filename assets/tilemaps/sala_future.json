@@ -194,6 +194,18 @@
                  "width":16,
                  "x":80,
                  "y":80
+                }, 
+                {
+                 "height":15.1544505435368,
+                 "id":23,
+                 "name":"arena_trigger",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":20.6651598320956,
+                 "x":59.2401248520073,
+                 "y":159.810569368206
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -202,7 +214,7 @@
          "y":0
         }],
  "nextlayerid":10,
- "nextobjectid":23,
+ "nextobjectid":25,
  "orientation":"orthogonal",
  "properties":[
         {

@@ -1,33 +1,13 @@
+"""
+Chrono Blight - Saw/Shuriken Hazard
+"""
 import pygame
-from typing import Any, List, Optional
+from typing import Any
+from gale.animation import Animation
 import settings
 
 
 class SawHazard:
-    _FRAMES_CACHE: dict[str, List[pygame.Surface]] = {}
-
-    @classmethod
-    def _get_frames(cls, hazard_type: str) -> List[pygame.Surface]:
-        if hazard_type == "saw":
-            if "saw" not in cls._FRAMES_CACHE:
-                tex = settings.TEXTURES["saw_blade"]
-                rects = settings.FRAMES["saw_blade"]
-                cls._FRAMES_CACHE["saw"] = [tex.subsurface(r) for r in rects]
-            return cls._FRAMES_CACHE["saw"]
-        
-        # Keep old shuriken logic if needed, or adapt
-        if hazard_type not in cls._FRAMES_CACHE:
-            path = settings.BASE_DIR / "assets" / "graphics" / "player" / "sword" / "SawBladeSuriken.png"
-            try:
-                surf = pygame.image.load(str(path)).convert_alpha()
-                cls._FRAMES_CACHE["shuriken"] = [
-                    surf.subsurface((i * 25 + 4, 36, 24, 24)) for i in range(2)
-                ]
-            except Exception:
-                pass
-        
-        return cls._FRAMES_CACHE.get(hazard_type, [])
-
     def __init__(
         self,
         room: Any,
@@ -48,11 +28,15 @@ class SawHazard:
         self.width = 32
         self.height = 32
         
-        # Fair hitbox (e.g. 24x24 centered in 32x32)
         hitbox_size = 24
-        offset = (32 - hitbox_size) // 2
-        self.hitbox = pygame.Rect(int(x) + offset, int(y) + offset, hitbox_size, hitbox_size)
-        self.hitbox_offset = offset
+        self.hitbox_offset = (32 - hitbox_size) // 2
+        self.hitbox = pygame.Rect(
+            int(x) + self.hitbox_offset, 
+            int(y) + self.hitbox_offset, 
+            hitbox_size, 
+            hitbox_size
+        )
+        
         self.hazard_type = hazard_type
         self.phase = phase
         self.patrol_dist = patrol_dist
@@ -60,23 +44,27 @@ class SawHazard:
         self.speed = speed
         self.damage = damage
         self.direction = 1
-
-        self.frames = self._get_frames(hazard_type)
-        self.frame_index = 0
-        self.anim_timer = 0.0
-        self.frame_time = 0.08
+        
+        tex_key = "saw_blade" if self.hazard_type in ("saw", "shuriken") else self.hazard_type
+        tex = settings.TEXTURES.get(tex_key)
+        rects = settings.FRAMES.get(tex_key, [])
+        
+        if tex and rects:
+            surfaces = [tex.subsurface(r) for r in rects]
+            self.animation = Animation(surfaces, 0.08)
+        else:
+            self.animation = None
+            
+        self.fallback_image = pygame.Surface((self.width, self.height))
+        self.fallback_image.fill((150, 150, 150))
 
     def update(self, dt: float) -> None:
         if self.phase != "neutral" and self.room.player.phase_color != self.phase:
             return
+            
+        if self.animation:
+            self.animation.update(dt)
 
-        # Animación de giro
-        self.anim_timer += dt
-        if self.anim_timer >= self.frame_time:
-            self.anim_timer = 0.0
-            self.frame_index = (self.frame_index + 1) % len(self.frames)
-
-        # Movimiento patrulla
         if self.patrol_dist > 0:
             if self.axis == "y":
                 self.y += self.direction * self.speed * dt
@@ -94,10 +82,9 @@ class SawHazard:
                 elif self.direction < 0 and self.x <= self.start_x:
                     self.x = self.start_x
                     self.direction = 1
-
+                    
         self.hitbox.topleft = (int(self.x) + self.hitbox_offset, int(self.y) + self.hitbox_offset)
 
-        # Colisión con el jugador
         player = self.room.player
         if not player.is_dead() and self.hitbox.colliderect(player.hitbox):
             if player.invulnerable_timer <= 0:
@@ -114,9 +101,12 @@ class SawHazard:
     def render(self, surface: pygame.Surface, camera_x: float, camera_y: float) -> None:
         if self.phase != "neutral" and self.room.player.phase_color != self.phase:
             return
-
-        frame = self.frames[self.frame_index]
+            
         draw_x = int(self.x - camera_x)
         draw_y = int(self.y - camera_y)
-        surface.blit(frame, (draw_x, draw_y))
-
+        
+        if self.animation:
+            frame_surf = self.animation.get_current_frame()
+            surface.blit(frame_surf, (draw_x, draw_y))
+        else:
+            surface.blit(self.fallback_image, (draw_x, draw_y))

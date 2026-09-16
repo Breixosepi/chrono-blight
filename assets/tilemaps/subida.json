@@ -327,6 +327,18 @@
                  "width":16,
                  "x":145.68782161235,
                  "y":402.219373476573
+                }, 
+                {
+                 "height":17.3332129637989,
+                 "id":24,
+                 "name":"hazard_trigger",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":20.7998555565586,
+                 "x":58.9329240769161,
+                 "y":589.329240769161
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -358,7 +370,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":24,
+ "nextobjectid":28,
  "orientation":"orthogonal",
  "properties":[
         {
