@@ -1,20 +1,17 @@
 """
 Chrono Blight - Phase Shift Transition State
 """
-
-from typing import Any
+from typing import Any, Optional
 import pygame
-
 from gale.state import BaseState
+from gale.timer import Timer, After
 from gale.text import render_text
 
 import settings
 
 
 class PhaseShiftState(BaseState):
-
     def enter(self, phase_color: str = "blue", **params: Any) -> None:
-        self.timer: float = 0.35
         self.overlay = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
         )
@@ -25,14 +22,21 @@ class PhaseShiftState(BaseState):
             self.overlay.fill((50, 160, 255, 95))
             self.label_color = (190, 230, 255)
 
-    def update(self, dt: float) -> None:
-        self.timer -= dt
-        if self.timer <= 0.0:
-            self.state_machine.pop()
+        transition_duration = 0.35
+        self.transition_timer: Optional[After] = Timer.after(
+            transition_duration, self._finish_phase_shift
+        )
+
+    def _finish_phase_shift(self) -> None:
+        self.state_machine.pop()
+
+    def exit(self) -> None:
+        if hasattr(self, "transition_timer") and self.transition_timer is not None:
+            self.transition_timer.remove()
+            self.transition_timer = None
 
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(self.overlay, (0, 0))
-
         render_text(
             surface,
             "CAMBIO DE FASE",

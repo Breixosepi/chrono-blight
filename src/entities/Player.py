@@ -102,7 +102,7 @@ class Player(Entity):
         self.area_pos_x: float = 0.0
         self.area_pos_y: float = 0.0
         self.flames: list[dict] = []
-
+        self._flame_cache: dict[tuple[str, int, int], pygame.Surface] = {}
 
         self.state_machine = StateMachine({
             "idle": lambda sm: IdleState(self, sm),
@@ -418,12 +418,18 @@ class Player(Entity):
                 if frame_idx < entity_defs.FLAME_FRAMES:
                     sizes = [64, 96, 128]
                     size = sizes[f["idx"]]
-                    flame_rect = flame_rects[frame_idx]
-                    sub_flame = flame_texture.subsurface(flame_rect)
-                    scaled = pygame.transform.scale(sub_flame, (size, size))
-                    scaled.set_alpha(200)
-                    rect = scaled.get_rect(midbottom=(
+                    cache_key = (flame_color, frame_idx, size)
+                    
+                    if cache_key not in self._flame_cache:
+                        flame_rect = flame_rects[frame_idx]
+                        sub_flame = flame_texture.subsurface(flame_rect)
+                        scaled = pygame.transform.scale(sub_flame, (size, size))
+                        scaled.set_alpha(200)
+                        self._flame_cache[cache_key] = scaled
+                        
+                    cached_flame = self._flame_cache[cache_key]
+                    rect = cached_flame.get_rect(midbottom=(
                         int(f["x"] - camera_x),
                         int(f["y"] - camera_y),
                     ))
-                    surface.blit(scaled, rect)
+                    surface.blit(cached_flame, rect)

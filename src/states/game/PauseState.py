@@ -1,10 +1,8 @@
 """
 Chrono Blight - Pause State
 """
-
 from typing import Any
 import pygame
-
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
@@ -13,7 +11,6 @@ import settings
 
 
 class PauseState(BaseState):
-
     def enter(self, **params: Any) -> None:
         self.overlay = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
@@ -26,7 +23,7 @@ class PauseState(BaseState):
 
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(self.overlay, (0, 0))
-
+        
         render_text(
             surface,
             "PAUSA",
@@ -37,7 +34,7 @@ class PauseState(BaseState):
             center=True,
             shadowed=True,
         )
-
+        
         render_text(
             surface,
             "Presiona P para reanudar",

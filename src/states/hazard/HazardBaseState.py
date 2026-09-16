@@ -1,7 +1,6 @@
 from typing import Any
 from gale.state import BaseState, StateMachine
 
-
 class HazardBaseState(BaseState):
     state_name: str = "base"
 
@@ -10,5 +9,4 @@ class HazardBaseState(BaseState):
         self.hazard = hazard
 
     def update_with_player(self, dt: float, player: Any) -> None:
-        pass
-
+        pass 

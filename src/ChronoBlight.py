@@ -14,6 +14,11 @@ class ChronoBlight(Game):
 
         self.state_stack = StateStack()
         self.state_stack.push(TitleState(self.state_stack))
+        
+    def reset_to_title(self) -> None:
+        while len(self.state_stack.states) > 0:
+            self.state_stack.pop()
+        self.state_stack.push(TitleState(self.state_stack))
 
     def update(self, dt: float) -> None:
         self.state_stack.update(dt)

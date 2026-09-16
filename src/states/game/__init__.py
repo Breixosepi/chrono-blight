@@ -8,10 +8,4 @@ from src.states.game.PauseState import PauseState
 from src.states.game.PhaseShiftState import PhaseShiftState
 from src.states.game.GameOverState import GameOverState
 
-__all__ = [
-    "TitleState",
-    "PlayState",
-    "PauseState",
-    "PhaseShiftState",
-    "GameOverState",
-]
+__all__ = [ "TitleState", "PlayState", "PauseState", "PhaseShiftState", "GameOverState", ]

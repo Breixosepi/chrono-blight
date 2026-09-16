@@ -255,6 +255,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     45.0,
                 "contact_damage": 12.0,
+                "knockback_speed":  32.0,  
+                "hit_duration":      0.50, 
+                "death_duration":    1.50, 
             },
             "ai": {
                 "walk_speed":      36.0,
@@ -294,6 +297,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     25.0,
                 "contact_damage": 10.0,
+                "knockback_speed":  48.0,  
+                "hit_duration":      0.30, 
+                "death_duration":    1.00, 
             },
             "ai": {
                 "walk_speed":      42.0,
@@ -333,6 +339,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     120.0,
                 "contact_damage":  14.0,
+                "knockback_speed":  15.0,  
+                "hit_duration":      0.20, 
+                "death_duration":    2.00, 
             },
             "ai": {
                 "walk_speed":      32.0,
@@ -367,6 +376,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     20.0,
                 "contact_damage":  8.0,
+                "knockback_speed":  64.0,  
+                "hit_duration":      0.30, 
+                "death_duration":    1.00, 
             },
             "ai": {
                 "walk_speed":      48.0,
@@ -406,6 +418,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     120.0,
                 "contact_damage":  18.0,
+                "knockback_speed":  15.0,  
+                "hit_duration":      0.40, 
+                "death_duration":    1.50, 
             },
             "ai": {
                 "walk_speed":      30.0,
@@ -438,6 +453,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     18.0,
                 "contact_damage":  7.0,
+                "knockback_speed":  140.0,  
+                "hit_duration":      0.25, 
+                "death_duration":    0.80, 
             },
             "ai": {
                 "walk_speed":      52.0,
@@ -472,6 +490,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     40.0,
                 "contact_damage": 10.0,
+                "knockback_speed":  64.0,  
+                "hit_duration":      0.30, 
+                "death_duration":    1.00, 
             },
             "ai": {
                 "walk_speed":      42.0,
@@ -513,6 +534,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "stats": {
                 "max_health":     55.0,
                 "contact_damage": 14.0,
+                "knockback_speed":  64.0,  
+                "hit_duration":      0.30, 
+                "death_duration":    1.50, 
             },
             "ai": {
                 "walk_speed":      38.0,

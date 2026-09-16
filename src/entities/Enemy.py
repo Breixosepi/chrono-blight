@@ -55,6 +55,9 @@ class Enemy(Entity):
         self._health: float = stats["max_health"]
         self._max_health: float = stats["max_health"]
         self.contact_damage: float = stats["contact_damage"]
+        self.knockback_speed: float = stats.get("knockback_speed", 80.0)
+        self.hit_duration = float = stats.get("hit_duration", 0.35)
+        self.death_duration = float = stats.get("death_duration",1.0)
 
         # AI config
         ai = defn["ai"]

@@ -4,23 +4,22 @@ Chrono Blight
 
 from src.states.entity.EntityBaseState import EntityBaseState
 
-
 class DeathState(EntityBaseState):
-
     def enter(self) -> None:
-        self.entity.change_animation("death")
-        self.entity.vx = 0.0
+        player = self.entity
+        player.change_animation("death")
+        player.vx = 0.0
 
     def update(self, dt: float) -> None:
-        self.entity.vx = 0.0
-
-        if self.entity.is_animation_finished():
-            if self.entity.skin in self.entity.available_skins:
-                self.entity.available_skins.remove(self.entity.skin)
-
-            if self.entity.available_skins:
-                next_skin = self.entity.available_skins[0]
-                self.entity.change_skin(next_skin)
-                self.entity.health = self.entity.MAX_HEALTH
+        player = self.entity
+        player.vx = 0.0
+        
+        if player.is_animation_finished():
+            if player.skin in player.available_skins:
+                player.available_skins.remove(player.skin)
+                
+            if player.available_skins:
+                next_skin = player.available_skins[0]
+                player.change_skin(next_skin)
+                player.health = player.MAX_HEALTH
                 self.change_state("idle")
-

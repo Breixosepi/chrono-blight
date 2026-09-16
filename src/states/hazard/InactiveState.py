@@ -1,19 +1,17 @@
 from typing import Any
 from src.states.hazard.HazardBaseState import HazardBaseState
 
-
 class InactiveState(HazardBaseState):
-    state_name: str = "inactive"
-
     def enter(self, *args: Any, **kwargs: Any) -> None:
-        self.hazard.current_y = float(self.hazard.room.MAP_HEIGHT)
-        self.hazard.gate_current_y = self.hazard.gate_open_y
-        self.hazard.gate_landed = False
-        self.hazard.alert_text = ""
-        self.hazard.alert_timer = 0.0
-        self.hazard.liquid_particles.clear()
+        hazard = self.hazard
+        hazard.current_y = getattr(hazard, "inactive_y", float(hazard.room.MAP_HEIGHT))
+        hazard.gate_current_y = hazard.gate_open_y
+        hazard.gate_landed = False
+        hazard.alert_text = ""
+        hazard.alert_timer = 0.0
+        hazard.liquid_particles.clear()
 
     def update_with_player(self, dt: float, player: Any) -> None:
-        if player.hitbox.centerx >= self.hazard.trigger_x and player.hitbox.bottom >= 550:
+        hazard = self.hazard
+        if hazard.trigger_rect and hazard.trigger_rect.colliderect(player.hitbox):
             self.state_machine.change("triggered")
-

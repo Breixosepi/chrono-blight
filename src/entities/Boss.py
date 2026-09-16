@@ -1,16 +1,10 @@
 """
 Chrono Blight — Boss
-Clase base para todos los jefes. Hereda de Enemy y extiende con:
-  - Habilidades de proyectil especiales: ground_shockwave y void_orb con sprites.
-  - Sistema de escudo arcano (shield_active).
-  - Estado de fase (boss_phase) para ataques de multi-fase.
-  - StateMachine propia con estados de boss (BossChaseState, BossAttackState, etc.)
 """
 from __future__ import annotations
 
 import math
-import random
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pygame
 from gale.state import StateMachine
@@ -20,14 +14,13 @@ from src.definitions import entity as entity_defs
 from src.entities.Enemy import Enemy
 from src.states.entity.boss.BossBaseState import BossBaseState
 from src.states.entity.boss.BossIdleState import BossIdleState
-from src.states.entity.boss.BossChaseState import BossChaseState
-from src.states.entity.boss.BossAttackState import BossAttackState
 from src.states.entity.enemy.EnemyHitState import EnemyHitState
 from src.states.entity.enemy.EnemyDeathState import EnemyDeathState
+from src.states.entity.boss.cultist.CultistChaseState import CultistChaseState
+from src.states.entity.boss.cultist.CultistAttackState import CultistAttackState
 
 
 class Boss(Enemy):
-    """Jefe con habilidades especiales, escudo arcano y estado de fase."""
 
     def __init__(
         self,
@@ -37,46 +30,41 @@ class Boss(Enemy):
         floor_y: float = 160.0,
         map_w: float = 1248.0,
     ) -> None:
-        # Boss.__init__ defers to Enemy.__init__ which reads from entity_defs.ENEMY_DEFS.
-        # We temporarily patch ENEMY_DEFS to include BOSS_DEFS so Enemy.__init__ can find
-        # the definition, then restore it after initialization.
         _originally_missing = enemy_type not in entity_defs.ENEMY_DEFS
         if _originally_missing and enemy_type in entity_defs.BOSS_DEFS:
             entity_defs.ENEMY_DEFS[enemy_type] = entity_defs.BOSS_DEFS[enemy_type]
 
         super().__init__(x, y, enemy_type, floor_y=floor_y, map_w=map_w)
 
-        # Limpiar la entrada temporal de ENEMY_DEFS si fue añadida por nosotros
         if _originally_missing and enemy_type in entity_defs.ENEMY_DEFS:
             del entity_defs.ENEMY_DEFS[enemy_type]
 
-        # Sobreescribir la StateMachine con estados propios de boss
-        self.state_machine = StateMachine({
+        boss_states = {
             "idle":   lambda sm: BossIdleState(self, sm),
-            "patrol": lambda sm: BossIdleState(self, sm),   # patrol → idle pasivo
-            "chase":  lambda sm: BossChaseState(self, sm),
-            "attack": lambda sm: BossAttackState(self, sm),
+            "patrol": lambda sm: BossIdleState(self, sm),
             "hit":    lambda sm: EnemyHitState(self, sm),
             "death":  lambda sm: EnemyDeathState(self, sm),
-        })
+        }
+
+        if enemy_type == "cultist_priest":
+            boss_states["chase"] = lambda sm: CultistChaseState(self, sm)
+            boss_states["attack"] = lambda sm: CultistAttackState(self, sm)
+
+        self.state_machine = StateMachine(boss_states)
         self.change_state("idle")
 
-        # Estado y fases del jefe
         self.is_boss: bool = True
         self.boss_phase: int = 1
         self.shield_active: bool = False
         self.shield_pulse: float = 0.0
 
-        # Listas de proyectiles especiales
         self.ground_shockwaves: list[dict] = []
         self.void_orbs: list[dict] = []
 
-        # Caché de frames de efectos (se leen de settings.FRAMES)
         self._sw_frames: list[pygame.Surface] = settings.FRAMES.get("ground_shockwave_frames", [])
         self._orb_frames: list[pygame.Surface] = settings.FRAMES.get("void_orb_frames", [])
         self._sw_anim_timer: float = 0.0
         self._orb_anim_timer: float = 0.0
-        # Velocidad de animación de efectos (segundos por frame)
         self._EFFECT_FPS: float = 1.0 / 12.0
 
     # ------------------------------------------------------------------

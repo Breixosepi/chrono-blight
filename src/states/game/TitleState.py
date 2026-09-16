@@ -1,29 +1,32 @@
 """
 Chrono Blight - Title Screen State
 """
-
-from typing import Any
+from typing import Any, Optional
 import pygame
-
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
+from gale.timer import Timer, Every
 
 import settings
 
 
 class TitleState(BaseState):
-
     def enter(self, **params: Any) -> None:
-        self.blink_timer: float = 0.0
+        self.show_prompt: bool = True
+        self.blink_timer: Optional[Every] = Timer.every(0.4, self._toggle_prompt)
 
-    def update(self, dt: float) -> None:
-        self.blink_timer += dt * 3.5
+    def _toggle_prompt(self) -> None:
+        self.show_prompt = not self.show_prompt
+
+    def exit(self) -> None:
+        if hasattr(self, "blink_timer") and self.blink_timer is not None:
+            self.blink_timer.remove()
+            self.blink_timer = None
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "enter" and input_data.pressed:
             from src.states.game.PlayState import PlayState
-
             self.state_machine.pop()
             self.state_machine.push(PlayState(self.state_machine))
 
@@ -52,7 +55,7 @@ class TitleState(BaseState):
             shadowed=True,
         )
 
-        if int(self.blink_timer) % 2 == 0:
+        if self.show_prompt:
             render_text(
                 surface,
                 "Presiona ENTER para iniciar",
@@ -74,6 +77,7 @@ class TitleState(BaseState):
             center=True,
             shadowed=True,
         )
+
         render_text(
             surface,
             "Habilidad: X | Fase: Shift | Formas: Q / E | Pausa: P",

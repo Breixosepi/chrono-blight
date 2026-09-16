@@ -1,37 +1,43 @@
 """
-Chrono Blight
+Chrono Blight - EnemyHitState
 """
-
+from gale.timer import Timer
 from src.states.entity.enemy.EnemyBaseState import EnemyBaseState
-
-KNOCKBACK_SPEED: float = 80.0
-HIT_DURATION: float = 0.35
 
 
 class EnemyHitState(EnemyBaseState):
-    has_gravity: bool = True
-
     def enter(self, *args, **kwargs) -> None:
+        enemy = self.entity
+        enemy.change_animation("hit")
 
-        e = self.entity
-        e.change_animation("hit")
-        self._timer: float = 0.0
+        knockback = getattr(enemy, "knockback_speed", 80.0)
+        self.hit_duration = getattr(enemy, "hit_duration", 0.35)
 
-        if e.player is not None:
-            direction = 1 if e.hitbox.centerx >= e.player.hitbox.centerx else -1
+        if enemy.player is not None:
+            direction = 1.0 if enemy.hitbox.centerx >= enemy.player.hitbox.centerx else -1.0
         else:
-            direction = 1 if e.facing == "right" else -1
-        e.vx = KNOCKBACK_SPEED * direction
+            direction = 1.0 if enemy.facing == "right" else -1.0
+
+        enemy.vx = knockback * direction
+
+        Timer.tween(
+            self.hit_duration,
+            [(enemy, {"vx": 0.0})],
+            ease_function_name="out_quad"
+        )
 
     def update(self, dt: float) -> None:
-        e = self.entity
-        self._timer += dt
-        e.vx *= max(0.0, 1.0 - dt * 8.0)
+        enemy = self.entity
 
-        if e.is_animation_finished(fallback_duration=HIT_DURATION):
-            e.vx = 0.0
-            if e.is_active() and self.is_player_alive() and e.distance_to_player() <= e.detect_range:
+        if enemy.is_animation_finished(fallback_duration=self.hit_duration):
+            enemy.vx = 0.0
+            player_in_range = (
+                enemy.is_active() 
+                and self.is_player_alive() 
+                and enemy.distance_to_player() <= enemy.detect_range
+            )
+            
+            if player_in_range:
                 self.change_state("chase")
             else:
                 self.change_state("patrol")
-

@@ -1,17 +1,13 @@
 """
 Chrono Blight - EnemyAttackState
 """
-import math
 import random
 import pygame
 from src.states.entity.enemy.EnemyBaseState import EnemyBaseState
 
-
 class EnemyAttackState(EnemyBaseState):
     def enter(self, *args, **kwargs) -> None:
-
         enemy = self.entity
-        self.has_gravity = (enemy.float_amplitude == 0.0)
         self.attack_timer: float = 0.0
         self.damage_dealt: bool = False
         enemy.vx = 0.0
@@ -47,13 +43,6 @@ class EnemyAttackState(EnemyBaseState):
             )
             enemy.change_animation(self.current_attack_name)
 
-    def _update_floating_oscillation(self, dt: float) -> None:
-        enemy = self.entity
-        enemy.float_timer += dt
-        enemy.y = enemy.spawn_y + math.sin(enemy.float_timer * enemy.float_speed * math.pi) * enemy.float_amplitude
-        enemy.hitbox.y = int(enemy.y)
-        enemy.vy = 0.0
-
     def _execute_projectile_attack(self, damage: int) -> None:
         enemy = self.entity
         self.damage_dealt = True
@@ -82,13 +71,9 @@ class EnemyAttackState(EnemyBaseState):
 
     def update(self, dt: float) -> None:
         enemy = self.entity
-
         if not self.is_player_alive():
             self.change_state("patrol")
             return
-
-        if enemy.float_amplitude > 0:
-            self._update_floating_oscillation(dt)
 
         self.attack_timer += dt
         if self.attack_timer < 0.2 and enemy.player is not None:
@@ -121,7 +106,6 @@ class EnemyAttackState(EnemyBaseState):
 
     def _spawn_boss_vines(self) -> None:
         enemy = self.entity
-        
         if enemy.player is None:
             return
 

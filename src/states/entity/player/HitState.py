@@ -1,22 +1,27 @@
 """
-Chrono Blight
+Chrono Blight - HitState
 """
-
+from gale.timer import Timer
 from src.states.entity.EntityBaseState import EntityBaseState
 
 
 class HitState(EntityBaseState):
-
     def enter(self) -> None:
-        self.entity.change_animation("hit")
-        self.duration = 0.25
+        player = self.entity
+        player.change_animation("hit")
+        self.hit_duration = 0.25
+
+        Timer.tween(
+            self.hit_duration,
+            [(player, {"vx": 0.0})],
+            ease_function_name="out_quad"
+        )
 
     def update(self, dt: float) -> None:
-        self.entity.vx *= max(0.0, 1.0 - dt * 6.0)
-
-        if self.entity.is_animation_finished(fallback_duration=self.duration):
-            if self.entity.on_ground:
+        player = self.entity
+        
+        if player.is_animation_finished(fallback_duration=self.hit_duration):
+            if player.on_ground:
                 self.change_state("idle")
             else:
                 self.change_state("fall")
-
