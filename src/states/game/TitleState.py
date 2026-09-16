@@ -1,34 +1,47 @@
 """
-Chrono Blight - Title Screen State
+Chrono Blight - Title Screen State with Main Menu
 """
-from typing import Any, Optional
+from typing import Any
 import pygame
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
-from gale.timer import Timer, Every
 
 import settings
 
 
 class TitleState(BaseState):
     def enter(self, **params: Any) -> None:
-        self.show_prompt: bool = True
-        self.blink_timer: Optional[Every] = Timer.every(0.4, self._toggle_prompt)
-
-    def _toggle_prompt(self) -> None:
-        self.show_prompt = not self.show_prompt
-
-    def exit(self) -> None:
-        if hasattr(self, "blink_timer") and self.blink_timer is not None:
-            self.blink_timer.remove()
-            self.blink_timer = None
+        self.options = ["NUEVA PARTIDA", "CARGAR PARTIDA", "SALIR"]
+        self.selected_index = 0
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
-        if input_id == "enter" and input_data.pressed:
-            from src.states.game.PlayState import PlayState
+        if not input_data.pressed:
+            return
+
+        if input_id in ("up", "move_left"):
+            self.selected_index = (self.selected_index - 1) % len(self.options)
+        elif input_id in ("down", "move_right"):
+            self.selected_index = (self.selected_index + 1) % len(self.options)
+        elif input_id in ("enter", "attack", "jump"):
+            self._confirm_selection()
+
+    def _confirm_selection(self) -> None:
+        choice = self.options[self.selected_index]
+        if choice == "NUEVA PARTIDA":
+            from src.states.game.SlotSelectState import SlotSelectState
             self.state_machine.pop()
-            self.state_machine.push(PlayState(self.state_machine))
+            slot_state = SlotSelectState(self.state_machine)
+            self.state_machine.push(slot_state)
+            slot_state.enter(mode="new")
+        elif choice == "CARGAR PARTIDA":
+            from src.states.game.SlotSelectState import SlotSelectState
+            self.state_machine.pop()
+            slot_state = SlotSelectState(self.state_machine)
+            self.state_machine.push(slot_state)
+            slot_state.enter(mode="load")
+        elif choice == "SALIR":
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((16, 12, 24))
@@ -38,7 +51,7 @@ class TitleState(BaseState):
             settings.TITLE,
             settings.FONTS["title"],
             settings.VIRTUAL_WIDTH // 2,
-            38,
+            32,
             (235, 190, 70),
             center=True,
             shadowed=True,
@@ -49,42 +62,38 @@ class TitleState(BaseState):
             "TEMPORAL HACK / SLASH",
             settings.FONTS["hud"],
             settings.VIRTUAL_WIDTH // 2,
-            58,
+            52,
             (140, 160, 210),
             center=True,
             shadowed=True,
         )
 
-        if self.show_prompt:
+        start_y = 86
+        gap = 18
+
+        for i, opt in enumerate(self.options):
+            is_selected = (i == self.selected_index)
+            color = (255, 230, 90) if is_selected else (160, 150, 175)
+            prefix = "> " if is_selected else "  "
+
             render_text(
                 surface,
-                "Presiona ENTER para iniciar",
+                f"{prefix}{opt}",
                 settings.FONTS["ui"],
                 settings.VIRTUAL_WIDTH // 2,
-                92,
-                (255, 255, 255),
+                start_y + i * gap,
+                color,
                 center=True,
                 shadowed=True,
             )
 
         render_text(
             surface,
-            "Mover: Flechas | Saltar: Espacio | Atacar: Z",
+            "[ARRIBA/ABAJO] Navegar  [ENTER/Z] Seleccionar",
             settings.FONTS["hud"],
             settings.VIRTUAL_WIDTH // 2,
-            140,
-            (170, 175, 190),
-            center=True,
-            shadowed=True,
-        )
-
-        render_text(
-            surface,
-            "Habilidad: X | Fase: Shift | Formas: Q / E | Pausa: P",
-            settings.FONTS["hud"],
-            settings.VIRTUAL_WIDTH // 2,
-            156,
-            (170, 175, 190),
+            settings.VIRTUAL_HEIGHT - 12,
+            (110, 100, 125),
             center=True,
             shadowed=True,
         )

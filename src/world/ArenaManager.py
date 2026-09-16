@@ -202,6 +202,9 @@ class ArenaManager:
                 en.dead = True
                 en.change_state("death")
 
+        if hasattr(self.room, "play_state") and self.room.play_state:
+            self.room.play_state.cleared_events.add("boss_cultist_defeated")
+
         if hasattr(self.room, "elevators"):
             for elev in self.room.elevators:
                 Timer.after(1.5, elev.activate)

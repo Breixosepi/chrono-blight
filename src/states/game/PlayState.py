@@ -21,10 +21,20 @@ class PlayState(BaseState):
         start_room_name = params.get("map_name", DEFAULT_START_ROOM)
         spawn_coordinates = params.get("spawn_point", DEFAULT_START_SPAWN)
         spawn_x, spawn_y = spawn_coordinates
-
         self.room = Room(map_name=start_room_name, spawn_x=spawn_x, spawn_y=spawn_y)
         self.room.play_state = self
         self.player = self.room.player
+        
+        self.current_slot: str = params.get("slot", "slot_1")
+        self.cleared_events: set[str] = set()
+
+        if "save_data" in params:
+            save_data = params["save_data"]
+            self.player.health = save_data.get("player_health", self.player.MAX_HEALTH)
+            self.player.skin = save_data.get("player_skin", "sword")
+            self.cleared_events = set(save_data.get("cleared_events", []))
+            
+        self.room._check_cleared_events()
         self.hud = HUD()
 
         self.in_transition: bool = False
@@ -35,9 +45,11 @@ class PlayState(BaseState):
         )
 
     def change_room(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
-
         if self.in_transition:
             return
+
+        if self.room.map_name in ("subida", "subida_past", "subida_future"):
+            self.cleared_events.add("subida_cleared")
 
         self.in_transition = True
         self._halt_player()
@@ -59,7 +71,6 @@ class PlayState(BaseState):
         self.player.change_state("idle")
 
     def _on_room_faded_out(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
-
         self.room = Room(
             map_name=target_room_name,
             spawn_x=target_spawn_x,
@@ -67,6 +78,7 @@ class PlayState(BaseState):
             player=self.player,
         )
         self.room.play_state = self
+        self.room._check_cleared_events()
         self._halt_player()
 
         fade_duration = 0.2

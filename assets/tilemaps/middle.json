@@ -44,6 +44,29 @@
          "y":0
         }, 
         {
+         "draworder":"topdown",
+         "id":11,
+         "name":"traps",
+         "objects":[
+                {
+                 "height":16.1017929438982,
+                 "id":2,
+                 "name":"altar",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"altar",
+                 "visible":true,
+                 "width":15.5465587044534,
+                 "x":143.805668016194,
+                 "y":401.434355118566
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 73, 0, 0, 0, 0, 69, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70,
             70, 70, 70, 70, 70, 89, 87, 87, 87, 87, 87, 87, 90, 0, 0, 0, 0, 86, 87, 87, 87, 87, 87, 88, 70, 70, 70, 70, 70, 70,
             70, 70, 70, 70, 89, 106, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105, 88, 70, 70, 70, 70, 70,
@@ -293,27 +316,15 @@
          "draworder":"topdown",
          "id":10,
          "name":"spawns",
-         "objects":[
-                {
-                 "height":16,
-                 "id":1,
-                 "name":"spawn",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"spawn",
-                 "visible":true,
-                 "width":16,
-                 "x":208,
-                 "y":384
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
          "x":0,
          "y":0
         }],
- "nextlayerid":11,
- "nextobjectid":2,
+ "nextlayerid":12,
+ "nextobjectid":4,
  "orientation":"orthogonal",
  "properties":[
         {

@@ -186,6 +186,18 @@
                  "width":33.7531,
                  "x":284.059840054892,
                  "y":274.502197691314
+                }, 
+                {
+                 "height":16.1018,
+                 "id":5,
+                 "name":"altar",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"altar",
+                 "visible":true,
+                 "width":15.5466,
+                 "x":201.461443299968,
+                 "y":258.874081164568
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -205,7 +217,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":5,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "properties":[
         {

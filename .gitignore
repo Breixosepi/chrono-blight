@@ -76,3 +76,7 @@ debug.txt
 .tempmediaStorage/
 scratch/
 
+# Partidas guardadas locales
+saves/
+*.sav
+
