@@ -1,7 +1,7 @@
 """
 Chrono Blight - Pause State
 """
-from typing import Any
+from typing import Any, Optional
 import pygame
 from gale.state import BaseState
 from gale.input_handler import InputData
@@ -11,18 +11,22 @@ import settings
 
 
 class PauseState(BaseState):
+    _OVERLAY: Optional[pygame.Surface] = None
+
     def enter(self, **params: Any) -> None:
-        self.overlay = pygame.Surface(
-            (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
-        )
-        self.overlay.fill((0, 0, 0, 180))
+        if PauseState._OVERLAY is None:
+            PauseState._OVERLAY = pygame.Surface(
+                (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
+            )
+            PauseState._OVERLAY.fill((0, 0, 0, 180))
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "pause" and input_data.pressed:
             self.state_machine.pop()
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.blit(self.overlay, (0, 0))
+        if PauseState._OVERLAY is not None:
+            surface.blit(PauseState._OVERLAY, (0, 0))
         
         render_text(
             surface,

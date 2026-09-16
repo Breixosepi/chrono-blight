@@ -2,7 +2,6 @@
 Chrono Blight - Slot Selection Screen with New Game, Load Game, Overwrite, and Delete
 """
 import time
-import os
 from typing import Any
 import pygame
 from gale.state import BaseState
@@ -11,11 +10,12 @@ from gale.input_handler import InputData
 from gale.text import render_text
 
 import settings
+from src.world.room_connections import DEFAULT_START_ROOM, DEFAULT_START_SPAWN
 
 
 class SlotSelectState(BaseState):
     def enter(self, **params: Any) -> None:
-        self.mode = params.get("mode", "new") 
+        self.mode = params.get("mode", "new")
         self.selected_index = 0
         self.slots = settings.SAVE_SLOTS
         self.manager = SaveManager()
@@ -30,6 +30,11 @@ class SlotSelectState(BaseState):
         total_h = len(self.slots) * self.card_h + (len(self.slots) - 1) * self.card_gap
         self.start_y = (settings.VIRTUAL_HEIGHT - total_h) // 2 + 10
 
+        self._dim_overlay = pygame.Surface(
+            (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
+        )
+        self._dim_overlay.fill((0, 0, 0, 180))
+
     def _refresh_metadata(self) -> None:
         self.metadata = []
         for slot in self.slots:
@@ -43,21 +48,21 @@ class SlotSelectState(BaseState):
             return
 
         if self.confirming_overwrite:
-            if input_id in ("enter", "attack", "jump"):
+            if input_id in ("enter"):
                 self._start_new_game_on_slot(self.slots[self.selected_index])
-            elif input_id in ("quit", "back", "pause", "special"):
+            elif input_id in ("back", "pause"):
                 self.confirming_overwrite = False
             return
 
-        if input_id in ("up", "move_left"):
+        if input_id in ("up"):
             self.selected_index = (self.selected_index - 1) % len(self.slots)
-        elif input_id in ("down", "move_right"):
+        elif input_id in ("down"):
             self.selected_index = (self.selected_index + 1) % len(self.slots)
-        elif input_id in ("enter", "attack", "jump"):
+        elif input_id in ("enter"):
             self._handle_slot_selection()
         elif input_id == "special":
             self._delete_selected_slot()
-        elif input_id in ("quit", "back", "pause"):
+        elif input_id in ("back", "pause"):
             from src.states.game.TitleState import TitleState
             self.state_machine.pop()
             title_state = TitleState(self.state_machine)
@@ -86,8 +91,8 @@ class SlotSelectState(BaseState):
 
         params = {
             "slot": slot,
-            "map_name": "middle",
-            "spawn_point": (64.0, 208.0),
+            "map_name": DEFAULT_START_ROOM,
+            "spawn_point": DEFAULT_START_SPAWN,
         }
         play_state.enter(**params)
 
@@ -105,8 +110,11 @@ class SlotSelectState(BaseState):
 
         params = {
             "slot": slot,
-            "map_name": save_data.get("room", "middle"),
-            "spawn_point": (save_data.get("spawn_x", 64.0), save_data.get("spawn_y", 208.0)),
+            "map_name": save_data.get("room", DEFAULT_START_ROOM),
+            "spawn_point": (
+                save_data.get("spawn_x", DEFAULT_START_SPAWN[0]),
+                save_data.get("spawn_y", DEFAULT_START_SPAWN[1]),
+            ),
             "save_data": save_data,
         }
         play_state.enter(**params)
@@ -114,11 +122,7 @@ class SlotSelectState(BaseState):
     def _delete_selected_slot(self) -> None:
         slot = self.slots[self.selected_index]
         save_path = settings.BASE_DIR / "saves" / f"{slot}.sav"
-        if os.path.exists(save_path):
-            try:
-                os.remove(save_path)
-            except OSError:
-                pass
+        save_path.unlink(missing_ok=True)
         self._refresh_metadata()
 
     def render(self, surface: pygame.Surface) -> None:
@@ -202,9 +206,7 @@ class SlotSelectState(BaseState):
                 )
 
         if self.confirming_overwrite:
-            overlay = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 180))
-            surface.blit(overlay, (0, 0))
+            surface.blit(self._dim_overlay, (0, 0))
 
             box_w, box_h = 240, 60
             box_x = (settings.VIRTUAL_WIDTH - box_w) // 2
@@ -225,7 +227,7 @@ class SlotSelectState(BaseState):
             )
             render_text(
                 surface,
-                "[ENTER/Z] Confirmar  [ESC] Cancelar",
+                "[ENTER] Confirmar  [P] Cancelar",
                 settings.FONTS["hud"],
                 settings.VIRTUAL_WIDTH // 2,
                 box_y + 36,
@@ -236,7 +238,7 @@ class SlotSelectState(BaseState):
         else:
             render_text(
                 surface,
-                "[ENTER/Z] Elegir  [X] Borrar  [ESC] Volver",
+                "[ENTER] Elegir  [X] Borrar  [P] Volver",
                 settings.FONTS["hud"],
                 settings.VIRTUAL_WIDTH // 2,
                 settings.VIRTUAL_HEIGHT - 12,

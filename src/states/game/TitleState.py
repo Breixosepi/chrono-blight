@@ -8,9 +8,13 @@ from gale.input_handler import InputData
 from gale.text import render_text
 
 import settings
+from src.states.game.SlotSelectState import SlotSelectState
 
 
 class TitleState(BaseState):
+    MENU_START_Y: int = 86
+    MENU_GAP: int = 18
+
     def enter(self, **params: Any) -> None:
         self.options = ["NUEVA PARTIDA", "CARGAR PARTIDA", "SALIR"]
         self.selected_index = 0
@@ -19,27 +23,24 @@ class TitleState(BaseState):
         if not input_data.pressed:
             return
 
-        if input_id in ("up", "move_left"):
+        if input_id in ("up"):
             self.selected_index = (self.selected_index - 1) % len(self.options)
-        elif input_id in ("down", "move_right"):
+        elif input_id in ("down"):
             self.selected_index = (self.selected_index + 1) % len(self.options)
-        elif input_id in ("enter", "attack", "jump"):
+        elif input_id in ("enter"):
             self._confirm_selection()
+
+    def _open_slot_select(self, mode: str) -> None:
+        self.state_machine.pop()
+        slot_state = SlotSelectState(self.state_machine)
+        self.state_machine.push(slot_state, mode=mode)
 
     def _confirm_selection(self) -> None:
         choice = self.options[self.selected_index]
         if choice == "NUEVA PARTIDA":
-            from src.states.game.SlotSelectState import SlotSelectState
-            self.state_machine.pop()
-            slot_state = SlotSelectState(self.state_machine)
-            self.state_machine.push(slot_state)
-            slot_state.enter(mode="new")
+            self._open_slot_select(mode="new")
         elif choice == "CARGAR PARTIDA":
-            from src.states.game.SlotSelectState import SlotSelectState
-            self.state_machine.pop()
-            slot_state = SlotSelectState(self.state_machine)
-            self.state_machine.push(slot_state)
-            slot_state.enter(mode="load")
+            self._open_slot_select(mode="load")
         elif choice == "SALIR":
             pygame.event.post(pygame.event.Event(pygame.QUIT))
 
@@ -68,9 +69,6 @@ class TitleState(BaseState):
             shadowed=True,
         )
 
-        start_y = 86
-        gap = 18
-
         for i, opt in enumerate(self.options):
             is_selected = (i == self.selected_index)
             color = (255, 230, 90) if is_selected else (160, 150, 175)
@@ -81,7 +79,7 @@ class TitleState(BaseState):
                 f"{prefix}{opt}",
                 settings.FONTS["ui"],
                 settings.VIRTUAL_WIDTH // 2,
-                start_y + i * gap,
+                self.MENU_START_Y + i * self.MENU_GAP,
                 color,
                 center=True,
                 shadowed=True,
@@ -89,7 +87,7 @@ class TitleState(BaseState):
 
         render_text(
             surface,
-            "[ARRIBA/ABAJO] Navegar  [ENTER/Z] Seleccionar",
+            "[ARRIBA/ABAJO] Navegar  [ENTER] Seleccionar",
             settings.FONTS["hud"],
             settings.VIRTUAL_WIDTH // 2,
             settings.VIRTUAL_HEIGHT - 12,
