@@ -7,10 +7,12 @@ import gale.text
 from typing import Optional
 
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE,"quit")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_BACKSPACE,"back")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN,"enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT,"move_left")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT,"move_right")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP,"up")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN,"down")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE,"jump")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_z,"attack")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_x,"special")
@@ -33,7 +35,6 @@ WINDOW_HEIGHT = 720
 TILE_SIZE = 16
 
 TEXTURES = {
-    # --- Jugador ---
     "sword_red":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "sword" / "Sword.png"),
     "sword_green":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "sword" / "sword_green.png"),
     "morph_red":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "morph" / "Morph.png"),
@@ -44,17 +45,14 @@ TEXTURES = {
     "mage_atk2_green":pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "mage_atk2_green.png"),
     "flame_purple":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "flame_purple.png"),
     "flame_green":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "flame_green.png"),
-    # --- Enemigos regulares ---
     "skeleton_sword": pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "skeleton_sword" / "ready_1.png"),
     "monster_eyes":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "monster_eyes" / "monster001eyes.png"),
     "goblin":         pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "goblin" / "goblin.png"),
     "crown":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "crown" / "crow_idle.png"),
     "monster2":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "monster2" / "monster2.png"),
     "monster3":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "monster3" / "monster3.png"),
-    # --- Jefes ---
     "cultist_priest": pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "bosses" / "cultist_priest" / "cultist_priest_idle_1.png"),
     "big_monster":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "bosses" / "big_monster" / "dark fantasy big boss idle.png"),
-    # --- Fondos ---
     "abismo_1_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_past.png"),
     "abismo_1_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_future.png"),
     "sala_past":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_past.png"),
@@ -65,17 +63,21 @@ TEXTURES = {
     "middle_future":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "middle_future.png"),
     "big_room_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "b_r_past.png"),
     "big_room_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "b_r_future.png"),
-    # --- Efectos de habilidades ---
     "void_orb":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "void_orb.png"),
     "ground_shockwave":  pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "ground_shockwave.png"),
-    # --- Trampas y Peligros ---
     "saw_blade":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "saws" / "saw_blade.png"),
     "destructible_block": pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "blocks" / "Brick1.png"),
     "moving_platform":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "platforms" / "Moving Platfrom_A.png"),
     "elevator_open":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "13.png"),
     "elevator_closed":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "12.png"),
     "elevator_rope":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "22.png"),
+    "obelisk":            pygame.image.load(BASE_DIR / "assets" / "graphics" / "world" / "objects" / "obelisk.png"),
+    "animated_items":     pygame.image.load(BASE_DIR / "assets" / "graphics" / "items" / "animated_items.png"),
+    "keyboard_ui":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "keyboard.png"),
+    "save_icon":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "save_icon.png"),
 }
+
+SAVE_SLOTS = ["slot_1", "slot_2", "slot_3"]
 
 FRAMES = {
     "sword_red":       frames.generate_frames(TEXTURES["sword_red"],  128, 64),
@@ -91,6 +93,10 @@ FRAMES = {
     "saw_blade":          frames.generate_frames(TEXTURES["saw_blade"], 32, 32),
     "destructible_block": frames.generate_frames(TEXTURES["destructible_block"], 32, 32),
     "moving_platform":    frames.generate_frames(TEXTURES["moving_platform"], 32, 16),
+    "obelisk":            frames.generate_frames(TEXTURES["obelisk"], 190, 380),
+    "save_icon":          frames.generate_frames(TEXTURES["save_icon"], 16, 16),
+    "animated_items":     frames.generate_frames(TEXTURES["animated_items"], 32, 32),
+    "keyboard_ui":        frames.generate_frames(TEXTURES["keyboard_ui"], 16, 16),
     **generate_enemy_frames(BASE_DIR, TEXTURES),
 }
 

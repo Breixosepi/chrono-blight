@@ -80,6 +80,7 @@ class Room:
         self.enemy_projectiles: List[dict] = []
         
         self.dust_particles: List[dict] = []
+        self.health_orbs: list = []
         self.damage_popups: List[Dict[str, Any]] = []
         self.respawn_queue: List[Dict[str, Any]] = []
         self.combat_resolver = CombatResolver(self)
@@ -90,6 +91,21 @@ class Room:
 
         self.rising_hazard = RisingHazard(self) if self.map_name == "subida" else None
         self.arena = ArenaManager(self) if self.map_name == "sala_future" else None
+
+    def _check_cleared_events(self) -> None:
+        cleared = getattr(self.play_state, "cleared_events", set()) if hasattr(self, "play_state") and self.play_state else set()
+        
+        if "boss_cultist_defeated" in cleared and self.map_name == "sala_future":
+            self.arena = None
+            self.enemies = []
+            for elev in self.elevators:
+                elev.state = "open"
+                elev.image = elev.tex_open
+                elev.y = elev.start_y - elev.height
+                elev.hitbox.y = int(elev.y)
+
+        if "subida_cleared" in cleared and self.map_name in ("subida", "subida_past", "subida_future"):
+            self.rising_hazard = None
 
     @property
     def camera_offset(self) -> Tuple[float, float]:
@@ -179,7 +195,8 @@ class Room:
                 self._spawn_enemy(float(obj.get("x", 0.0)), float(obj.get("y", 0.0)), enemy_type)
 
     def _init_traps(self) -> None:
-        for obj in self._get_tiled_objects({"traps"}):
+        self.altars: list = []
+        for obj in self._get_tiled_objects({"traps", "objects", "interactables"}):
             props = self._parse_props(obj)
             t_name = obj.get("name", "") or str(props.get("name", ""))
             t_type = obj.get("type", "") or obj.get("class", "") or str(props.get("type", ""))
@@ -187,7 +204,11 @@ class Room:
             
             x, y = float(obj.get("x", 0.0)), float(obj.get("y", 0.0))
 
-            if "saw" in combined_id or "shuriken" in combined_id:
+            if "altar" in combined_id or "obelisk" in combined_id:
+                from src.world.Altar import Altar
+                obj_h = float(obj.get("height", 16.0))
+                self.altars.append(Altar(x, y, self, obj_height=obj_h))
+            elif "saw" in combined_id or "shuriken" in combined_id:
                 h_type = "shuriken" if "shuriken" in combined_id else "saw"
                 phase = "green" if "green" in combined_id else ("red" if "red" in combined_id else "neutral")
                 self.saw_hazards.append(SawHazard(
@@ -283,9 +304,14 @@ class Room:
         for trap in self.falling_traps: trap.update(dt)
         for elev in self.elevators: elev.update(dt)
         for saw in self.saw_hazards: saw.update(dt)
+        for altar in self.altars: altar.update(dt, self.player)
 
         if self.arena:
             self.arena.update(dt)
+
+        for orb in self.health_orbs:
+            orb.update(dt, self.player)
+        self.health_orbs = [orb for orb in self.health_orbs if not orb.is_dead]
 
         self.camera.update(self.player.hitbox.centerx, self.player.hitbox.centery, dt)
 
@@ -374,6 +400,10 @@ class Room:
                 self.combat_resolver.handle_contact_damage(enemy)
 
             if enemy.dead:
+                if random.random() < 0.25:
+                    from src.world.HealthOrb import HealthOrb
+                    self.health_orbs.append(HealthOrb(enemy.hitbox.centerx - 8, enemy.hitbox.centery - 8, self))
+                
                 if not getattr(enemy, "in_arena", False) and self.map_name != "sala_future" and self.arena is None:
                     self.respawn_queue.append({"type": enemy.enemy_type, "x": enemy.spawn_x, "y": enemy.spawn_y, "timer": 3.0})
             else:
@@ -535,8 +565,12 @@ class Room:
         for t in self.falling_traps: t.render(surface, cam_x, cam_y)
         for e in self.elevators: e.render(surface, cam_x, cam_y)
         for s in self.saw_hazards: s.render(surface, cam_x, cam_y)
+        for a in self.altars: a.render(surface, cam_x, cam_y)
         for enemy in self.enemies: enemy.render(surface, cam_x, cam_y)
 
+        for orb in self.health_orbs:
+            orb.render(surface, cam_x, cam_y)
+            
         for p in self.enemy_projectiles:
             px, py = int(p["x"] - cam_x), int(p["y"] - cam_y)
             for tr in p.get("trail", []):
@@ -554,6 +588,8 @@ class Room:
     def _render_ui(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
         for p in self.damage_popups:
             render_text(surface, p["text"], settings.FONTS["hud"], int(p["x"] - cam_x), int(p["y"] - cam_y), p["color"], center=True, shadowed=True)
+            
+        for a in self.altars: a.render_ui(surface)
             
         if self.rising_hazard: self.rising_hazard.render_hud(surface, self.player)
         if self.arena: self.arena.render_hud(surface)
