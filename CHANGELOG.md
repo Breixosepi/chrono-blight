@@ -4,6 +4,25 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.10.0] - 2026-09-15
+
+### Añadido
+- **Sistema de Ascensores (`src/world/Elevator.py`)**: Ascensor interactivo con animaciones de puertas abiertas/cerradas. Traslada al jugador invisibilizándolo durante el viaje; entra en escena, suelta al jugador, espera 1 segundo con las puertas abiertas y desaparece por arriba permanentemente.
+- **Módulo de Resolución de Combate (`src/world/combat.py`)**: Extracción completa de la lógica de evaluación de daño, impacto de ataques (cuerpo a cuerpo y magia) y daño por contacto desde `Room.py` a una clase `CombatResolver` independiente.
+
+### Cambiado / Refactorizado
+- **Refactorización Limpieza en `Room.py`**:
+  - Eliminación de abundante código duplicado centralizando la lógica con `_parse_props` y `_spawn_enemy`.
+  - Simplificación del mapeo de capas de colisión con diccionarios limpios a nivel de módulo (`_PHASE_LAYERS`).
+  - Eliminación de argumentos y variables huérfanas en trampas y generadores.
+- **Máquina de Estados de Jefes**:
+  - Reestructuración del paquete de estados de los Jefes, moviendo ataques específicos a sus respectivas carpetas de entidad (ej: `boss/cultist/`) para un mejor desacoplamiento.
+
+### Optimizado (Rendimiento)
+- **Eliminación de Fugas de Memoria en Renderizado (Memory Thrashing)**:
+  - **Proyectiles**: Pre-asignación de la superficie `_trail_surf` en memoria caché. Evita la creación destructiva de más de 3000 `pygame.Surface` por segundo al dibujar el rastro de las balas enemigas.
+  - **Magia del Jugador**: Introducción del caché perezoso (`_flame_cache`) para las llamas del ataque de área del mago, evitando llamar a la intensiva operación `pygame.transform.scale` 60 veces por segundo.
+
 ---
 
 ## [0.9.0] - 2026-09-14
