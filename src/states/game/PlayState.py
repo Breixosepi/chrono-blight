@@ -78,6 +78,9 @@ class PlayState(BaseState):
         if self.in_transition:
             return
 
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
+
         if self.room.map_name in ("subida", "subida_past", "subida_future"):
             if "subida_cleared" not in self.cleared_events:
                 self.cleared_events.add("subida_cleared")
@@ -105,6 +108,8 @@ class PlayState(BaseState):
         self.player.change_state("idle")
 
     def _on_room_faded_out(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
         self.visited_rooms.add(target_room_name)
         self.room = Room(
             map_name=target_room_name,
@@ -143,6 +148,8 @@ class PlayState(BaseState):
         self.can_exit_room = True
 
     def respawn_at_checkpoint(self) -> None:
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
         from gale.save import SaveManager
         save_data = SaveManager().load(self.current_slot)
         if not save_data:

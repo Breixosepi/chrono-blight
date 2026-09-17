@@ -223,6 +223,8 @@ class ArenaManager:
     def on_arena_cleared(self) -> None:
         settings.stop_music("boss_survive")
         settings.stop_music("giant_boss")
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
         settings.play_music("ambient")
         
         self.state = "cleared"
@@ -238,6 +240,10 @@ class ArenaManager:
 
         if self.is_survival:
             self._show_banner("¡SUPERVIVENCIA COMPLETADA!", (100, 255, 140), 3.5)
+            if "lava" in settings.SOUNDS:
+                settings.SOUNDS["lava"].stop()
+            if getattr(self.room, "rising_hazard", None):
+                self.room.rising_hazard.reset()
             if self.boss and not self.boss.dead:
                 self.boss.shield_active = False
                 self.boss.dead = True
@@ -295,7 +301,9 @@ class ArenaManager:
             self.room.respawn_queue.clear()
 
             if self.is_survival:
-                if self.boss is not None and (self.boss.dead or self.boss.health <= 0):
+                if self.boss is not None and (self.boss.dead or self.boss.health <= 0 or getattr(self.boss, "state_name", "") == "death"):
+                    if "lava" in settings.SOUNDS:
+                        settings.SOUNDS["lava"].stop()
                     self.on_arena_cleared()
                     return
 

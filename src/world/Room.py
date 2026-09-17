@@ -113,9 +113,13 @@ class Room:
                     elev.hitbox.y = int(elev.y)
 
         if "survival_boss_defeated" in cleared and self.map_name == "sala_past":
+            if "lava" in settings.SOUNDS:
+                settings.SOUNDS["lava"].stop()
             if self.arena and self.arena.state not in ("cleared", "clearing", "unlocking"):
                 self.arena = None
             self.enemies = []
+            if getattr(self, "rising_hazard", None):
+                self.rising_hazard.reset()
             self.rising_hazard = None
             self.lava_rising = False
             for saw in self.saw_hazards:
@@ -128,6 +132,10 @@ class Room:
                     elev.hitbox.y = int(elev.y)
 
         if "subida_cleared" in cleared and self.map_name in ("subida", "subida_past", "subida_future"):
+            if "lava" in settings.SOUNDS:
+                settings.SOUNDS["lava"].stop()
+            if getattr(self, "rising_hazard", None):
+                self.rising_hazard.reset()
             self.rising_hazard = None
 
         # Elevator to Final Boss in 'middle' (unlocked only when all major challenges are cleared)
@@ -372,6 +380,11 @@ class Room:
                 self.falling_traps.append(FallingTrap(self, x, y, phase))
             elif "lava" in combined_id:
                 self.lava_target_y = y
+                cleared_ev = getattr(self.play_state, "cleared_events", set()) if hasattr(self, "play_state") and self.play_state else getattr(self, "cleared_events", set())
+                if "survival_boss_defeated" in cleared_ev and self.map_name == "sala_past":
+                    if "lava" in settings.SOUNDS:
+                        settings.SOUNDS["lava"].stop()
+                    continue
                 if not self.rising_hazard:
                     self.rising_hazard = RisingHazard(self, speed=0.0)
                     self.rising_hazard.is_pool = True
