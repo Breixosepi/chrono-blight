@@ -38,7 +38,6 @@ class TitleState(BaseState):
             self._confirm_selection()
 
     def _open_slot_select(self, mode: str) -> None:
-        settings.stop_music("intro")
         self.state_machine.pop()
         slot_state = SlotSelectState(self.state_machine)
         self.state_machine.push(slot_state, mode=mode)
