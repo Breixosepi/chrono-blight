@@ -3,10 +3,11 @@ Chrono Blight - HitState
 """
 from gale.timer import Timer
 from src.states.entity.EntityBaseState import EntityBaseState
-
+import settings
 
 class HitState(EntityBaseState):
     def enter(self) -> None:
+        settings.SOUNDS["hit-player"].play()
         player = self.entity
         player.change_animation("hit")
         self.hit_duration = 0.25

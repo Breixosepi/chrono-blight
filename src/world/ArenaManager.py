@@ -92,15 +92,19 @@ class ArenaManager:
         self._banner_timer = None
 
     def start_arena(self) -> None:
+        settings.stop_music("ambient")
         self.barrier_active = True
+        settings.SOUNDS["close"].play()
         self.room.camera.shake(4.5, 0.4)
 
         if self.is_survival:
+            settings.play_music("boss_survive")
             self.state = "intro_delay"
             self._show_banner("¡LA LAVA VA SUBIENDO!", (255, 120, 80), 3.0)
             Timer.after(1.5, lambda: setattr(self.room, "lava_rising", True))
             Timer.after(3.0, self._start_survival_active)
         else:
+            settings.play_music("giant_boss")
             self.state = "active"
             self.boss_phase = 1
             self.lava_shower.reset()
@@ -221,6 +225,10 @@ class ArenaManager:
             Timer.after(2.4, lambda: self.boss.change_state("chase") if self.boss and not self.boss.dead else None)
 
     def on_arena_cleared(self) -> None:
+        settings.stop_music("boss_survive")
+        settings.stop_music("giant_boss")
+        settings.play_music("ambient")
+        
         self.state = "cleared"
         self.barrier_active = False
         self.room.camera.shake(4.0, 0.4)

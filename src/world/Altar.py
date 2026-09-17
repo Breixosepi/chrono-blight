@@ -78,6 +78,7 @@ class Altar:
             self.anim_save.update(dt)
 
     def interact(self, player: Player) -> None:
+        settings.SOUNDS["save"].play()
         self.is_animating = True
         self.is_saving = True
         self.anim_obelisk.reset()

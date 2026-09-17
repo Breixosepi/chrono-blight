@@ -173,6 +173,7 @@ class RisingHazard:
         return False
 
     def reset(self) -> None:
+        settings.SOUNDS["lava"].stop()
         self.state_machine.change(self.STATE_INACTIVE)
 
     def render_world(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:

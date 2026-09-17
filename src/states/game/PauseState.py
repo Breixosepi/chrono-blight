@@ -14,6 +14,7 @@ class PauseState(BaseState):
     _OVERLAY: Optional[pygame.Surface] = None
 
     def enter(self, **params: Any) -> None:
+        settings.pause_music("ambient")
         if PauseState._OVERLAY is None:
             PauseState._OVERLAY = pygame.Surface(
                 (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
@@ -22,6 +23,7 @@ class PauseState(BaseState):
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "pause" and input_data.pressed:
+            settings.resume_music("ambient")
             self.state_machine.pop()
 
     def render(self, surface: pygame.Surface) -> None:

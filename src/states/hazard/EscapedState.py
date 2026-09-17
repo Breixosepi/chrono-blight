@@ -3,11 +3,13 @@ Chrono Blight - EscapedState
 """
 from typing import Any
 from src.states.hazard.HazardBaseState import HazardBaseState
+import settings
 
 class EscapedState(HazardBaseState):
     state_name: str = "escaped"
 
     def enter(self, *args: Any, **kwargs: Any) -> None:
+        settings.SOUNDS["lava"].stop()
         hazard = self.hazard
         hazard.alert_text = getattr(hazard, "escaped_text", "¡ESCAPASTE!")
         hazard.alert_timer = getattr(hazard, "escaped_timer_duration", 5.0)

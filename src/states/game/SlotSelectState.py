@@ -49,6 +49,7 @@ class SlotSelectState(BaseState):
 
         if self.confirming_overwrite:
             if input_id in ("enter"):
+                settings.SOUNDS["enter"].play()
                 self._start_new_game_on_slot(self.slots[self.selected_index])
             elif input_id in ("back", "pause"):
                 self.confirming_overwrite = False
@@ -56,9 +57,12 @@ class SlotSelectState(BaseState):
 
         if input_id in ("up"):
             self.selected_index = (self.selected_index - 1) % len(self.slots)
+            settings.SOUNDS["change"].play()
         elif input_id in ("down"):
             self.selected_index = (self.selected_index + 1) % len(self.slots)
+            settings.SOUNDS["change"].play()
         elif input_id in ("enter"):
+            settings.SOUNDS["enter"].play()
             self._handle_slot_selection()
         elif input_id == "special":
             self._delete_selected_slot()
@@ -95,6 +99,8 @@ class SlotSelectState(BaseState):
             "spawn_point": DEFAULT_START_SPAWN,
         }
         play_state.enter(**params)
+
+        settings.stop_music("intro")
 
     def _load_game_from_slot(self, slot: str) -> None:
         try:

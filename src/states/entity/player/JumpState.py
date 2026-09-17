@@ -1,8 +1,10 @@
 from src.states.entity.EntityBaseState import EntityBaseState
 from src.definitions import entity as entity_defs
+import settings
 
 class JumpState(EntityBaseState):
     def enter(self) -> None:
+        settings.SOUNDS["jump"].play()
         player = self.entity
         if player.on_ground and hasattr(player, "on_jump_effect"):
             player.on_jump_effect()

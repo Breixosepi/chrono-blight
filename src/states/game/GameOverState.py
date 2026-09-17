@@ -11,6 +11,8 @@ import settings
 
 class GameOverState(BaseState):
     def enter(self, **params: Any) -> None:
+        settings.stop_all_music()
+        
         self.overlay = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
         )
