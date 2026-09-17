@@ -16,7 +16,10 @@ class TitleState(BaseState):
     MENU_GAP: int = 18
 
     def enter(self, **params: Any) -> None:
-        settings.play_music("intro")
+        # Only start intro if it isn't already playing (avoids restart on back-press)
+        ch = settings.MUSIC_CHANNELS.get("intro")
+        if ch is None or not ch.get_busy():
+            settings.play_music("intro")
         self.options = ["NUEVA PARTIDA", "CARGAR PARTIDA", "SALIR"]
         self.selected_index = 0
 
@@ -35,6 +38,7 @@ class TitleState(BaseState):
             self._confirm_selection()
 
     def _open_slot_select(self, mode: str) -> None:
+        settings.stop_music("intro")
         self.state_machine.pop()
         slot_state = SlotSelectState(self.state_machine)
         self.state_machine.push(slot_state, mode=mode)

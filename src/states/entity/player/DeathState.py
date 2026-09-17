@@ -3,9 +3,11 @@ Chrono Blight
 """
 
 from src.states.entity.EntityBaseState import EntityBaseState
+import settings
 
 class DeathState(EntityBaseState):
     def enter(self) -> None:
+        settings.SOUNDS["enemy-death"].play()
         player = self.entity
         player.change_animation("death")
         player.vx = 0.0
