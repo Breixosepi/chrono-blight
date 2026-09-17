@@ -30,30 +30,58 @@ class PlayState(BaseState):
 
         if "save_data" in params:
             save_data = params["save_data"]
-            self.player.health = save_data.get("player_health", self.player.MAX_HEALTH)
-            self.player.skin = save_data.get("player_skin", "sword")
             self.cleared_events = set(save_data.get("cleared_events", []))
+            self.player.sync_progression(self.cleared_events)
+            
+            self.player.skin = save_data.get("player_skin", "mage")
+            self.player.health = save_data.get("player_health", self.player.MAX_HEALTH)
             
         self.room._check_cleared_events()
         self.hud = HUD()
 
         self.in_transition: bool = False
+        self.waiting_for_unlock: bool = False
         self.can_exit_room: bool = True
         self.fade_alpha: float = 0.0
         self.fade_surface = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
         )
 
+    def save_game_checkpoint(self, spawn_pos: Any = None) -> None:
+        """Centralized save handler for checkpoints, altars and world events."""
+        from gale.save import SaveManager
+        sx = float(spawn_pos[0]) if spawn_pos else self.player.hitbox.centerx
+        sy = float(spawn_pos[1]) if spawn_pos else (self.player.hitbox.top - 20)
+        save_data = {
+            "room": self.room.map_name,
+            "spawn_x": sx,
+            "spawn_y": sy,
+            "player_health": self.player.health,
+            "player_max_health": self.player.MAX_HEALTH,
+            "player_skin": self.player.skin,
+            "cleared_events": list(self.cleared_events),
+        }
+        metadata = {
+            "room_name": self.room.map_name,
+            "health": self.player.health,
+            "skin": self.player.skin,
+        }
+        SaveManager().save(self.current_slot, save_data, metadata=metadata)
+
     def change_room(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
         if self.in_transition:
             return
 
         if self.room.map_name in ("subida", "subida_past", "subida_future"):
-            self.cleared_events.add("subida_cleared")
+            if "subida_cleared" not in self.cleared_events:
+                self.cleared_events.add("subida_cleared")
 
         self.in_transition = True
         self._halt_player()
 
+        self._start_fade_out(target_room_name, target_spawn_x, target_spawn_y)
+
+    def _start_fade_out(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
         fade_duration = 0.2
         Timer.tween(
             fade_duration,
@@ -81,6 +109,14 @@ class PlayState(BaseState):
         self.room._check_cleared_events()
         self._halt_player()
 
+        if target_room_name == "esquina_1" and "subida_cleared" in self.cleared_events and "morph" not in self.player.available_skins:
+            self.waiting_for_unlock = True
+            self.player.x = 120.0
+            self.player.y = 248.0
+            self.player.hitbox.topleft = (int(self.player.x), int(self.player.y))
+            self.player.on_ground = True
+            self.player.change_state("unlock", form="morph")
+
         fade_duration = 0.2
         Timer.tween(
             fade_duration,
@@ -103,12 +139,12 @@ class PlayState(BaseState):
             self.state_machine.push(GameOverState(self.state_machine))
             return
 
-        if self.in_transition:
+        if self.in_transition and not self.waiting_for_unlock:
             return
 
         self.room.update(dt)
 
-        if self.can_exit_room:
+        if self.can_exit_room and not self.in_transition:
             exit_info = self.room.check_room_exits()
             if exit_info is not None:
                 target_room_name, target_x, target_y = exit_info
@@ -136,7 +172,6 @@ class PlayState(BaseState):
     def render(self, surface: pygame.Surface) -> None:
         self.room.render(surface)
         camera_x, camera_y = self.room.camera_offset
-        self.player.render(surface, camera_x, camera_y)
         self.hud.render(surface, self.player, camera_x, camera_y)
 
         if self.fade_alpha > 0.0:

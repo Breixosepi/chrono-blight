@@ -77,6 +77,7 @@ class RisingHazard:
         self.liquid_particles: List[Dict[str, Any]] = []
 
         self.gate_particle_system: Optional[ParticleSystem] = None
+        self._gate_p_surf = pygame.Surface((3, 3), pygame.SRCALPHA)
         self.gate_x = 4.0
         self.gate_width = 24.0
         self.gate_open_y = 540.0
@@ -183,9 +184,8 @@ class RisingHazard:
                     screen_px = int(particle.x - cam_x)
                     screen_py = int(particle.y - cam_y)
                     if 0 <= screen_px < settings.VIRTUAL_WIDTH and 0 <= screen_py < settings.VIRTUAL_HEIGHT:
-                        p_surf = pygame.Surface((3, 3), pygame.SRCALPHA)
-                        p_surf.fill(particle.color)
-                        surface.blit(p_surf, (screen_px, screen_py))
+                        self._gate_p_surf.fill(particle.color)
+                        surface.blit(self._gate_p_surf, (screen_px, screen_py))
 
         screen_lava_y = int(self.current_y - cam_y)
         if screen_lava_y < settings.VIRTUAL_HEIGHT:

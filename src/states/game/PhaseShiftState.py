@@ -12,6 +12,7 @@ import settings
 
 class PhaseShiftState(BaseState):
     _OVERLAYS: Optional[Dict[str, Tuple[pygame.Surface, Tuple[int, int, int]]]] = None
+    _RING_SURF: Optional[pygame.Surface] = None
 
     def enter(self, phase_color: str = "green", **params: Any) -> None:
         self._init_shared_overlays()
@@ -19,6 +20,7 @@ class PhaseShiftState(BaseState):
         config = self._OVERLAYS.get(phase_color, self._OVERLAYS["green"])
         self.overlay, self.label_color = config
 
+        self.elapsed = 0.0
         self.transition_timer: Optional[After] = Timer.after(0.35, self._finish_phase_shift)
 
     @classmethod
@@ -34,6 +36,8 @@ class PhaseShiftState(BaseState):
                 "red": (red_surf, (255, 190, 190)),
                 "green": (green_surf, (180, 255, 210)),
             }
+        if cls._RING_SURF is None:
+            cls._RING_SURF = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA)
 
     def _finish_phase_shift(self) -> None:
         self.transition_timer = None
@@ -44,15 +48,18 @@ class PhaseShiftState(BaseState):
             self.transition_timer.remove()
             self.transition_timer = None
 
+    def update(self, dt: float) -> None:
+        self.elapsed += dt
+
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(self.overlay, (0, 0))
-        render_text(
-            surface,
-            "CAMBIO DE FASE",
-            settings.FONTS["ui"],
-            settings.VIRTUAL_WIDTH // 2,
-            settings.VIRTUAL_HEIGHT // 2,
-            self.label_color,
-            center=True,
-            shadowed=True,
-        )
+        
+        max_time = 0.35
+        progress = min(1.0, self.elapsed / max_time)
+        radius = int(progress * settings.VIRTUAL_WIDTH * 0.7)
+        alpha = int(255 * (1.0 - progress))
+        
+        if radius > 0 and alpha > 0 and self._RING_SURF is not None:
+            self._RING_SURF.fill((0, 0, 0, 0))
+            pygame.draw.circle(self._RING_SURF, (*self.label_color, alpha), (settings.VIRTUAL_WIDTH // 2, settings.VIRTUAL_HEIGHT // 2), radius, width=4)
+            surface.blit(self._RING_SURF, (0, 0))

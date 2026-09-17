@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 import pygame
 from gale.animation import Animation
 from gale.timer import Timer, After
-from gale.save import SaveManager
 
 import settings
 from src.entities.Player import Player
@@ -83,32 +82,16 @@ class Altar:
         self.is_saving = True
         self.anim_obelisk.reset()
 
-        player.available_skins = ["mage", "morph", "sword"]
-        for stats in player.form_stats.values():
-            stats["health"] = stats["max_health"]
-            stats["mana"] = stats["max_mana"]
-        player.health = player.MAX_HEALTH
+        # Restore all forms through player's dedicated method
+        player.restore_all_forms()
 
+        if hasattr(self.room, "_spawn_popup"):
+            self.room._spawn_popup("¡FORMAS RESTAURADAS!", player.hitbox.centerx, player.hitbox.top - 20, 2.0, (120, 255, 180))
+
+        # Delegate checkpoint saving to PlayState
         play_state = getattr(self.room, "play_state", None)
-        slot = getattr(play_state, "current_slot", "slot_1") if play_state else "slot_1"
-        cleared = list(getattr(play_state, "cleared_events", [])) if play_state else []
-
-        save_data = {
-            "room": self.room.map_name,
-            "spawn_x": self.hitbox.centerx,
-            "spawn_y": self.hitbox.top - 20,
-            "player_health": player.health,
-            "player_max_health": player.MAX_HEALTH,
-            "player_skin": player.skin,
-            "cleared_events": cleared,
-        }
-        metadata = {
-            "room_name": self.room.map_name,
-            "health": player.health,
-            "skin": player.skin,
-        }
-
-        SaveManager().save(slot, save_data, metadata=metadata)
+        if play_state and hasattr(play_state, "save_game_checkpoint"):
+            play_state.save_game_checkpoint(spawn_pos=(self.hitbox.centerx, self.hitbox.top - 20))
 
         if self._save_timer:
             self._save_timer.remove()

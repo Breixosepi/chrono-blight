@@ -4,6 +4,48 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.12.0] - 2026-09-16
+
+### Añadido
+- **Sistema de Progresión y Cinemática de Desbloqueo de Formas (`src/states/entity/player/UnlockState.py`)**:
+  - Estado dedicado para la obtención de nuevas formas (`UnlockState`) con animación cinemática:
+    - Levitación suave del personaje mediante curvas cúbicas de Gale (`gale.ease_functions.ease_out_cubic`).
+    - Destello con halo resplandeciente, onda expansiva circular y emisión de partículas de polvo al alcanzar el clímax.
+    - Caída al suelo y despliegue del banner superior estilizado indicando la forma obtenida.
+  - Bloqueo de entrada/salida de sala durante la animación para garantizar la integridad cinemática.
+- **Desbloqueo de Formas y Eventos en el Mundo**:
+  - **Forma Caballero (`sword`)**: Desbloqueo al vencer la supervivencia en `sala_past`. Incorpora un retardo dramático tras el combate antes de iniciar la cinemática, revelando el ascensor de escape únicamente tras finalizar la transformación.
+  - **Forma Morph (`morph`)**: Desbloqueo en la sala de la esquina (`middle`) tras superar con éxito la prueba de escape ascendente en `subida`.
+- **Bloqueadores Dinámicos de Puertas y Pasajes (`src/world/Room.py`)**:
+  - Sistema de barreras temporales mediante rectángulos en Tiled (`traps` / capas de objetos) con propiedades personalizadas `requires_event` / `event`.
+  - Mosaico procedural automático con textura de bloques de piedra/ladrillo del juego (`destructible_block`), impidiendo el paso con colisiones AABB sólidas en 4 direcciones mientras el evento no esté superado.
+  - Desaparición automática tanto visual como física al registrarse el evento en `cleared_events` (ej. derrota de jefes o superación de salas).
+
+### Cambiado / Refactorizado
+- **Centralización de Persistencia y Encapsulación (SRP)**:
+  - Creación de `PlayState.save_game_checkpoint()` en `src/states/game/PlayState.py`, centralizando el empaquetado del estado de partida y metadatos.
+  - Creación de `Player.restore_all_forms()` en `src/entities/Player.py`, desacoplando a `Altar.py` del acceso directo a diccionarios y propiedades internas del jugador.
+  - Refactorización de `Altar.interact()` para delegar el guardado y restauración a sus respectivos responsables.
+- **Controles Canónicos de Transformación y HUD**:
+  - Establecimiento del orden canónico para el ciclo de formas: `Mago -> Caballero -> Morph`.
+  - Corrección de la orientación de teclas: `[Q]` rota hacia la izquierda (hacia el Mago) y `[E]` rota hacia la derecha (hacia Morph).
+  - HUD adaptativo que lista dinámicamente las formas desbloqueadas en el orden canónico estricto.
+
+### Optimizado (Rendimiento)
+- **Eliminación de Doble Renderizado de Jugador**:
+  - Supresión de la llamada redundante `self.player.render()` en `PlayState.render()`, delegando la renderización completa de entidades del mundo a `Room.render()`.
+- **Prevención de Presión al Garbage Collector (Eliminación de Asignaciones en Bucle)**:
+  - **Transición de Fase (`PhaseShiftState.py`)**: Pre-asignación y reutilización de la superficie de pantalla completa `_RING_SURF`, evitando la creación de superficies de $400 \times 225$ píxeles a 60 FPS.
+  - **Partículas de Compuerta (`RisingHazard.py`)**: Pre-asignación de la superficie de partículas `_gate_p_surf` ($3 \times 3$ px), eliminando miles de asignaciones por segundo en el ciclo de dibujado.
+
+### Corregido
+- **Tope Estricto de Vida Máxima del Mago (`Player.py`)**:
+  - Implementación de clamp estricto en los setters de `health` y `mana` vinculados a `self.MAX_HEALTH` y `self.MAX_MANA`.
+  - Ajuste automático de salud al alternar formas (`change_skin`) para evitar que el Mago conserve la vida residual más alta de otras formas (ej. 80 HP de Caballero).
+  - Corrección del orden de carga en `PlayState.enter()` para inicializar el skin antes de restaurar la vida.
+
+---
+
 ## [0.11.0] - 2026-09-16
 
 ### Añadido
