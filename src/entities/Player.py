@@ -22,6 +22,7 @@ from src.states.entity.player.AttackState import AttackState
 from src.states.entity.player.AttackSpecialState import AttackSpecialState
 from src.states.entity.player.HitState import HitState
 from src.states.entity.player.DeathState import DeathState
+from src.states.entity.player.UnlockState import UnlockState
 
 
 def _build_animations() -> dict[str, dict[str, Animation]]:
@@ -56,7 +57,8 @@ class Player(Entity):
 
         self.skin: str = "mage"
         self.phase_color: str = "red"
-        self.available_skins: list[str] = ["mage", "morph", "sword"]
+        self.available_skins: list[str] = ["mage"]
+        self.unlocked_skins: set[str] = {"mage"}
 
         self.form_stats: dict[str, dict[str, float]] = {}
         for form_key, form_data in entity_defs.ENTITY_DEFS["player"]["forms"].items():
@@ -82,7 +84,6 @@ class Player(Entity):
         self.command_bindings.bind("move_right", press=commands.MOVE_RIGHT, release=commands.STOP_MOVE_RIGHT)
         self.command_bindings.bind("up", press=commands.MOVE_UP, release=commands.STOP_MOVE_UP)
         self.command_bindings.bind("jump", press=commands.JUMP, release=commands.STOP_JUMP)
-        self.command_bindings.bind("run", press=commands.RUN, release=commands.STOP_RUN)
         self.command_bindings.bind("attack", press=commands.ATTACK)
         self.command_bindings.bind("special", press=commands.ATTACK_SPECIAL)
         self.command_bindings.bind("dash", press=commands.DASH)
@@ -114,6 +115,7 @@ class Player(Entity):
             "attack_special": lambda sm: AttackSpecialState(self, sm),
             "hit": lambda sm: HitState(self, sm),
             "death": lambda sm: DeathState(self, sm),
+            "unlock": lambda sm: UnlockState(self, sm),
         })
         self.change_state("idle")
 
@@ -123,7 +125,7 @@ class Player(Entity):
 
     @health.setter
     def health(self, val: float) -> None:
-        self.form_stats[self.skin]["health"] = val
+        self.form_stats[self.skin]["health"] = max(0.0, min(float(val), self.MAX_HEALTH))
 
     @property
     def MAX_HEALTH(self) -> float:
@@ -135,7 +137,7 @@ class Player(Entity):
 
     @mana.setter
     def mana(self, val: float) -> None:
-        self.form_stats[self.skin]["mana"] = val
+        self.form_stats[self.skin]["mana"] = max(0.0, min(float(val), self.MAX_MANA))
 
     @property
     def MAX_MANA(self) -> float:
@@ -143,6 +145,44 @@ class Player(Entity):
 
     def is_dead(self) -> bool:
         return len(self.available_skins) == 0 and self.state_name == "death"
+
+    def sync_progression(self, cleared_events: set[str]) -> None:
+        self.unlocked_skins.add("mage")
+        if "survival_boss_defeated" in cleared_events:
+            self.unlocked_skins.add("sword")
+        if "subida_cleared" in cleared_events:
+            self.unlocked_skins.add("morph")
+            
+        for form in ("mage", "sword", "morph"):
+            if form in self.unlocked_skins and form not in self.available_skins:
+                self.available_skins.append(form)
+            
+        if "boss_cultist_defeated" in cleared_events:
+            self.apply_permanent_stat_boost(30.0, 20.0)
+
+    def restore_all_forms(self) -> None:
+        """Restores all unlocked forms back to available forms and fully replenishes HP and MP."""
+        unlocked = getattr(self, "unlocked_skins", {"mage"})
+        for form in ("mage", "sword", "morph"):
+            if form in unlocked and form not in self.available_skins:
+                self.available_skins.append(form)
+        for stats in self.form_stats.values():
+            stats["health"] = stats["max_health"]
+            stats["mana"] = stats["max_mana"]
+        self.health = self.MAX_HEALTH
+        self.mana = self.MAX_MANA
+
+    def apply_permanent_stat_boost(self, hp_bonus: float, mp_bonus: float) -> None:
+        # Avoid applying multiple times by checking a flag
+        if getattr(self, "_stats_boosted", False):
+            return
+        self._stats_boosted = True
+        
+        for form_key in self.form_stats:
+            self.form_stats[form_key]["max_health"] += hp_bonus
+            self.form_stats[form_key]["health"] += hp_bonus
+            self.form_stats[form_key]["max_mana"] += mp_bonus
+            self.form_stats[form_key]["mana"] += mp_bonus
 
     def on_land(self) -> None:
         super().on_land()
@@ -186,11 +226,24 @@ class Player(Entity):
         self._sync_animation()
         return True
 
-    def change_skin(self, new_skin: str) -> None:
-        self.skin = new_skin
+    def change_skin(self, skin_name: str) -> None:
+        self.skin = skin_name
         self._anim_timer = 0.0
-
         self.area_active = False
+
+        # Clamp stats to new form's maximums
+        self.form_stats[self.skin]["health"] = max(0.0, min(self.form_stats[self.skin]["health"], self.MAX_HEALTH))
+        self.form_stats[self.skin]["mana"] = max(0.0, min(self.form_stats[self.skin]["mana"], self.MAX_MANA))
+
+        if hasattr(self, "tilemap") and hasattr(self.tilemap, "room"):
+            form_colors = {
+                "mage": (185, 115, 245),
+                "morph": (70, 215, 120),
+                "sword": (245, 195, 65)
+            }
+            c = form_colors.get(self.skin, (255, 255, 255))
+            self.tilemap.room.spawn_dust(self.hitbox.centerx, self.hitbox.centery, 12, c)
+            
         self.dash_requested = False
         self.attack_requested = False
         self.special_attack_requested = False
@@ -210,13 +263,19 @@ class Player(Entity):
         if self.skin_cooldown_timer > 0.0:
             return None
 
-        if self.skin in self.available_skins:
-            curr_idx = self.available_skins.index(self.skin)
-            next_idx = (curr_idx + direction) % len(self.available_skins)
+        # Canonical HUD layout from left to right: Mage -> Sword -> Morph
+        HUD_ORDER = ["mage", "sword", "morph"]
+        active_sorted = [s for s in HUD_ORDER if s in self.available_skins]
+        if len(active_sorted) <= 1:
+            return None
+
+        if self.skin in active_sorted:
+            curr_idx = active_sorted.index(self.skin)
+            next_idx = (curr_idx + direction) % len(active_sorted)
         else:
             next_idx = 0
 
-        self.change_skin(self.available_skins[next_idx])
+        self.change_skin(active_sorted[next_idx])
         self.skin_cooldown_timer = self.skin_cooldown_max
         return self.skin
 
@@ -366,7 +425,7 @@ class Player(Entity):
         if self.current_animation is None:
             return
 
-        if self.invulnerable_timer > 0.0:
+        if self.invulnerable_timer > 0.0 and self.state_name != "unlock":
             if int(self.invulnerable_timer * 20) % 2 == 0:
                 return
 
@@ -440,3 +499,6 @@ class Player(Entity):
                         int(f["y"] - camera_y),
                     ))
                     surface.blit(cached_flame, rect)
+
+        if hasattr(self.state_machine.current, "render"):
+            self.state_machine.current.render(surface, camera_x, camera_y)

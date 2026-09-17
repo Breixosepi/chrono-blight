@@ -208,21 +208,34 @@ class HUD:
             pygame.draw.line(hud_surf, (130, 205, 255), (bar_x, mp_bar_y), (bar_x + fill_mp - 1, mp_bar_y))
         pygame.draw.rect(hud_surf, (30, 60, 90), pygame.Rect(bar_x, mp_bar_y, bar_w, bar_h), 1)
 
-        # MAGE, MORPH and SWORD
+        # DYNAMIC FORMS
         row_forms_y = 22
-        forms = [("MAG", "mage", 24), ("MOR", "morph", 45), ("SWD", "sword", 66)]
         skin_cd = getattr(player, "skin_cooldown_timer", 0.0)
-
-        for label, form_key, fx in forms:
+        
+        unlocked = []
+        for label, form_key in [("MAG", "mage"), ("SWD", "sword"), ("MOR", "morph")]:
+            if form_key in player.available_skins:
+                unlocked.append((label, form_key))
+                
+        n = len(unlocked)
+        # Center of the forms area is roughly x=54 (from 24 to 84)
+        if n == 1:
+            positions = [54]
+        elif n == 2:
+            positions = [38, 70]
+        else:
+            positions = [31, 54, 77]
+            
+        for i, (label, form_key) in enumerate(unlocked):
+            fx = positions[i]
             if form_key == player.skin:
                 col = form_colors[form_key]
-            elif form_key in player.available_skins:
-                col = (85, 90, 105) if skin_cd > 0.0 else (120, 125, 140)
             else:
-                col = (170, 45, 45)
+                col = (85, 90, 105) if skin_cd > 0.0 else (120, 125, 140)
 
             f_surf = font.render(label, False, col)
-            hud_surf.blit(f_surf, (fx, row_forms_y))
+            f_rect = f_surf.get_rect(midtop=(fx, row_forms_y))
+            hud_surf.blit(f_surf, f_rect)
 
         # Ghost HUD
         player_screen_x = player.x - cam_x

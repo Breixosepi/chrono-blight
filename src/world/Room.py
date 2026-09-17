@@ -85,6 +85,7 @@ class Room:
         self.respawn_queue: List[Dict[str, Any]] = []
         self.combat_resolver = CombatResolver(self)
         self.rising_hazard = RisingHazard(self) if self.map_name == "subida" else None
+        self.solid_blockers: List[pygame.Rect] = []
 
         self._init_enemies()
         self._init_traps()
@@ -119,6 +120,61 @@ class Room:
 
         if "subida_cleared" in cleared and self.map_name in ("subida", "subida_past", "subida_future"):
             self.rising_hazard = None
+
+        # Dynamic door / passage blockers defined via Tiled objects (e.g. in 'traps' layer)
+        self.solid_blockers = []
+        for layer in self.map_data.get("layers", []):
+            if layer.get("type") == "objectgroup":
+                for obj in layer.get("objects", []):
+                    props = self._parse_props(obj)
+                    obj_name = str(obj.get("name", "")).lower()
+                    obj_type = str(obj.get("type", "")).lower()
+                    req_event = props.get("requires_event", props.get("event"))
+
+                    # If object has an event requirement or is a blocker/door
+                    if req_event or "block" in obj_name or "block" in obj_type or "door" in obj_name or "door" in obj_type:
+                        if not req_event:
+                            continue
+
+                        # Determine tile range: either from explicit properties (col, row, count) or bounding box
+                        if "col" in props or "column" in props:
+                            c = int(props.get("col", props.get("column", 0)))
+                            r = int(props.get("row", 0))
+                            count = int(props.get("count", 1))
+                            axis = str(props.get("axis", "vertical")).lower()
+                            if axis == "vertical":
+                                start_col, end_col = c, c
+                                start_row, end_row = r, r + count - 1
+                            else:
+                                start_col, end_col = c, c + count - 1
+                                start_row, end_row = r, r
+                            ox = float(start_col * self.TILE_SIZE)
+                            oy = float(start_row * self.TILE_SIZE)
+                            ow = float((end_col - start_col + 1) * self.TILE_SIZE)
+                            oh = float((end_row - start_row + 1) * self.TILE_SIZE)
+                        else:
+                            ox = float(obj.get("x", 0.0))
+                            oy = float(obj.get("y", 0.0))
+                            ow = max(1.0, float(obj.get("width", 16.0)))
+                            oh = max(1.0, float(obj.get("height", 16.0)))
+                            start_col = int(ox // self.TILE_SIZE)
+                            end_col = int((ox + ow - 1) // self.TILE_SIZE)
+                            start_row = int(oy // self.TILE_SIZE)
+                            end_row = int((oy + oh - 1) // self.TILE_SIZE)
+
+                        if req_event in cleared:
+                            # Event completed: remove tiles from tilemap layers
+                            for row_idx in range(start_row, end_row + 1):
+                                for col_idx in range(start_col, end_col + 1):
+                                    if 0 <= row_idx < self.MAP_ROWS and 0 <= col_idx < self.MAP_COLS:
+                                        self.tilemap.set_gid("ground", row_idx, col_idx, 0)
+                                        self.tilemap.set_gid("red_ground", row_idx, col_idx, 0)
+                                        self.tilemap.set_gid("green_ground", row_idx, col_idx, 0)
+                        else:
+                            # Event NOT completed: add solid blocker
+                            blocker_rect = pygame.Rect(int(ox), int(oy), int(ow), int(oh))
+                            if not any(s == blocker_rect for s in self.solid_blockers):
+                                self.solid_blockers.append(blocker_rect)
 
     @property
     def camera_offset(self) -> Tuple[float, float]:
@@ -164,7 +220,9 @@ class Room:
         if self.map_name == "sala_future":
             self.player.phase, self.player.phase_color = "future", "red"
 
+        self.player.room = self
         self.player.tilemap = self.tilemap
+        self.tilemap.room = self
         self.player.active_collision_layers = self._get_active_collision_layers()
         
         old_on_land = getattr(self.player, "on_land", lambda: None)
@@ -311,6 +369,14 @@ class Room:
         pygame.draw.ellipse(self._bullet_surf, (255, 250, 180, 255), (3, 1, 8, 6))
         
         self._trail_surf = pygame.Surface((8, 6), pygame.SRCALPHA)
+        
+        tex = settings.TEXTURES.get("destructible_block")
+        frames = settings.FRAMES.get("destructible_block", [])
+        if tex and frames:
+            self._brick_tile = pygame.transform.scale(tex.subsurface(frames[0]), (self.TILE_SIZE, self.TILE_SIZE))
+        else:
+            self._brick_tile = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE))
+            self._brick_tile.fill((120, 110, 100))
 
     def _load_background_image(self, candidate_name: str) -> Optional[pygame.Surface]:
         if not candidate_name: return None
@@ -335,6 +401,31 @@ class Room:
         
         self.player.active_collision_layers = self._get_active_collision_layers()
         self.player.update(dt)
+
+        for b in self.solid_blockers:
+            if self.player.hitbox.colliderect(b):
+                overlap_left = self.player.hitbox.right - b.left
+                overlap_right = b.right - self.player.hitbox.left
+                overlap_top = self.player.hitbox.bottom - b.top
+                overlap_bottom = b.bottom - self.player.hitbox.top
+                min_overlap = min(overlap_left, overlap_right, overlap_top, overlap_bottom)
+                if min_overlap == overlap_left:
+                    self.player.hitbox.right = b.left
+                    self.player.x = float(self.player.hitbox.x)
+                    self.player.vx = 0.0
+                elif min_overlap == overlap_right:
+                    self.player.hitbox.left = b.right
+                    self.player.x = float(self.player.hitbox.x)
+                    self.player.vx = 0.0
+                elif min_overlap == overlap_top:
+                    self.player.hitbox.bottom = b.top
+                    self.player.y = float(self.player.hitbox.y)
+                    self.player.vy = 0.0
+                    self.player.is_grounded = True
+                elif min_overlap == overlap_bottom:
+                    self.player.hitbox.top = b.bottom
+                    self.player.y = float(self.player.hitbox.y)
+                    self.player.vy = 0.0
 
         for trap in self.falling_traps: trap.update(dt)
         for elev in self.elevators: elev.update(dt)
@@ -405,6 +496,9 @@ class Room:
                 self.enemy_projectiles.remove(p)
 
     def _check_environmental_hazards(self, dt: float) -> None:
+        if self.player.state_name == "unlock":
+            return
+
         if self.rising_hazard is None and self.player.hitbox.bottom >= (self.MAP_HEIGHT - 4):
             if self.player.state_name != "death":
                 self.player.take_damage(20)
@@ -528,6 +622,8 @@ class Room:
 
     def check_room_exits(self) -> Optional[Tuple[str, float, float]]:
         if self.arena and self.arena.is_locked(): return None
+        if self.player.state_name == "unlock": return None
+        
         from src.world.room_connections import ROOM_CONNECTIONS
         for exit_def in ROOM_CONNECTIONS.get(self.map_name, []):
             if exit_def["check"](self.player, self):
@@ -544,12 +640,13 @@ class Room:
     def _spawn_popup(self, text: str, x: float, y: float, timer: float, color: tuple) -> None:
         self.damage_popups.append({"text": text, "x": x, "y": y, "timer": timer, "color": color})
 
-    def spawn_dust(self, x: float, y: float, count: int = 4) -> None:
+    def spawn_dust(self, x: float, y: float, count: int = 4, color: Optional[tuple] = None) -> None:
         for _ in range(count):
             self.dust_particles.append({
                 "x": x + random.uniform(-5.0, 5.0), "y": y + random.uniform(-1.0, 1.0),
                 "vx": random.uniform(-30.0, 30.0), "vy": random.uniform(-14.0, -4.0),
                 "life": 0.22, "max_life": 0.22, "radius": random.choice([1, 2]),
+                "color": color
             })
 
     def _reset_player_to_spawn(self) -> None:
@@ -631,6 +728,20 @@ class Room:
         self._render_layer(f"{active_pfx}_decoration", surface)
         self._render_layer(f"{inactive_pfx}_ground", surface, ghost=True)
 
+        # Render visible stone/brick blocks for active solid blockers (temporary door/boss locks)
+        if self.solid_blockers and hasattr(self, "_brick_tile") and self._brick_tile:
+            ground_grid = self.tilemap.get_layer("ground") if "ground" in self.tilemap.layer_names() else None
+            for rect in self.solid_blockers:
+                for bx in range(rect.left, rect.right, self.TILE_SIZE):
+                    for by in range(rect.top, rect.bottom, self.TILE_SIZE):
+                        col = bx // self.TILE_SIZE
+                        row = by // self.TILE_SIZE
+                        has_tile = False
+                        if ground_grid and 0 <= row < self.MAP_ROWS and 0 <= col < self.MAP_COLS:
+                            has_tile = (ground_grid[row][col] != 0)
+                        if not has_tile:
+                            surface.blit(self._brick_tile, (bx - cam_x, by - cam_y))
+
     def _render_vfx_background(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:
         self._particles_surface.fill((0, 0, 0, 0))
         part_col = (120, 255, 190) if phase == "green" else (255, 135, 80)
@@ -640,12 +751,13 @@ class Room:
             if 0 <= px < settings.VIRTUAL_WIDTH and 0 <= py < settings.VIRTUAL_HEIGHT:
                 pygame.draw.circle(self._particles_surface, (*part_col, p["alpha"]), (px, py), p["radius"])
 
-        dust_col = (140, 240, 190) if phase == "green" else (240, 150, 130)
+        dust_default = (140, 240, 190) if phase == "green" else (240, 150, 130)
         for d in self.dust_particles:
             px, py = int(d["x"] - cam_x), int(d["y"] - cam_y)
             alpha = int(220 * max(0.0, min(1.0, d["life"] / d["max_life"])))
             if 0 <= px < settings.VIRTUAL_WIDTH and 0 <= py < settings.VIRTUAL_HEIGHT:
-                pygame.draw.circle(self._particles_surface, (*dust_col, alpha), (px, py), d["radius"])
+                c = d.get("color") or dust_default
+                pygame.draw.circle(self._particles_surface, (*c, alpha), (px, py), d["radius"])
                 
         surface.blit(self._particles_surface, (0, 0))
 
