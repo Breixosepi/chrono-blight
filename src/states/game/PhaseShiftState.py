@@ -15,6 +15,10 @@ class PhaseShiftState(BaseState):
     _RING_SURF: Optional[pygame.Surface] = None
 
     def enter(self, phase_color: str = "green", **params: Any) -> None:
+        if phase_color == "green":
+            settings.SOUNDS["phase_shift_past"].play()
+        else:
+            settings.SOUNDS["phase_shift_future"].play()
         self._init_shared_overlays()
         
         config = self._OVERLAYS.get(phase_color, self._OVERLAYS["green"])

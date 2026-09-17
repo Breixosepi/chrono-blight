@@ -15,6 +15,7 @@ class GameOverState(BaseState):
         self.play_state = play_state
 
     def enter(self, play_state: Any = None, **params: Any) -> None:
+        settings.stop_all_music()
         if play_state is not None:
             self.play_state = play_state
         self.selected_index: int = 0

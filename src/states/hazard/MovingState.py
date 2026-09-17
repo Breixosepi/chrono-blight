@@ -4,11 +4,14 @@ Chrono Blight - MovingState
 from typing import Any
 from gale.timer import Timer
 from src.states.hazard.HazardBaseState import HazardBaseState
+import settings
 
 class MovingState(HazardBaseState):
     state_name: str = "moving"  
 
     def enter(self, *args: Any, **kwargs: Any) -> None:
+        settings.SOUNDS["lava"].play(loops=-1)
+        
         hazard = self.hazard
         if getattr(hazard, "is_pool", False):
             return

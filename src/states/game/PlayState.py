@@ -18,6 +18,7 @@ from src.states.game.GameOverState import GameOverState
 
 class PlayState(BaseState):
     def enter(self, **params: Any) -> None:
+        settings.play_music("ambient")
         start_room_name = params.get("map_name", DEFAULT_START_ROOM)
         spawn_coordinates = params.get("spawn_point", DEFAULT_START_SPAWN)
         spawn_x, spawn_y = spawn_coordinates

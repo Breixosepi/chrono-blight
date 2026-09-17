@@ -35,6 +35,7 @@ class PauseState(BaseState):
         self.play_state = play_state
 
     def enter(self, play_state: Any = None, **params: Any) -> None:
+        settings.pause_music("ambient")
         if play_state is not None:
             self.play_state = play_state
         elif self.play_state is None and hasattr(self.state_machine, "states"):
@@ -69,6 +70,7 @@ class PauseState(BaseState):
         if self.is_closing:
             return
         self.is_closing = True
+        settings.resume_music("ambient")
         cb = on_finish_callback if on_finish_callback else self.state_machine.pop
         Timer.tween(
             0.15,
@@ -102,6 +104,7 @@ class PauseState(BaseState):
                 else:
                     # Quit to title
                     def go_to_title():
+                        settings.stop_all_music()
                         from src.states.game.TitleState import TitleState
                         while len(self.state_machine.states) > 0:
                             self.state_machine.pop()

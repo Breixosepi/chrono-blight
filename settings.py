@@ -142,13 +142,73 @@ def _crisp_render_text(
 
 gale.text.render_text = _crisp_render_text
 
-SOUNDS: dict = {}
-"""
-Claves previstas:
-  "ambient_past"   -- musica de fondo del Pasado
-  "ambient_future" -- musica de fondo del Futuro
-  "phase_shift"    -- SFX del cambio de fase
-  "attack"         -- SFX del ataque de las 3 formas
-  "jump"           -- SFX del salto
-  "hurt"           -- SFX de dano recibido
-"""
+SOUNDS = {
+    "intro": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "intro.wav"),
+    "ambient": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "ambient2.mp3"),
+
+    "jump": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "jump1.wav"),
+    "lava": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "lava.wav"),
+    "close": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "close.wav"),
+    "save": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "save.wav"),
+
+    "change": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "change.wav"),
+    "enter": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "enter.wav"),
+    
+    "sword": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sword.wav"),
+    "heart": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "heart.wav"),
+    "hit-player": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hit_player.wav"),
+    "enemy-death": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "enemy_death.wav"),
+    "fall-lava": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "fall_lava.wav"),
+
+    "boss-wind-spell": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "boss_wind_spell.wav"),
+    "morph-power": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "morph_rocks.wav"),
+    "morph-fire": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "morph_fire.wav"),
+
+    "giant_boss": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "giant_boss.wav"),
+    "boss_survive": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "small_boss.wav"),
+    "final_boss": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "final_boss.wav"),
+
+    "phase_shift_past": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "past.wav"),
+    "phase_shift_future": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "future.wav"),
+}
+
+MUSIC_CHANNELS = {
+    "intro": None,
+    "ambient": None,
+    "boss_survive": None,
+    "giant_boss": None,
+    "final_boss": None,
+}
+
+def play_music(name: str) -> None:
+    stop_music(name)
+    MUSIC_CHANNELS[name] = SOUNDS[name].play(loops=-1)
+
+
+def stop_music(name: str) -> None:
+    channel = MUSIC_CHANNELS.get(name)
+
+    if channel is not None:
+        channel.stop()
+        MUSIC_CHANNELS[name] = None
+
+
+def pause_music(name: str) -> None:
+    channel = MUSIC_CHANNELS.get(name)
+
+    if channel is not None:
+        channel.pause()
+
+
+def resume_music(name: str) -> None:
+    channel = MUSIC_CHANNELS.get(name)
+
+    if channel is not None:
+        channel.unpause()
+
+def stop_all_music() -> None:
+    for name in list(MUSIC_CHANNELS.keys()):
+        stop_music(name)
+    
+    if "lava" in SOUNDS:
+        SOUNDS["lava"].stop()

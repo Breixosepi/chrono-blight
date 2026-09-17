@@ -82,6 +82,7 @@ class HealthOrb:
         if self.hitbox.colliderect(player.hitbox):
             if player.health < player.MAX_HEALTH:
                 player.health = min(player.MAX_HEALTH, player.health + self.heal_amount)
+                settings.SOUNDS["heart"].play()
                 self.room._spawn_popup(
                     f"+{self.heal_amount}",
                     self.hitbox.centerx,

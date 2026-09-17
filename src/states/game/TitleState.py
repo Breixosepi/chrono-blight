@@ -16,6 +16,7 @@ class TitleState(BaseState):
     MENU_GAP: int = 18
 
     def enter(self, **params: Any) -> None:
+        settings.play_music("intro")
         self.options = ["NUEVA PARTIDA", "CARGAR PARTIDA", "SALIR"]
         self.selected_index = 0
 
@@ -25,9 +26,12 @@ class TitleState(BaseState):
 
         if input_id in ("up"):
             self.selected_index = (self.selected_index - 1) % len(self.options)
+            settings.SOUNDS["change"].play()
         elif input_id in ("down"):
             self.selected_index = (self.selected_index + 1) % len(self.options)
+            settings.SOUNDS["change"].play()
         elif input_id in ("enter"):
+            settings.SOUNDS["enter"].play()
             self._confirm_selection()
 
     def _open_slot_select(self, mode: str) -> None:
