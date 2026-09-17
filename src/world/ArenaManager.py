@@ -242,6 +242,8 @@ class ArenaManager:
                 saw.stop()
             if hasattr(self.room, "play_state") and self.room.play_state:
                 self.room.play_state.cleared_events.add("survival_boss_defeated")
+                form_to_unlock = "sword"
+
         else:
             self._show_banner("¡SUMO SACERDOTE DERROTADO!", (100, 255, 140), 3.5)
             for en in list(self.room.enemies):
@@ -250,10 +252,24 @@ class ArenaManager:
                     en.change_state("death")
             if hasattr(self.room, "play_state") and self.room.play_state:
                 self.room.play_state.cleared_events.add("boss_cultist_defeated")
+                form_to_unlock = "stats"
 
+        # Delay unlock cutscene by 1.8s so the player can appreciate the defeat banner and boss death
+        self.state = "clearing"
+        def _trigger_unlock():
+            if hasattr(self.room, "player") and not self.room.player.is_dead():
+                self.state = "unlocking"
+                self.room.player.change_state("unlock", form=form_to_unlock)
+            else:
+                self.on_unlock_finished()
+
+        Timer.after(1.8, _trigger_unlock)
+
+    def on_unlock_finished(self) -> None:
+        self.state = "cleared"
         if hasattr(self.room, "elevators"):
             for elev in self.room.elevators:
-                Timer.after(1.5, elev.activate)
+                elev.activate()
 
     def update(self, dt: float) -> None:
         if self.state == "inactive":

@@ -107,7 +107,7 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "top",
             "check": lambda p, r: _check_exit_top(p, 100.0, 180.0),
             "target_room": "esquina_1",
-            "target_spawn": (200.0, 256.0),
+            "target_spawn": (120.0, 248.0),
         },
     ],
     "esquina_1": [

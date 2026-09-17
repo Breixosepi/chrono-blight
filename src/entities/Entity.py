@@ -48,7 +48,6 @@ class Entity:
         self.jump_requested: bool = False
         self.jump_held: bool = False
         self.is_looking_up: bool = False
-        self.is_running: bool = False
         self.attack_requested: bool = False
         self.special_attack_requested: bool = False
         self.dash_requested: bool = False
@@ -100,7 +99,7 @@ class Entity:
             self.state_machine.change(name, *args, **kwargs)
 
     def is_busy(self) -> bool:
-        return self.state_name in {"attack", "attack_special", "dash", "hit", "death"}
+        return self.state_name in {"attack", "attack_special", "dash", "hit", "death", "unlock"}
 
     def change_animation(self, new_anim_name: str) -> None:
         if new_anim_name == self._last_anim_name and self.current_animation is not None:

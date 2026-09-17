@@ -31,8 +31,8 @@ class Elevator:
         self.state = start_state
         self.timer = 0.0
         
-        self.descend_speed = 60.0
-        self.ascend_speed = 120.0
+        self.descend_speed = 120.0
+        self.ascend_speed = 140.0
         
         self.tex_open = settings.TEXTURES.get("elevator_open")
         self.tex_closed = settings.TEXTURES.get("elevator_closed")
@@ -43,7 +43,7 @@ class Elevator:
             self.image = self.tex_closed
             
         if self.state == "descending":
-            self.y = -self.height
+            self.y = -float(self.height)
             self.hitbox.y = int(self.y)
         elif self.state == "arriving":
             self.y = self.start_y - self.height - 300
@@ -60,13 +60,13 @@ class Elevator:
         player.hitbox.y = int(player.y)
 
     def activate(self) -> None:
-        if self.state == "hidden":
+        if self.state in ("hidden", "hidden_permanently"):
             self.state = "descending"
-            self.y = -self.height
+            self.y = -float(self.height)
             self.hitbox.y = int(self.y)
             self.image = self.tex_closed
             if hasattr(self.room, "camera"):
-                self.room.camera.shake(5.0, 1.5)
+                self.room.camera.shake(4.0, 1.2)
 
     def update(self, dt: float) -> None:
         if self.state in ("hidden", "hidden_permanently"):
@@ -80,7 +80,9 @@ class Elevator:
                 self.state = "open"
                 self.image = self.tex_open
                 if hasattr(self.room, "camera"):
-                    self.room.camera.shake(2.0, 0.2)
+                    self.room.camera.shake(3.0, 0.3)
+                if hasattr(self.room, "spawn_dust"):
+                    self.room.spawn_dust(self.hitbox.centerx, self.start_y, count=16)
                     
         elif self.state == "arriving":
             self.y += self.descend_speed * dt

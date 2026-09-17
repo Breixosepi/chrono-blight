@@ -23,7 +23,7 @@ class EntityBaseState(BaseState):
         e = self.entity
         if e.move_direction != 0:
             e.facing = "left" if e.move_direction < 0 else "right"
-            speed = entity_defs.RUN_SPEED if getattr(e, "is_running", False) else entity_defs.WALK_SPEED
+            speed = entity_defs.WALK_SPEED
             e.vx = speed * e.move_direction
         else:
             e.vx = 0.0

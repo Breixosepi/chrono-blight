@@ -5,7 +5,7 @@ class WalkState(EntityBaseState):
 
     def enter(self) -> None:
         player = self.entity
-        player.change_animation("run" if player.is_running else "walk")
+        player.change_animation("walk")
         self.apply_horizontal_movement()
 
     def update(self, dt: float) -> None:
@@ -20,7 +20,7 @@ class WalkState(EntityBaseState):
             return
 
         self.apply_horizontal_movement()
-        player.change_animation("run" if player.is_running else "walk")
+        player.change_animation("walk")
 
         if not player.on_ground:
             self.change_state("fall")

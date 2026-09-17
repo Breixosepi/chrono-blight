@@ -8,8 +8,7 @@ PLAYER_HIT_W = 16
 PLAYER_HIT_H = 24
 GRAVITY = 700.0
 JUMP_VELOCITY = -280.0
-WALK_SPEED = 80.0
-RUN_SPEED = 150.0
+WALK_SPEED = 115.0
 
 FLAME_FRAMES = 30
 MAGE_AREA_CIRCLES = [
@@ -23,7 +22,6 @@ MAGE_AREA_CIRCLES = [
 _SWORD_ANIMATIONS = {
     "idle":           {"frames": [0, 1, 2, 3, 4, 5, 6], "interval": 1/5.0,  "loops": None},
     "walk":           {"frames": [28, 29, 30, 31, 32, 33, 34, 35], "interval": 1/8.0, "loops": None},
-    "run":            {"frames": [42, 43, 44, 45, 46, 47, 48], "interval": 1/10.0, "loops": None},
     "jump":           {"frames": [15], "interval": 1.0,  "loops": 1},
     "fall":           {"frames": [16], "interval": 1.0,  "loops": 1},
     "attack":         {"frames": [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69], "interval": 1/15.0, "loops": 1},
@@ -159,7 +157,6 @@ ENTITY_DEFS: Dict[str, Any] = {
             "gravity": GRAVITY,
             "jump_velocity": JUMP_VELOCITY,
             "walk_speed": WALK_SPEED,
-            "run_speed": RUN_SPEED,
         },
 
         "mage_area": {
