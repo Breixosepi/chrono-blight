@@ -165,6 +165,11 @@ class Entity:
                 self.x = float(self.hitbox.x)
                 self.vx = 0.0
 
+            if self.hitbox.top < 0:
+                self.hitbox.top = 0
+                self.y = float(self.hitbox.y)
+                self.vy = 0.0
+
             if cx:
                 self.vx = 0.0
 
@@ -205,6 +210,11 @@ class Entity:
                 self.x = float(self.hitbox.x)
                 self.vx = 0.0
 
+            if self.hitbox.top < 0:
+                self.hitbox.top = 0
+                self.y = float(self.hitbox.y)
+                self.vy = 0.0
+
             if self.hitbox.bottom >= int(self.floor_y):
                 self.hitbox.bottom = int(self.floor_y)
                 self.y = float(self.hitbox.y)
@@ -221,6 +231,10 @@ class Entity:
             current_state.on_land()
 
     def update(self, dt: float) -> None:
+        if not getattr(self, "active", True):
+            self._tick_anim(dt)
+            return
+
         if self.invulnerable_timer > 0.0:
             self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
         if self.hit_flash_timer > 0.0:

@@ -27,15 +27,18 @@ class PlayState(BaseState):
         
         self.current_slot: str = params.get("slot", "slot_1")
         self.cleared_events: set[str] = set()
+        self.visited_rooms: set[str] = {"middle"}
 
         if "save_data" in params:
             save_data = params["save_data"]
             self.cleared_events = set(save_data.get("cleared_events", []))
+            self.visited_rooms.update(save_data.get("visited_rooms", []))
             self.player.sync_progression(self.cleared_events)
             
             self.player.skin = save_data.get("player_skin", "mage")
             self.player.health = save_data.get("player_health", self.player.MAX_HEALTH)
             
+        self.visited_rooms.add(self.room.map_name)
         self.room._check_cleared_events()
         self.hud = HUD()
 
@@ -60,6 +63,7 @@ class PlayState(BaseState):
             "player_max_health": self.player.MAX_HEALTH,
             "player_skin": self.player.skin,
             "cleared_events": list(self.cleared_events),
+            "visited_rooms": list(self.visited_rooms),
         }
         metadata = {
             "room_name": self.room.map_name,
@@ -99,6 +103,7 @@ class PlayState(BaseState):
         self.player.change_state("idle")
 
     def _on_room_faded_out(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
+        self.visited_rooms.add(target_room_name)
         self.room = Room(
             map_name=target_room_name,
             spawn_x=target_spawn_x,
@@ -107,7 +112,8 @@ class PlayState(BaseState):
         )
         self.room.play_state = self
         self.room._check_cleared_events()
-        self._halt_player()
+        if getattr(self.player, "active", True):
+            self._halt_player()
 
         if target_room_name == "esquina_1" and "subida_cleared" in self.cleared_events and "morph" not in self.player.available_skins:
             self.waiting_for_unlock = True
@@ -134,9 +140,39 @@ class PlayState(BaseState):
     def _enable_room_exit(self) -> None:
         self.can_exit_room = True
 
+    def respawn_at_checkpoint(self) -> None:
+        from gale.save import SaveManager
+        save_data = SaveManager().load(self.current_slot)
+        if not save_data:
+            target_room = "middle"
+            target_x, target_y = 64.0, 208.0
+        else:
+            target_room = save_data.get("room", "middle")
+            target_x = float(save_data.get("spawn_x", 64.0))
+            target_y = float(save_data.get("spawn_y", 208.0))
+            self.cleared_events = set(save_data.get("cleared_events", []))
+            self.visited_rooms.update(save_data.get("visited_rooms", []))
+
+        self.visited_rooms.add(target_room)
+        self.room = Room(
+            map_name=target_room,
+            spawn_x=target_x,
+            spawn_y=target_y,
+            player=self.player,
+        )
+        self.room.play_state = self
+        self.player.restore_all_forms()
+        self.player.sync_progression(self.cleared_events)
+        self.player.state_machine.change("idle")
+        self.player.vx = 0.0
+        self.player.vy = 0.0
+        self.room._check_cleared_events()
+        self.in_transition = False
+        self.waiting_for_unlock = False
+
     def update(self, dt: float) -> None:
         if self.player.is_dead() and self.player.is_animation_finished():
-            self.state_machine.push(GameOverState(self.state_machine))
+            self.state_machine.push(GameOverState(self.state_machine), play_state=self)
             return
 
         if self.in_transition and not self.waiting_for_unlock:
@@ -156,7 +192,12 @@ class PlayState(BaseState):
             return
 
         if input_id == "pause" and input_data.pressed:
-            self.state_machine.push(PauseState(self.state_machine))
+            self.state_machine.push(PauseState(self.state_machine), play_state=self)
+        elif input_id == "map" and input_data.pressed:
+            from src.states.game.MapState import MapState
+            self.state_machine.push(MapState(self.state_machine), play_state=self)
+        elif not getattr(self.player, "active", True):
+            return
         elif input_id == "phase_shift" and input_data.pressed:
             if self.room.map_name == "sala_future":
                 return

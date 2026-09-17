@@ -76,15 +76,6 @@ class RisingHazard:
         self.wave_timer = 0.0
         self.liquid_particles: List[Dict[str, Any]] = []
 
-        self.gate_particle_system: Optional[ParticleSystem] = None
-        self._gate_p_surf = pygame.Surface((3, 3), pygame.SRCALPHA)
-        self.gate_x = 4.0
-        self.gate_width = 24.0
-        self.gate_open_y = 540.0
-        self.gate_closed_y = 576.0
-        self.gate_current_y = self.gate_open_y
-        self.gate_landed = False
-
         self.alert_timer = 0.0
         self.alert_text = ""
 
@@ -112,21 +103,6 @@ class RisingHazard:
     def state(self, new_state: str) -> None:
         self.state_machine.change(new_state)
 
-    def spawn_gate_impact_particles(self) -> None:
-        impact_x = self.gate_x + self.gate_width / 2
-        impact_y = self.gate_closed_y + 32
-        ps = ParticleSystem(impact_x, impact_y, n=14)
-        ps.set_life_time(0.2, 0.45)
-        ps.set_linear_acceleration(-40.0, -60.0, 40.0, -10.0)
-        ps.set_area_spread(10.0, 2.0)
-        ps.set_colors([
-            pygame.Color(200, 210, 225, 240),
-            pygame.Color(140, 150, 165, 220),
-            pygame.Color(90, 95, 110, 200),
-        ])
-        ps.generate()
-        self.gate_particle_system = ps
-
     def update(self, dt: float, player: "Player") -> None:
         self.wave_timer += dt * 3.5
         if self.alert_timer > 0.0:
@@ -135,11 +111,6 @@ class RisingHazard:
         current_state = self.state_machine.current
         if isinstance(current_state, HazardBaseState):
             current_state.update_with_player(dt, player)
-
-        if self.gate_particle_system is not None:
-            self.gate_particle_system.update(dt)
-            if len(self.gate_particle_system.particles) == 0:
-                self.gate_particle_system = None
 
         self._update_liquid_particles(dt, player.phase_color)
 
@@ -176,17 +147,6 @@ class RisingHazard:
         self.state_machine.change(self.STATE_INACTIVE)
 
     def render_world(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:
-        self._render_gate(surface, cam_x, cam_y)
-        
-        if self.gate_particle_system is not None:
-            for particle in self.gate_particle_system.particles:
-                if self.gate_particle_system.timer < particle.life_time:
-                    screen_px = int(particle.x - cam_x)
-                    screen_py = int(particle.y - cam_y)
-                    if 0 <= screen_px < settings.VIRTUAL_WIDTH and 0 <= screen_py < settings.VIRTUAL_HEIGHT:
-                        self._gate_p_surf.fill(particle.color)
-                        surface.blit(self._gate_p_surf, (screen_px, screen_py))
-
         screen_lava_y = int(self.current_y - cam_y)
         if screen_lava_y < settings.VIRTUAL_HEIGHT:
             self._render_liquid(surface, screen_lava_y, cam_x, cam_y, phase)
@@ -197,29 +157,6 @@ class RisingHazard:
             py = int(p["y"] - cam_y)
             if 0 <= px < settings.VIRTUAL_WIDTH and 0 <= py < settings.VIRTUAL_HEIGHT:
                 pygame.draw.circle(surface, part_color, (px, py), p["radius"])
-
-    def _render_gate(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
-        if getattr(self, "is_pool", False):
-            return
-        gx = int(self.gate_x - cam_x)
-        gy = int(self.gate_current_y - cam_y)
-        gw = int(self.gate_width)
-        gh = 36
-        pygame.draw.rect(surface, (45, 48, 55), (gx, gy, gw, 3))
-        pygame.draw.rect(surface, (70, 75, 85), (gx, gy, gw, 1))
-
-        num_bars = 5
-        bar_spacing = gw // num_bars
-        for i in range(num_bars):
-            bx = gx + i * bar_spacing + 2
-            pygame.draw.rect(surface, (60, 64, 75), (bx, gy, 2, gh))
-            pygame.draw.rect(surface, (110, 115, 130), (bx, gy, 1, gh))
-            pygame.draw.polygon(surface, (130, 135, 150), [
-                (bx - 1, gy + gh),
-                (bx + 1, gy + gh + 4),
-                (bx + 3, gy + gh),
-            ])
-        pygame.draw.rect(surface, (50, 54, 62), (gx, gy + gh // 2, gw, 2))
 
     def _render_liquid(
         self,

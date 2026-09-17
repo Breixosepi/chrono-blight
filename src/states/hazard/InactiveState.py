@@ -5,8 +5,6 @@ class InactiveState(HazardBaseState):
     def enter(self, *args: Any, **kwargs: Any) -> None:
         hazard = self.hazard
         hazard.current_y = getattr(hazard, "inactive_y", float(hazard.room.MAP_HEIGHT))
-        hazard.gate_current_y = hazard.gate_open_y
-        hazard.gate_landed = False
         hazard.alert_text = ""
         hazard.alert_timer = 0.0
         hazard.liquid_particles.clear()

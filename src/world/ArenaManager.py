@@ -31,10 +31,6 @@ class ArenaManager:
         self.banner_color = (255, 230, 80)
         self._banner_timer: Optional[After] = None
         
-        self.barrier_active = False
-        self.barrier_pulse = 0.0
-        self.barrier_rect = pygame.Rect(608, 60, 16, 120) if self.is_survival else pygame.Rect(16, 112, 16, 64)
-        
         self.lava_shower = LavaShower(room)
         self.boss: Optional[Boss] = None
         self.spawn_positions = self._extract_spawn_positions()
@@ -92,7 +88,6 @@ class ArenaManager:
         self._banner_timer = None
 
     def start_arena(self) -> None:
-        self.barrier_active = True
         self.room.camera.shake(4.5, 0.4)
 
         if self.is_survival:
@@ -222,9 +217,14 @@ class ArenaManager:
 
     def on_arena_cleared(self) -> None:
         self.state = "cleared"
-        self.barrier_active = False
         self.room.camera.shake(4.0, 0.4)
-        self.room.spawn_dust(self.barrier_rect.centerx, self.barrier_rect.bottom, count=16)
+        if hasattr(self, "barrier_rect") and getattr(self, "barrier_rect", None):
+            self.room.spawn_dust(self.barrier_rect.centerx, self.barrier_rect.bottom, count=16)
+        elif getattr(self.room, "solid_blockers", None):
+            for b in self.room.solid_blockers:
+                self.room.spawn_dust(b.centerx, b.bottom, count=16)
+        elif self.boss:
+            self.room.spawn_dust(self.boss.hitbox.centerx, self.boss.hitbox.bottom, count=16)
         self.room.respawn_queue.clear()
 
         if self.is_survival:
@@ -270,6 +270,8 @@ class ArenaManager:
         if hasattr(self.room, "elevators"):
             for elev in self.room.elevators:
                 elev.activate()
+        if hasattr(self.room, "_check_cleared_events"):
+            self.room._check_cleared_events()
 
     def update(self, dt: float) -> None:
         if self.state == "inactive":
@@ -278,20 +280,8 @@ class ArenaManager:
             return
 
         if self.state == "active":
-            self.barrier_pulse += dt * 4.0
-
-            player = self.room.player
-            if self.is_survival:
-                if player.hitbox.right > self.barrier_rect.left and player.hitbox.left < self.barrier_rect.right + 20:
-                    player.x = float(self.barrier_rect.left - player.hitbox.width)
-                    player.hitbox.x = int(player.x)
-                    player.vx = min(0.0, player.vx)
-            else:
+            if not self.is_survival:
                 self.lava_shower.update(dt)
-                if player.hitbox.left < 36:
-                    player.x = 36.0
-                    player.hitbox.x = 36
-                    player.vx = max(0.0, player.vx)
 
             self.room.respawn_queue.clear()
 
@@ -336,29 +326,6 @@ class ArenaManager:
     def render(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
         if self.state == "active" and not self.is_survival:
             self.lava_shower.render(surface, cam_x, cam_y)
-
-        if not self.barrier_active:
-            return
-
-        bx = int(self.barrier_rect.x - cam_x)
-        by = int(self.barrier_rect.y - cam_y)
-        bw = self.barrier_rect.width
-        bh = self.barrier_rect.height
-
-        alpha = int(170 + 60 * math.sin(self.barrier_pulse))
-        barrier_surf = pygame.Surface((bw, bh), pygame.SRCALPHA)
-        color_fill = (50, 180, 120, alpha // 2) if self.is_survival else (180, 50, 220, alpha // 2)
-        color_line = (120, 255, 180) if self.is_survival else (240, 120, 255)
-        color_border = (200, 255, 220, alpha) if self.is_survival else (255, 200, 255, alpha)
-
-        pygame.draw.rect(barrier_surf, color_fill, (0, 0, bw, bh))
-
-        for y_offset in range(4, bh, 8):
-            line_alpha = min(255, alpha + 30)
-            pygame.draw.line(barrier_surf, (*color_line, line_alpha), (2, y_offset), (bw - 2, y_offset), 2)
-
-        pygame.draw.rect(barrier_surf, color_border, (0, 0, bw, bh), 2)
-        surface.blit(barrier_surf, (bx, by))
 
     def render_hud(self, surface: pygame.Surface) -> None:
         if self.banner_text:

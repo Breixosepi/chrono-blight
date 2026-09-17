@@ -39,6 +39,7 @@ class UnlockState(EntityBaseState):
             self.flash_color = (255, 255, 255)
             
         self.start_y = float(self.entity.y)
+        self.target_y = self._calculate_safe_levitation_target()
         self.phase = 0
         self.timer = 0.0
         self.flash_timer = 0.0
@@ -47,50 +48,111 @@ class UnlockState(EntityBaseState):
     def _get_room(self) -> Any:
         return getattr(self.entity, "room", None) or getattr(getattr(self.entity, "tilemap", None), "room", None)
 
+    def _calculate_safe_levitation_target(self) -> float:
+        """
+        Calculates a safe levitation Y coordinate so the player never:
+          - Escapes above the ceiling of the room into solid tiles or out-of-bounds.
+          - Flies off the visible top of the screen/camera viewport.
+        """
+        room = self._get_room()
+        tilemap = getattr(self.entity, "tilemap", None)
+        collision_layers = getattr(self.entity, "active_collision_layers", None)
+
+        # 1. Screen / Camera top boundary
+        cam_top = 0.0
+        if room and hasattr(room, "camera"):
+            cam_top = float(getattr(room.camera, "offset", (0.0, 0.0))[1])
+        min_screen_y = cam_top + 28.0
+
+        # 2. Tilemap Ceiling boundary
+        ceiling_bottom = 0.0
+        if tilemap and collision_layers:
+            from gale.tilemap.collision import CollisionType
+            from src.world.tile_collision import collision_type_in_layers
+
+            tile_h = tilemap.tile_height
+            tile_w = tilemap.tile_width
+            start_row = max(0, min(tilemap.rows - 1, int(self.entity.y // tile_h)))
+            col_left = max(0, int(self.entity.hitbox.left // tile_w))
+            col_right = min(tilemap.cols - 1, int((self.entity.hitbox.right - 1) // tile_w))
+
+            for row in range(start_row, -1, -1):
+                is_solid_row = False
+                for col in range(col_left, col_right + 1):
+                    if collision_type_in_layers(tilemap, collision_layers, row, col) == CollisionType.SOLID:
+                        ceiling_bottom = max(ceiling_bottom, float((row + 1) * tile_h))
+                        is_solid_row = True
+                if is_solid_row:
+                    break
+
+        min_ceiling_y = ceiling_bottom + 6.0  # 6px clearance beneath solid ceiling
+        min_safe_y = max(min_ceiling_y, min_screen_y, 24.0)
+
+        # Standard levitation rise is 40px
+        desired_y = self.start_y - 40.0
+        if desired_y < min_safe_y:
+            return max(min_safe_y, min(self.start_y, min_safe_y))
+        return desired_y
+
     def update(self, dt: float) -> None:
         self.timer += dt
         self.entity.invulnerable_timer = max(self.entity.invulnerable_timer, 1.0)
         self.entity.vx = 0.0
         room = self._get_room()
-        
+
         if self.phase == 0:
             progress = min(1.0, self.timer / 1.1)
             ease = ease_out_cubic(progress)
-            self.entity.y = self.start_y - (45.0 * ease)
-            self.entity.hitbox.y = int(self.entity.y)
-            
+            self.entity.y = self.start_y + (self.target_y - self.start_y) * ease
+            self.entity.hitbox.y = int(round(self.entity.y))
+
             if self.timer >= 1.1:
+                self.entity.y = self.target_y
+                self.entity.hitbox.y = int(round(self.entity.y))
                 self.phase = 1
                 self.timer = 0.0
                 self.flash_timer = self.flash_max
                 if room and hasattr(room, "spawn_dust"):
                     room.spawn_dust(self.entity.hitbox.centerx, self.entity.hitbox.centery, 24, self.flash_color)
-                
+
         elif self.phase == 1:
             if self.flash_timer > 0.0:
                 self.flash_timer = max(0.0, self.flash_timer - dt)
-            
+
             if self.timer >= 1.1:
                 self.phase = 2
                 self.timer = 0.0
                 self.entity.change_animation("fall")
-                
+
         elif self.phase == 2:
             self.entity.vy = 180.0
-            self.entity.y += self.entity.vy * dt
-            self.entity.hitbox.y = int(self.entity.y)
-            
             landed = False
-            if hasattr(self.entity, "tilemap") and getattr(self.entity, "active_collision_layers", None):
-                from src.world.tile_collision import check_on_ground
-                if check_on_ground(self.entity.tilemap, self.entity.active_collision_layers, self.entity.x, self.entity.y, float(self.entity.width), float(self.entity.height)):
+
+            tilemap = getattr(self.entity, "tilemap", None)
+            collision_layers = getattr(self.entity, "active_collision_layers", None)
+            if tilemap and collision_layers:
+                from src.world.tile_collision import move_and_collide_layers
+                nx, ny, cx, cy = move_and_collide_layers(
+                    tilemap,
+                    collision_layers,
+                    self.entity.x,
+                    self.entity.y,
+                    float(self.entity.width),
+                    float(self.entity.height),
+                    0.0,
+                    self.entity.vy * dt,
+                )
+                self.entity.x = nx
+                self.entity.y = ny
+                self.entity.hitbox.x = int(round(nx))
+                self.entity.hitbox.y = int(round(ny))
+                if cy:
                     landed = True
-            
-            if not landed and self.entity.y >= self.start_y:
-                self.entity.y = self.start_y
-                self.entity.hitbox.y = int(self.entity.y)
-                landed = True
-            elif not landed and self.entity.hitbox.bottom >= self.entity.floor_y:
+            else:
+                self.entity.y += self.entity.vy * dt
+                self.entity.hitbox.y = int(round(self.entity.y))
+
+            if not landed and self.entity.hitbox.bottom >= int(self.entity.floor_y):
                 self.entity.hitbox.bottom = int(self.entity.floor_y)
                 self.entity.y = float(self.entity.hitbox.y)
                 landed = True

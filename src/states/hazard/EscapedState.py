@@ -14,6 +14,10 @@ class EscapedState(HazardBaseState):
         
         if hasattr(hazard, "room") and hasattr(hazard.room, "camera"):
             hazard.room.camera.shake(2.5, 0.2)
+            
+        if hasattr(hazard, "room") and hasattr(hazard.room, "cleared_events"):
+            hazard.room.cleared_events.add("subida_cleared")
+            hazard.room._check_cleared_events()
 
     def update_with_player(self, dt: float, player: Any) -> None:
         pass

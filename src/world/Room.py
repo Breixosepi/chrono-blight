@@ -52,6 +52,7 @@ class Room:
         player: Optional[Player] = None,
     ) -> None:
         self.map_name = map_name
+        self.play_state: Any = None
         map_file = settings.BASE_DIR / "assets" / "tilemaps" / f"{map_name}.json"
         
         with open(str(map_file), "r", encoding="utf-8") as f:
@@ -61,7 +62,7 @@ class Room:
         self.MAP_COLS, self.MAP_ROWS = self.tilemap.cols, self.tilemap.rows
         self.MAP_WIDTH, self.MAP_HEIGHT = self.tilemap.pixel_width, self.tilemap.pixel_height
 
-        self.spawn_x, self.spawn_y = self._extract_spawn_point(spawn_x, spawn_y)
+        self.spawn_x, self.spawn_y = self._extract_spawn_point(spawn_x, spawn_y, player)
         self._preprocess_tilemap()
 
         self.camera = SmoothCamera(
@@ -92,34 +93,67 @@ class Room:
         self._init_graphics()
 
         self.arena = ArenaManager(self) if self.map_name in ("sala_future", "sala_past") else None
+        self.cleared_events: set = getattr(self.play_state, "cleared_events", set()) if hasattr(self, "play_state") and self.play_state else set()
+        self._check_cleared_events()
 
     def _check_cleared_events(self) -> None:
-        cleared = getattr(self.play_state, "cleared_events", set()) if hasattr(self, "play_state") and self.play_state else set()
+        cleared = getattr(self.play_state, "cleared_events", None)
+        if cleared is None:
+            cleared = getattr(self, "cleared_events", set())
         
         if "boss_cultist_defeated" in cleared and self.map_name == "sala_future":
-            self.arena = None
+            if self.arena and self.arena.state not in ("cleared", "clearing", "unlocking"):
+                self.arena = None
             self.enemies = []
             for elev in self.elevators:
-                elev.state = "open"
-                elev.image = elev.tex_open
-                elev.y = elev.start_y - elev.height
-                elev.hitbox.y = int(elev.y)
+                if elev.state not in ("descending", "ascending", "arriving", "arriving_open"):
+                    elev.state = "open"
+                    elev.image = elev.tex_open
+                    elev.y = elev.start_y - elev.height
+                    elev.hitbox.y = int(elev.y)
 
         if "survival_boss_defeated" in cleared and self.map_name == "sala_past":
-            self.arena = None
+            if self.arena and self.arena.state not in ("cleared", "clearing", "unlocking"):
+                self.arena = None
             self.enemies = []
             self.rising_hazard = None
             self.lava_rising = False
             for saw in self.saw_hazards:
                 saw.stop()
             for elev in self.elevators:
-                elev.state = "open"
-                elev.image = elev.tex_open
-                elev.y = elev.start_y - elev.height
-                elev.hitbox.y = int(elev.y)
+                if elev.state not in ("descending", "ascending", "arriving", "arriving_open"):
+                    elev.state = "open"
+                    elev.image = elev.tex_open
+                    elev.y = elev.start_y - elev.height
+                    elev.hitbox.y = int(elev.y)
 
         if "subida_cleared" in cleared and self.map_name in ("subida", "subida_past", "subida_future"):
             self.rising_hazard = None
+
+        # Elevator to Final Boss in 'middle' (unlocked only when all major challenges are cleared)
+        all_major_events = {"survival_boss_defeated", "boss_cultist_defeated", "subida_cleared"}
+        all_cleared = all_major_events.issubset(cleared)
+        if self.map_name == "middle":
+            for elev in self.elevators:
+                if "middle_elevator_unlocked" in cleared:
+                    if elev.state not in ("ascending", "arriving", "arriving_open"):
+                        elev.state = "open"
+                        elev.image = elev.tex_open
+                        elev.y = elev.start_y - elev.height
+                        elev.hitbox.y = int(elev.y)
+                elif all_cleared:
+                    if elev.state in ("hidden", "hidden_permanently"):
+                        elev.activate()
+                        cleared.add("middle_elevator_unlocked")
+                        if self.play_state:
+                            self.play_state.cleared_events.add("middle_elevator_unlocked")
+                    elif elev.state not in ("descending", "ascending", "arriving", "arriving_open"):
+                        elev.state = "open"
+                        elev.image = elev.tex_open
+                        elev.y = elev.start_y - elev.height
+                        elev.hitbox.y = int(elev.y)
+                else:
+                    elev.state = "hidden"
 
         # Dynamic door / passage blockers defined via Tiled objects (e.g. in 'traps' layer)
         self.solid_blockers = []
@@ -162,7 +196,11 @@ class Room:
                             start_row = int(oy // self.TILE_SIZE)
                             end_row = int((oy + oh - 1) // self.TILE_SIZE)
 
-                        if req_event in cleared:
+                        is_event_cleared = (
+                            req_event in cleared
+                            or (req_event in ("all_events", "all_bosses_defeated", "all_cleared") and all_cleared)
+                        )
+                        if is_event_cleared:
                             # Event completed: remove tiles from tilemap layers
                             for row_idx in range(start_row, end_row + 1):
                                 for col_idx in range(start_col, end_col + 1):
@@ -216,6 +254,9 @@ class Room:
             self.player.vx = self.player.vy = 0.0
             self.player.floor_y = float(self.MAP_HEIGHT)
             self.player.map_w = float(self.MAP_WIDTH)
+            if not getattr(self.player, "arriving_via_elevator", False):
+                self.player.hidden = False
+                self.player.active = True
 
         if self.map_name == "sala_future":
             self.player.phase, self.player.phase_color = "future", "red"
@@ -233,7 +274,24 @@ class Room:
         self.player.on_land = _on_player_land
         self.player.on_jump_effect = lambda: self.spawn_dust(self.player.hitbox.centerx, self.player.hitbox.bottom, 4)
 
-    def _extract_spawn_point(self, override_x: Optional[float], override_y: Optional[float]) -> Tuple[float, float]:
+    def _extract_spawn_point(
+        self,
+        override_x: Optional[float],
+        override_y: Optional[float],
+        player: Optional[Player] = None,
+    ) -> Tuple[float, float]:
+        if player is not None and getattr(player, "arriving_via_elevator", False):
+            for obj in self._get_tiled_objects(set()):
+                combined = f"{obj.get('name', '')} {obj.get('type', '')}".lower()
+                if "elevator" in combined or "ascensor" in combined:
+                    props = self._parse_props(obj)
+                    if str(props.get("start_state", "")) == "arriving":
+                        return float(obj.get("x", 0)), float(obj.get("y", 0))
+            for obj in self._get_tiled_objects(set()):
+                combined = f"{obj.get('name', '')} {obj.get('type', '')}".lower()
+                if "elevator" in combined or "ascensor" in combined:
+                    return float(obj.get("x", 0)), float(obj.get("y", 0))
+
         if override_x is not None and override_y is not None:
             return float(override_x), float(override_y)
 
@@ -296,7 +354,7 @@ class Room:
                     speed=float(props.get("speed", 50.0)), damage=int(props.get("damage", 15)),
                     initial_direction=init_dir
                 ))
-            elif "elevator" in combined_id:
+            elif "elevator" in combined_id or "ascensor" in combined_id:
                 start_state = str(props.get("start_state", "hidden"))
                 if start_state == "arriving":
                     if getattr(self.player, "arriving_via_elevator", False):
@@ -305,7 +363,10 @@ class Room:
                         self.player.state_machine.change("idle")
                     else:
                         start_state = "hidden_permanently"
-                self.elevators.append(Elevator(self, x, y, dest_map=str(props.get("dest_map", "")), start_state=start_state))
+                elev_obj = Elevator(self, x, y, dest_map=str(props.get("dest_map", "")), start_state=start_state)
+                self.elevators.append(elev_obj)
+                if start_state == "arriving":
+                    self.camera.snap_to(elev_obj.hitbox.centerx, elev_obj.start_y - elev_obj.height // 2)
             elif "green" in combined_id or "red" in combined_id:
                 phase = "green" if "green" in combined_id else "red"
                 self.falling_traps.append(FallingTrap(self, x, y, phase))
@@ -513,11 +574,6 @@ class Room:
                     if self.rising_hazard.current_y <= self.lava_target_y:
                         self.rising_hazard.current_y = self.lava_target_y
                         self.lava_rising = False
-
-            if self.map_name != "sala_past" and self.rising_hazard.gate_current_y >= 570.0 and self.player.hitbox.left < 28 and self.player.hitbox.bottom >= 540:
-                self.player.x, self.player.hitbox.left = 28.0, 28
-                self.player.vx = max(0.0, self.player.vx)
-                
             self.rising_hazard.update(dt, self.player)
             
             if self.rising_hazard.check_player_hit(self.player) and self.player.state_name != "death" and self.player.invulnerable_timer <= 0:
@@ -623,6 +679,8 @@ class Room:
     def check_room_exits(self) -> Optional[Tuple[str, float, float]]:
         if self.arena and self.arena.is_locked(): return None
         if self.player.state_name == "unlock": return None
+        if not getattr(self.player, "active", True): return None
+        if getattr(self.player, "hidden", False): return None
         
         from src.world.room_connections import ROOM_CONNECTIONS
         for exit_def in ROOM_CONNECTIONS.get(self.map_name, []):

@@ -393,6 +393,8 @@ class Player(Entity):
             self.change_state("hit")
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
+        if not getattr(self, "active", True):
+            return
         self.command_bindings.dispatch(self, input_id, input_data)
 
     def update(self, dt: float) -> None:

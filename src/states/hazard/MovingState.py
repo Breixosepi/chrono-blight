@@ -18,8 +18,6 @@ class MovingState(HazardBaseState):
         if hasattr(hazard, "room") and hasattr(hazard.room, "camera"):
             hazard.room.camera.shake(3.0, 0.2)
             
-        hazard.gate_current_y = hazard.gate_closed_y
-        
         target_color = getattr(hazard, "target_color", None)
         if target_color:
             Timer.tween(2.0, [(hazard, {"color_r": target_color[0], "color_g": target_color[1], "color_b": target_color[2]})])

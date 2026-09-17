@@ -64,13 +64,13 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "right_top",
             "check": lambda p, r: _check_exit_right(p, r, y_max=260.0),
             "target_room": "esquina_1",
-            "target_spawn": (32.0, 224.0),
+            "target_spawn": (48.0, 224.0),
         },
         {
             "direction": "right_bottom",
             "check": lambda p, r: _check_exit_right(p, r, y_min=260.0),
             "target_room": "subida",
-            "target_spawn": (32.0, 576.0),
+            "target_spawn": (64.0, 576.0),
         },
         {
             "direction": "left_top",
@@ -84,12 +84,6 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "target_room": "abismo_fixed",
             "target_spawn": (760.0, 104.0),
         },
-        {
-            "direction": "top",
-            "check": lambda p, r: _check_exit_top(p, 200.0, 280.0, margin_top=8.0),
-            "target_room": "big_room",
-            "target_spawn": (800.0, 220.0),
-        },
     ],
     "subida": [
         {
@@ -98,7 +92,6 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
                 p.hitbox.left <= MARGIN
                 and p.vx <= 0
                 and p.hitbox.bottom >= 550
-                and (r.rising_hazard is None or r.rising_hazard.gate_current_y < 560.0)
             ),
             "target_room": "middle",
             "target_spawn": (440.0, 368.0),
@@ -129,7 +122,7 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "left",
             "check": lambda p, r: _check_exit_left(p),
             "target_room": "sala_past",
-            "target_spawn": (600.0, 136.0),
+            "target_spawn": (576.0, 152.0),
         },
         {
             "direction": "right",
@@ -143,7 +136,7 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "right",
             "check": lambda p, r: _check_exit_right(p, r),
             "target_room": "abismo_fixed",
-            "target_spawn": (32.0, 104.0),
+            "target_spawn": (48.0, 104.0),
         },
     ],
     "sala_future": [
@@ -159,13 +152,13 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "right_bottom",
             "check": lambda p, r: _check_exit_right(p, r, y_min=150.0),
             "target_room": "middle",
-            "target_spawn": (40.0, 200.0),
+            "target_spawn": (60.0, 200.0),
         },
         {
             "direction": "right_top",
             "check": lambda p, r: _check_exit_right(p, r, y_max=150.0),
             "target_room": "sala_future",
-            "target_spawn": (40.0, 152.0),
+            "target_spawn": (64.0, 120.0),
         },
     ],
     "big_room": [

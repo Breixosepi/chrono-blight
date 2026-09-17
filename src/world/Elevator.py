@@ -31,7 +31,7 @@ class Elevator:
         self.state = start_state
         self.timer = 0.0
         
-        self.descend_speed = 120.0
+        self.descend_speed = 90.0
         self.ascend_speed = 140.0
         
         self.tex_open = settings.TEXTURES.get("elevator_open")
@@ -46,7 +46,11 @@ class Elevator:
             self.y = -float(self.height)
             self.hitbox.y = int(self.y)
         elif self.state == "arriving":
-            self.y = self.start_y - self.height - 300
+            cam_y = 0.0
+            if hasattr(self.room, "camera"):
+                cam_y = float(getattr(self.room.camera, "offset", (0.0, 0.0))[1])
+            target_y = self.start_y - self.height
+            self.y = min(target_y - 60.0, cam_y - float(self.height) - 10.0)
             self.hitbox.y = int(self.y)
             if hasattr(self.room, "player"):
                 self._center_player(self.room.player)
@@ -62,7 +66,10 @@ class Elevator:
     def activate(self) -> None:
         if self.state in ("hidden", "hidden_permanently"):
             self.state = "descending"
-            self.y = -float(self.height)
+            cam_y = 0.0
+            if hasattr(self.room, "camera"):
+                cam_y = float(getattr(self.room.camera, "offset", (0.0, 0.0))[1])
+            self.y = max(-float(self.height), cam_y - float(self.height) - 10.0)
             self.hitbox.y = int(self.y)
             self.image = self.tex_closed
             if hasattr(self.room, "camera"):
@@ -90,25 +97,36 @@ class Elevator:
             player = self.room.player
             
             self._center_player(player)
-            player.vy = 0
+            player.vy = 0.0
+            player.vx = 0.0
             player.hidden = True
+            player.active = False
             
             if self.y >= target_y:
                 self.y = target_y
                 self.state = "arriving_open"
                 self.image = self.tex_open
                 if hasattr(self.room, "camera"):
-                    self.room.camera.shake(2.0, 0.2)
-                self.timer = 1.0
+                    self.room.camera.shake(3.0, 0.25)
+                if hasattr(self.room, "spawn_dust"):
+                    self.room.spawn_dust(self.hitbox.centerx, self.start_y, count=16)
+                self.timer = 0.8
                 player.hidden = False
+                player.active = False
+                self._center_player(player)
                 
         elif self.state == "arriving_open":
             self.timer -= dt
+            player = self.room.player
+            self._center_player(player)
+            player.hidden = False
+            player.active = False
             if self.timer <= 0:
                 self.state = "departing"
                 self.image = self.tex_closed
-                self.room.player.state_machine.change("idle")
-                self.room.player.active = True
+                player.state_machine.change("idle")
+                player.active = True
+                player.hidden = False
                 
         elif self.state == "departing":
             self.y -= self.ascend_speed * dt
@@ -135,11 +153,14 @@ class Elevator:
             self.y -= self.ascend_speed * dt
             player = self.room.player
             self._center_player(player)
+            player.active = False
+            player.hidden = True
             
             if hasattr(self.room, "camera") and self.y + self.height < self.room.camera.offset[1]:
                 if not self.room.play_state.in_transition:
                     player.arriving_via_elevator = True
-                    player.hidden = False
+                    player.hidden = True
+                    player.active = False
                     self.room.play_state.change_room(self.dest_map, self.x, self.start_y)
                     
         self.hitbox.x = int(self.x)

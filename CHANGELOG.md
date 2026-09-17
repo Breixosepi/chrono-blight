@@ -4,6 +4,74 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.15.0] - 2026-09-17
+
+### Añadido
+- **Sistema de UI de Papel Moderno y Animado (Humble Gift - Paper UI System v1.1)**:
+  - **Animación de Despliegue y Plegado Táctil (`PauseState` y `MapState`)**:
+    - Efecto de desenrollado y apertura vertical con rebote suave mediante interpolación `out_back` en apertura (0.24s) y anticipación `in_back` en cierre (0.16s).
+    - Proyección dinámica de sombra de papel (*paper drop shadow*) que escala y modula su opacidad según el progreso de la animación.
+    - Ocultamiento y revelado nítido del contenido interior cuando el pergamino alcanza un umbral de apertura adecuado ($progress \ge 0.6$).
+  - **Niebla Animada Viva en el Mapa (`MapState`)**:
+    - Las salas no exploradas cuentan con una niebla difusa en movimiento continuo mediante ondas senoidales (`math.sin` / `math.cos`) y líneas de trama flotantes que simulan vapor o bruma viva en tiempo real.
+    - Signo de interrogación (`?`) con suave levitación flotante en cada sala misteriosa.
+  - **Faro con Ondas de Radar en el Jugador (`MapState`)**:
+    - Marcador de posición del jugador enriquecido con anillos de radar concéntricos expansivos que se difuminan progresivamente al alejarse del centro.
+  - **Cursor Suave Deslizante (`lerp`)**:
+    - Marco de selección que se desliza fluidamente entre habitaciones en el Mapa del Mundo con velocidad proporcional `dt * 20.0`.
+    - Cursor indicador interactivo con transición suave en el Menú de Pausa.
+  - **Menú de Pausa Rediseñado con Botones Interactivos y Subpantalla**:
+    - Opciones interactivas enmarcadas: `REANUDAR`, `MAPA DEL MUNDO`, `CONTROLES Y FORMAS` y `MENU PRINCIPAL`.
+    - Subpantalla detallada `CONTROLES Y FORMAS` con guía de botones para todas las transformaciones (Mago, Caballero, Morph Ball) y mecánicas de cambio de fase temporal.
+    - Acceso directo al Mapa del Mundo desde el menú de pausa sin necesidad de reanudar el juego.
+
+---
+
+## [0.14.0] - 2026-09-16
+
+### Añadido
+- **Pantalla de Mapa del Mundo Completo (`src/states/game/MapState.py`)**:
+  - Acceso instantáneo en cualquier momento mediante la tecla `[M]` (o salida con `[M]` / `[ESC]`).
+  - **Estética de Pergamino Humble Gift**: Inspirado en `ps3Urw.gif` y `Frc_nf.gif`, con marco cálido de pergamino (`#eebd8a`), doble borde de tinta oscura (`#2c1e28`) y filigranas de diamantes en las esquinas.
+  - **Niebla para Salas Inexploradas**: Las habitaciones no visitadas se proyectan como siluetas oscuras atenuadas con trama de niebla y un `?` central, manteniendo ocultos sus secretos y POIs.
+  - **Salas Visitadas y Puntos de Interés (POIs)**: Las salas descubiertas se renderizan con contorno nítido y sus mini-iconos distintivos:
+    - `middle`: Altar ancestral de guardado.
+    - `abismo_fixed`: Bloque desmoronable de piedra.
+    - `sala_past`: Cara del Gran Monstruo (y cruz `X` de victoria tras superarlo).
+    - `sala_future`: Cara del Sumo Sacerdote Cultista (y cruz `X` de victoria tras derrotarlo).
+    - `esquina_1` y `left_corner`: Monolitos/obeliscos con runa cian brillante.
+    - `subida`: Gota / llama de lava fundida.
+    - `big_room`: Calavera del clímax final.
+  - **Faro de Posición del Jugador**: Marcador pulsante en tiempo real indicando en qué sala te encuentras.
+  - **Tarjeta de Información Inferior (`INFO`)**: Caja de detalle que expone el icono enmarcado, título y descripción/estado de la sala seleccionada.
+  - **Exploración Interactiva con Flechas**: Navegación con `[↑/↓/←/→]` para inspeccionar los detalles de cualquier sala conectada en el mapa.
+- **Menú de Muerte y Game Over Interactivo (`src/states/game/GameOverState.py`)**:
+  - Reemplazo del retorno automático al título por un menú de 2 opciones:
+    1. *Continuar desde el último altar*: Restaura al jugador al 100% de vida y resucita todas las formas disponibles en el altar guardado, preservando en memoria el mapa de salas descubiertas.
+    2. *Volver al menú principal*: Retorna limpiamente a la pantalla de título.
+- **Persistencia de Exploración (`visited_rooms`)**:
+  - Registro de salas exploradas en `PlayState` sincronizado con el sistema de guardado `SaveManager`.
+
+---
+
+## [0.13.0] - 2026-09-16
+
+### Añadido
+- **Bloqueadores de Puertas en Mapas Tiled (`assets/tilemaps/`)**:
+  - `subida.json`: Bloqueador de entrada inferior ($X=0, Y=560$, $32 \times 48$ px) con `requires_event="subida_cleared"`.
+  - `sala_past.json`: Bloqueador de arena de supervivencia ($X=608, Y=112$, $32 \times 64$ px) con `requires_event="survival_boss_defeated"`.
+  - `sala_future.json`: Bloqueador de sala del jefe cultista ($X=0, Y=112$, $32 \times 64$ px) con `requires_event="boss_cultist_defeated"`.
+
+### Cambiado / Refactorizado
+- **Eliminación de Muros Invisibles y Barreras Procedurales Hardcodeadas**:
+  - `ArenaManager.py`: Eliminación total del renderizado procedural de campos láser, lógica de pulsos, variables `barrier_active`, `barrier_rect` y empuje forzado del jugador.
+  - `RisingHazard.py`: Eliminación de los barrotes de hierro procedurales descendentes, superficie y lógica de colisión vertical de compuerta.
+  - `TriggeredState.py` y `InactiveState.py` / `MovingState.py`: Limpieza de referencias a `gate_current_y`, `gate_landed` y `drop_tween`.
+  - `room_connections.py`: Desvinculación de la salida de `subida` de coordenadas internas de la compuerta eliminada.
+  - `Room.py`: Inicialización de `solid_blockers` durante `__init__` e invocación reactiva en `ArenaManager.on_unlock_finished()` y `EscapedState.enter()` para apertura inmediata de puertas al superar los desafíos.
+
+---
+
 ## [0.12.0] - 2026-09-16
 
 ### Añadido

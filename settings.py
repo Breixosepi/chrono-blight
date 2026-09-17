@@ -22,6 +22,7 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_q,"prev_form")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_e,"next_form")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LCTRL,"run")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p,"pause")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_m,"map")
 
 TITLE = "Chrono Blight"
 
@@ -75,6 +76,7 @@ TEXTURES = {
     "animated_items":     pygame.image.load(BASE_DIR / "assets" / "graphics" / "items" / "animated_items.png"),
     "keyboard_ui":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "keyboard.png"),
     "save_icon":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "save_icon.png"),
+    "humble_ui":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "Humble Gift - v1.3" / "PNG" / "SpriteSheet.png"),
 }
 
 SAVE_SLOTS = ["slot_1", "slot_2", "slot_3"]
