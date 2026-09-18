@@ -140,7 +140,8 @@ class ArenaManager:
                 self.boss.change_state("idle")
             self._show_banner("ﾂ｡THE HARVESTER! - FASE 1: DESINCRONIZACIﾃ哲", (255, 100, 100), 3.5)
         else:
-            settings.play_music("giant_boss")
+            boss_track = "final_boss" if self.room.map_name == "big_room" else "giant_boss"
+            settings.play_music(boss_track)
             self.state = "active"
             self.boss_phase = 1
             self.lava_shower.reset()
@@ -263,8 +264,10 @@ class ArenaManager:
     def on_arena_cleared(self) -> None:
         settings.stop_music("boss_survive")
         settings.stop_music("giant_boss")
+        settings.stop_music("final_boss")
         if "lava" in settings.SOUNDS:
             settings.SOUNDS["lava"].stop()
+        settings.SOUNDS["arena-cleared"].play()
         settings.play_music("ambient")
         
         self.state = "cleared"

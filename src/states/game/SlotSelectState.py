@@ -16,6 +16,7 @@ from src.world.room_connections import DEFAULT_START_ROOM, DEFAULT_START_SPAWN
 class SlotSelectState(BaseState):
     def enter(self, **params: Any) -> None:
         self.mode = params.get("mode", "new")
+        self.from_game_over = params.get("from_game_over", False)
         self.selected_index = 0
         self.slots = settings.SAVE_SLOTS
         self.manager = SaveManager()
@@ -67,11 +68,12 @@ class SlotSelectState(BaseState):
         elif input_id == "special":
             self._delete_selected_slot()
         elif input_id in ("back", "pause"):
-            from src.states.game.TitleState import TitleState
-            self.state_machine.pop()
-            title_state = TitleState(self.state_machine)
-            self.state_machine.push(title_state)
-            title_state.enter()
+            if self.from_game_over:
+                self.state_machine.pop()
+            else:
+                from src.states.game.TitleState import TitleState
+                self.state_machine.pop()
+                self.state_machine.push(TitleState(self.state_machine))
 
     def _handle_slot_selection(self) -> None:
         slot = self.slots[self.selected_index]
@@ -89,16 +91,16 @@ class SlotSelectState(BaseState):
     def _start_new_game_on_slot(self, slot: str) -> None:
         from src.states.game.PlayState import PlayState
 
-        self.state_machine.pop()
+        while len(self.state_machine.states) > 0:
+            self.state_machine.pop()
         play_state = PlayState(self.state_machine)
-        self.state_machine.push(play_state)
 
         params = {
             "slot": slot,
             "map_name": DEFAULT_START_ROOM,
             "spawn_point": DEFAULT_START_SPAWN,
         }
-        play_state.enter(**params)
+        self.state_machine.push(play_state, **params)
 
         settings.stop_music("intro")
 
@@ -110,9 +112,9 @@ class SlotSelectState(BaseState):
 
         from src.states.game.PlayState import PlayState
 
-        self.state_machine.pop()
+        while len(self.state_machine.states) > 0:
+            self.state_machine.pop()
         play_state = PlayState(self.state_machine)
-        self.state_machine.push(play_state)
 
         params = {
             "slot": slot,
@@ -123,7 +125,7 @@ class SlotSelectState(BaseState):
             ),
             "save_data": save_data,
         }
-        play_state.enter(**params)
+        self.state_machine.push(play_state, **params)
 
     def _delete_selected_slot(self) -> None:
         slot = self.slots[self.selected_index]

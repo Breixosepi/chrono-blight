@@ -3,10 +3,12 @@ Chrono Blight - EnemyHitState
 """
 from gale.timer import Timer
 from src.states.entity.enemy.EnemyBaseState import EnemyBaseState
+import settings
 
 
 class EnemyHitState(EnemyBaseState):
     def enter(self, *args, **kwargs) -> None:
+        settings.SOUNDS["enemy-hurt"].play()
         enemy = self.entity
         enemy.change_animation("hit")
 

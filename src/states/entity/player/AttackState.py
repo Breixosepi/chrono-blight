@@ -2,7 +2,7 @@
 Chrono Blight - AttackState
 """
 from src.states.entity.EntityBaseState import EntityBaseState
-
+import settings
 
 class AttackState(EntityBaseState):
     def enter(self) -> None:
@@ -30,6 +30,13 @@ class AttackState(EntityBaseState):
         player.attack_requested = False
         player.swing_id = getattr(player, "swing_id", 0) + 1
 
+        if player.skin == "sword":
+            settings.SOUNDS["sword"].play()
+        elif player.skin == "mage":
+            settings.SOUNDS["mage-attack"].play()
+        elif player.skin == "morph":
+            settings.SOUNDS["morph-fire"].play()
+
     def update(self, dt: float) -> None:
         player = self.entity
         
@@ -51,6 +58,8 @@ class AttackState(EntityBaseState):
                 if self.combo_buffered:
                     self.in_combo_followup = True
                     player.swing_id = getattr(player, "swing_id", 0) + 1
+                    if player.skin == "sword":
+                        settings.SOUNDS["sword"].play()
                 else:
                     is_attack_finished = True
 

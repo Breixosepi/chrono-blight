@@ -334,10 +334,8 @@ class Player(Entity):
                 return False  # Handled via flame pillars
         elif self.skin == "morph":
             if self.state_name == "attack":
-                settings.SOUNDS["morph-fire"].play()
                 return (2 <= idx <= 4)
             elif self.state_name == "attack_special":
-                settings.SOUNDS["morph-power"].play()
                 return (2 <= idx <= 4)
 
         return (2 <= idx <= 4)

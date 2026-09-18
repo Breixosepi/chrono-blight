@@ -72,6 +72,7 @@ class FallingTrap:
 
     def break_trap(self) -> None:
         self.state = "broken"
+        settings.SOUNDS["rock-smash"].play()
         self.room.spawn_dust(self.hitbox.centerx, self.hitbox.bottom, count=5)
         self.break_animation.reset()
 
@@ -101,6 +102,7 @@ class FallingTrap:
             dist_x = abs(self.hitbox.centerx - self.room.player.hitbox.centerx)
             if dist_x < 48 and self.room.player.hitbox.centery > self.hitbox.centery:
                 self.state = "shaking"
+                settings.SOUNDS["rock-crack"].play()
                 Timer.after(0.45, self._start_falling)
                 
         elif self.state == "shaking":

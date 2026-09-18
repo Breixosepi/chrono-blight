@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, List, Dict, Any, Optional
 import pygame
 from gale.timer import Timer, After
 
+import settings
+
 if TYPE_CHECKING:
     from src.world.Room import Room
 
@@ -29,6 +31,8 @@ class LavaShower:
         self._start_cooldown(3.5)
 
     def reset(self) -> None:
+        if "lava-shower" in settings.SOUNDS:
+            settings.SOUNDS["lava-shower"].stop()
         self.current_lava_y = 0.0
         self.liquid_particles.clear()
         self._cancel_timers()
@@ -61,6 +65,7 @@ class LavaShower:
     def _start_active(self) -> None:
         self.state = "active"
         self.current_lava_y = 0.0
+        settings.SOUNDS["lava-shower"].play()
         self.room.camera.shake(2.5, 0.2)
         
         self.phase_timer = Timer.after(self.active_duration, self._start_cooldown)

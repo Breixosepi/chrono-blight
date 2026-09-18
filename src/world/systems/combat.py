@@ -1,5 +1,6 @@
 import pygame
 from typing import Any
+import settings
 
 class CombatResolver:
     def __init__(self, room: Any):
@@ -26,6 +27,7 @@ class CombatResolver:
         self._hit_this_swing.add(hit_id)
 
         if getattr(enemy, "shield_active", False) or getattr(enemy, "invulnerable", False):
+            settings.SOUNDS["shield-active"].play()
             self.room.camera.shake(1.8, 0.1)
             self.room._spawn_popup("ESCUDO", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.45, (220, 110, 255))
             return
@@ -36,6 +38,7 @@ class CombatResolver:
         damage = int(action_def.get("combo", {}).get("hit2_damage", action_def.get("damage", 10))) if is_combo_2 else int(action_def.get("damage", 10))
         shake = 3.0 if is_combo_2 else 1.5
 
+        settings.SOUNDS["slash-hit"].play()
         enemy.take_damage(float(damage))
         self.room.camera.shake(shake, 0.15)
         self.room._spawn_popup(f"-{damage}", enemy.hitbox.centerx, enemy.hitbox.top - 6, 0.5, (255, 230, 80))
@@ -51,6 +54,7 @@ class CombatResolver:
             if flame_hitbox.colliderect(enemy.hitbox) and hit_id not in self._flame_hits:
                 self._flame_hits.add(hit_id)
                 if getattr(enemy, "shield_active", False) or getattr(enemy, "invulnerable", False):
+                    settings.SOUNDS["shield-active"].play()
                     self.room._spawn_popup("ESCUDO", enemy.hitbox.centerx, enemy.hitbox.top - 8, 0.45, (220, 110, 255))
                 else:
                     damage = int(self.room.player.get_action("special").get("damage", 25))

@@ -7,7 +7,13 @@ import settings
 
 class DeathState(EntityBaseState):
     def enter(self) -> None:
-        settings.SOUNDS["enemy-death"].play()
+        settings.SOUNDS["player-death"].play()
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
+        if "lava-shower" in settings.SOUNDS:
+            settings.SOUNDS["lava-shower"].stop()
+        if "saw-hazard" in settings.SOUNDS:
+            settings.SOUNDS["saw-hazard"].stop()
         player = self.entity
         player.change_animation("death")
         player.vx = 0.0

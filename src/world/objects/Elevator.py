@@ -124,6 +124,7 @@ class Elevator:
             if self.timer <= 0:
                 self.state = "departing"
                 self.image = self.tex_closed
+                settings.SOUNDS["open"].play()
                 player.state_machine.change("idle")
                 player.active = True
                 player.hidden = False
@@ -142,6 +143,7 @@ class Elevator:
             if dist_x < 30 and dist_y < 40 and keys[pygame.K_UP]:
                 self.state = "ascending"
                 self.image = self.tex_closed
+                settings.SOUNDS["close"].play()
                 player.state_machine.change("idle")
                 player.vy = 0
                 player.vx = 0

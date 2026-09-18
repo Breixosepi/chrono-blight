@@ -44,6 +44,7 @@ class UnlockState(EntityBaseState):
         self.timer = 0.0
         self.flash_timer = 0.0
         self.flash_max = 1.0
+        settings.SOUNDS["unlock-state"].play()
 
     def _get_room(self) -> Any:
         return getattr(self.entity, "room", None) or getattr(getattr(self.entity, "tilemap", None), "room", None)

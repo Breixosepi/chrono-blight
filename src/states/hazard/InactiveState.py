@@ -1,8 +1,11 @@
 from typing import Any
 from src.states.hazard.HazardBaseState import HazardBaseState
+import settings
 
 class InactiveState(HazardBaseState):
     def enter(self, *args: Any, **kwargs: Any) -> None:
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
         hazard = self.hazard
         hazard.current_y = getattr(hazard, "inactive_y", float(hazard.room.MAP_HEIGHT))
         hazard.alert_text = ""
