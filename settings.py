@@ -106,9 +106,11 @@ BOSS_VINES_FRAMES = FRAMES["boss_vines"]
 
 pygame.font.init()
 FONTS = {
-    "hud":   pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Minimal4.ttf", 14),
-    "ui":    pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Minimal4.ttf", 16),
-    "title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Minimal4.ttf", 24),
+    "hud":        pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
+    "hud_small":  pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 9),
+    "ui":         pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
+    "title":      pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 18),
+    "main-title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Undaunted-DEMO.otf", 24),
 }
 
 def _crisp_render_text(
