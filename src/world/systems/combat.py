@@ -62,7 +62,7 @@ class CombatResolver:
         can_hit = (
             enemy.state_name not in ("hit", "death")
             and self.room.player.state_name not in ("hit", "death", "dash")
-            and not self.room._is_sword_special
+            and not getattr(self.room, "_is_sword_special", False)
             and self.room.player.invulnerable_timer <= 0.0
             and enemy.hitbox.colliderect(self.room.player.hitbox)
         )

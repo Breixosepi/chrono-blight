@@ -54,6 +54,19 @@ class Boss(Enemy):
         elif enemy_type == "monster2_boss":
             boss_states["idle"] = lambda sm: LurkerIdleState(self, sm)
             boss_states["attack"] = lambda sm: LurkerAttackState(self, sm)
+        elif enemy_type == "the_harvester":
+            from src.states.entity.boss.harvester.HarvesterIdleState import HarvesterIdleState
+            from src.states.entity.boss.harvester.HarvesterWalkState import HarvesterWalkState
+            from src.states.entity.boss.harvester.HarvesterAttackState import HarvesterAttackState
+            from src.states.entity.boss.harvester.HarvesterStunState import HarvesterStunState
+            from src.states.entity.boss.harvester.HarvesterDashState import HarvesterDashState
+            boss_states["idle"] = lambda sm: HarvesterIdleState(self, sm)
+            boss_states["patrol"] = lambda sm: HarvesterWalkState(self, sm)
+            boss_states["walk"] = lambda sm: HarvesterWalkState(self, sm)
+            boss_states["chase"] = lambda sm: HarvesterWalkState(self, sm)
+            boss_states["attack"] = lambda sm: HarvesterAttackState(self, sm)
+            boss_states["stun"] = lambda sm: HarvesterStunState(self, sm)
+            boss_states["dash"] = lambda sm: HarvesterDashState(self, sm)
 
         self.state_machine = StateMachine(boss_states)
         self.change_state("idle")
@@ -67,14 +80,73 @@ class Boss(Enemy):
         self.void_orbs: list[dict] = []
         self.burst_hazards: list[dict] = []
         self.side_shoots: list[dict] = []
+        self.wind_blades: list[dict] = []
+        self.falling_blades: list[dict] = []
+        self.dimensional_slashes: list[dict] = []
+        self._p3_teleporting: bool = False
 
         self._sw_frames: list[pygame.Surface] = settings.FRAMES.get("ground_shockwave_frames", [])
         self._orb_frames: list[pygame.Surface] = settings.FRAMES.get("void_orb_frames", [])
         self._burst_frames: list[pygame.Surface] = settings.FRAMES.get("burst_frames", [])
         self._side_shoot_frames: list[pygame.Surface] = settings.FRAMES.get("side_shoot_frames", [])
+        self._wb_green_frames: list[pygame.Surface] = settings.FRAMES.get("wind_blade_green_frames", [])
+        self._wb_red_frames: list[pygame.Surface] = settings.FRAMES.get("wind_blade_red_frames", [])
+        self._wb_green_h: list[pygame.Surface] = settings.FRAMES.get("wind_blade_green_horiz", [])
+        self._wb_green_v: list[pygame.Surface] = settings.FRAMES.get("wind_blade_green_vert", [])
+        self._wb_red_h: list[pygame.Surface] = settings.FRAMES.get("wind_blade_red_horiz", [])
+        self._wb_red_v: list[pygame.Surface] = settings.FRAMES.get("wind_blade_red_vert", [])
+        self._exp_slash_green: list[pygame.Surface] = settings.FRAMES.get("explosion_slash_green_frames", [])
+        self._exp_burst_green: list[pygame.Surface] = settings.FRAMES.get("explosion_burst_green_frames", [])
+        self._exp_slash_red: list[pygame.Surface] = settings.FRAMES.get("explosion_slash_red_frames", [])
+        self._exp_burst_red: list[pygame.Surface] = settings.FRAMES.get("explosion_burst_red_frames", [])
         self._sw_anim_timer: float = 0.0
         self._orb_anim_timer: float = 0.0
         self._EFFECT_FPS: float = 1.0 / 12.0
+
+    def teleport_to(self, tx: float, ty: float) -> None:
+        old_x, old_y = self.x, self.y
+        self.x = float(tx)
+        self.y = float(ty)
+        self.hitbox.topleft = (int(self.x), int(self.y))
+        self.vx = 0.0
+        self.vy = 0.0
+        if self.room:
+            self.room.spawn_dust(old_x + self.width // 2, old_y + self.height, count=10)
+            self.room.spawn_dust(self.x + self.width // 2, self.y + self.height, count=12)
+            self.room.camera.shake(2.5, 0.15)
+        if "change" in settings.SOUNDS:
+            settings.SOUNDS["change"].play()
+
+    def _schedule_p3_chase_teleport(self) -> None:
+        if getattr(self, "_p3_teleporting", False):
+            return
+        self._p3_teleporting = True
+
+        def _do_teleport():
+            self._p3_teleporting = False
+            if self.health <= 0 or self.state_name == "death":
+                return
+            px = self.player.hitbox.centerx if self.player else 800.0
+            platforms = [
+                (785.0, 85.0),   # Altar Summit
+                (295.0, 101.0),  # Left High Wing
+                (1255.0, 101.0), # Right High Wing
+                (552.0, 133.0),  # Left Mid Platform
+                (1048.0, 133.0), # Right Mid Platform
+                (200.0, 53.0),   # Left Upper Platform
+                (1350.0, 53.0),  # Right Upper Platform
+            ]
+            # Escoger una plataforma lejana al jugador (al menos 260px de distancia)
+            far_plats = [p for p in platforms if abs(p[0] - px) >= 260]
+            if not far_plats:
+                far_plats = platforms
+            import random
+            target = random.choice(far_plats)
+            self.teleport_to(target[0], target[1])
+            self.change_state("attack")
+
+        from gale.timer import Timer
+        Timer.after(0.20, _do_teleport)
 
     # ------------------------------------------------------------------
     # Spawn de habilidades
@@ -162,6 +234,69 @@ class Boss(Enemy):
             "damage": damage,
             "anim_t": 0.0,
             "life": 4.5,
+            "resolved": False,
+        })
+
+    def spawn_wind_blade(
+        self,
+        sx: float,
+        sy: float,
+        direction: float,
+        phase_color: str = "green",
+        is_vertical: bool = False,
+        speed: float = 210.0,
+        damage: int = 14,
+    ) -> None:
+        self.wind_blades.append({
+            "x": sx,
+            "y": sy,
+            "vx": speed * direction,
+            "direction": direction,
+            "phase_color": phase_color,
+            "is_vertical": is_vertical,
+            "damage": damage,
+            "life": 4.0,
+            "anim_t": 0.0,
+            "resolved": False,
+        })
+
+    def spawn_falling_blade(
+        self,
+        target_x: float,
+        phase_color: str = "green",
+        delay: float = 0.45,
+        damage: int = 15,
+    ) -> None:
+        self.falling_blades.append({
+            "target_x": target_x,
+            "phase_color": phase_color,
+            "delay": delay,
+            "timer": 0.0,
+            "y": -40.0,
+            "vy": 420.0,
+            "state": "warning",
+            "anim_t": 0.0,
+            "damage": damage,
+            "resolved": False,
+        })
+
+    def spawn_dimensional_slash(
+        self,
+        target_x: float,
+        target_y: float,
+        phase_color: str = "red",
+        delay: float = 0.8,
+        damage: int = 18,
+    ) -> None:
+        self.dimensional_slashes.append({
+            "x": target_x,
+            "y": target_y,
+            "phase_color": phase_color,
+            "delay": delay,
+            "timer": 0.0,
+            "state": "slash",
+            "anim_t": 0.0,
+            "damage": damage,
             "resolved": False,
         })
 
@@ -334,7 +469,144 @@ class Boss(Enemy):
                 if s in self.side_shoots:
                     self.side_shoots.remove(s)
 
+        # Actualizar ondas de viento (wind_blades)
+        for wb in self.wind_blades[:]:
+            wb["anim_t"] += dt
+            wb["x"] += wb["vx"] * dt
+            wb["life"] -= dt
+
+            player = self.player
+            if player is not None and not player.is_dead() and not wb["resolved"]:
+                is_vert = wb.get("is_vertical", False)
+                if is_vert:
+                    # Tall vertical crescent: cannot jump over, must dash through
+                    wb_rect = pygame.Rect(int(wb["x"] - 14), int(wb["y"] - 29), 28, 58)
+                    jumped_over = False
+                    dashed_through = (player.state_name == "dash")
+                else:
+                    # Low horizontal wave: can jump over
+                    wb_rect = pygame.Rect(int(wb["x"] - 23), int(wb["y"] - 10), 46, 20)
+                    jumped_over = (player.hitbox.bottom < wb["y"] - 4)
+                    dashed_through = (player.state_name == "dash")
+
+                is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
+
+                if (
+                    player.state_name not in ("hit", "death")
+                    and not is_sword_special
+                    and player.invulnerable_timer <= 0.0
+                    and wb_rect.colliderect(player.hitbox)
+                    and not jumped_over
+                    and not dashed_through
+                ):
+                    wb["resolved"] = True
+                    player.take_damage(int(wb["damage"]), source_x=wb["x"])
+                    if self.on_hazard_hit:
+                        self.on_hazard_hit({"damage": wb["damage"], "hitbox": wb_rect})
+                    if self.room:
+                        self.room.camera.shake(3.5, 0.18)
+                        col = (80, 255, 120) if wb["phase_color"] == "green" else (255, 80, 80)
+                        txt = "-14 (CORTE V)" if is_vert else "-14 (CORTE H)"
+                        self.room._spawn_popup(txt, player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
+                        self.room.spawn_dust(wb["x"], wb["y"], count=8)
+                    if wb in self.wind_blades:
+                        self.wind_blades.remove(wb)
+                    continue
+
+            if wb["life"] <= 0 or wb["x"] < -100.0 or wb["x"] > map_w + 100.0:
+                if wb in self.wind_blades:
+                    self.wind_blades.remove(wb)
+
+        # Actualizar cortes dimensionales explosivos (dimensional_slashes)
+        for ds in self.dimensional_slashes[:]:
+            ds["timer"] += dt
+            ds["anim_t"] += dt
+
+            if ds["state"] == "slash":
+                if ds["timer"] >= ds["delay"]:
+                    ds["state"] = "explode"
+                    ds["timer"] = 0.0
+                    ds["anim_t"] = 0.0
+                    if "morph-fire" in settings.SOUNDS:
+                        settings.SOUNDS["morph-fire"].play()
+                    if self.room:
+                        self.room.camera.shake(4.0, 0.25)
+                        self.room.spawn_dust(ds["x"], ds["y"], count=12)
+
+            elif ds["state"] == "explode":
+                if not ds["resolved"]:
+                    player = self.player
+                    if player is not None and not player.is_dead():
+                        exp_rect = pygame.Rect(int(ds["x"] - 28), int(ds["y"] - 28), 56, 56)
+                        is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
+                        if (
+                            player.state_name not in ("hit", "death", "dash")
+                            and not is_sword_special
+                            and player.invulnerable_timer <= 0.0
+                            and exp_rect.colliderect(player.hitbox)
+                        ):
+                            ds["resolved"] = True
+                            player.take_damage(int(ds["damage"]), source_x=ds["x"])
+                            if self.on_hazard_hit:
+                                self.on_hazard_hit({"damage": ds["damage"], "hitbox": exp_rect})
+                            if self.room:
+                                self.room.camera.shake(4.0, 0.2)
+                                col = (255, 80, 80) if ds["phase_color"] == "red" else (80, 255, 120)
+                                self.room._spawn_popup("-18 (EXPLOSIÓN)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
+
+                if ds["timer"] >= 0.70:
+                    if ds in self.dimensional_slashes:
+                        self.dimensional_slashes.remove(ds)
+
+        # Actualizar cortes verticales que caen del cielo (falling_blades)
+        for fb in self.falling_blades[:]:
+            fb["timer"] += dt
+            fb["anim_t"] += dt
+
+            if fb["state"] == "warning":
+                if fb["timer"] >= fb["delay"]:
+                    fb["state"] = "falling"
+                    fb["timer"] = 0.0
+                    fb["y"] = -40.0
+                    if "sword" in settings.SOUNDS:
+                        settings.SOUNDS["sword"].play()
+            elif fb["state"] == "falling":
+                fb["y"] += fb["vy"] * dt
+
+                player = self.player
+                if player is not None and not player.is_dead() and not fb["resolved"]:
+                    fb_rect = pygame.Rect(int(fb["target_x"] - 14), int(fb["y"] - 20), 28, 54)
+                    is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
+                    if (
+                        player.state_name not in ("hit", "death", "dash")
+                        and not is_sword_special
+                        and player.invulnerable_timer <= 0.0
+                        and fb_rect.colliderect(player.hitbox)
+                    ):
+                        fb["resolved"] = True
+                        player.take_damage(int(fb["damage"]), source_x=fb["target_x"])
+                        if self.on_hazard_hit:
+                            self.on_hazard_hit({"damage": fb["damage"], "hitbox": fb_rect})
+                        if self.room:
+                            self.room.camera.shake(3.5, 0.18)
+                            col = (80, 255, 120) if fb["phase_color"] == "green" else (255, 80, 80)
+                            self.room._spawn_popup("-15 (CORTE CAÍDA)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
+                            self.room.spawn_dust(fb["target_x"], fb["y"], count=8)
+
+                if fb["y"] >= 236.0:
+                    fb["state"] = "impact"
+                    if self.room:
+                        self.room.camera.shake(2.5, 0.12)
+                        self.room.spawn_dust(fb["target_x"], 238.0, count=8)
+                    if fb in self.falling_blades:
+                        self.falling_blades.remove(fb)
+
         super().update(dt)
+
+        # Harvester Phase 3 Aerial Safety: never walk/stay in acid/lava floor
+        if getattr(self, "boss_phase", 1) == 3 and self.enemy_type == "the_harvester":
+            if self.hitbox.bottom >= 220:
+                self.teleport_to(785.0, 85.0)
 
     def render(
         self,
@@ -436,6 +708,99 @@ class Boss(Enemy):
                 sy = int(s["y"] - camera_y) - s_surf.get_height() // 2
                 surface.blit(s_surf, (sx, sy))
 
+        # --- Ondas de viento (wind_blades) ---
+        for wb in self.wind_blades:
+            is_vert = wb.get("is_vertical", False)
+            color = wb.get("phase_color", "green")
+            if is_vert:
+                frames_list = self._wb_red_v if color == "red" else self._wb_green_v
+            else:
+                frames_list = self._wb_red_h if color == "red" else self._wb_green_h
+
+            if frames_list:
+                f_idx = int(wb["anim_t"] / 0.10) % len(frames_list)
+                surf = frames_list[f_idx]
+                
+                # Orient facing movement direction
+                if is_vert:
+                    # In frame 4/6, convex cutting edge is on LEFT. If moving right (> 0), flip X!
+                    if wb["direction"] > 0:
+                        surf = pygame.transform.flip(surf, True, False)
+                    # Radiant vertical aura to make it striking and visible
+                    aura_col = (255, 60, 60, 65) if color == "red" else (60, 255, 120, 65)
+                    aura_w, aura_h = surf.get_width() + 10, surf.get_height() + 10
+                    aura_surf = pygame.Surface((aura_w, aura_h), pygame.SRCALPHA)
+                    pygame.draw.ellipse(aura_surf, aura_col, (0, 0, aura_w, aura_h))
+                    ax = int(wb["x"] - camera_x) - aura_w // 2
+                    ay = int(wb["y"] - camera_y) - aura_h // 2
+                    surface.blit(aura_surf, (ax, ay))
+                else:
+                    # For horizontal: if moving left (< 0), flip X!
+                    if wb["direction"] < 0:
+                        surf = pygame.transform.flip(surf, True, False)
+
+                wx = int(wb["x"] - camera_x) - surf.get_width() // 2
+                wy = int(wb["y"] - camera_y) - surf.get_height() // 2
+                surface.blit(surf, (wx, wy))
+
+        # --- Cortes dimensionales explosivos (dimensional_slashes) ---
+        for ds in self.dimensional_slashes:
+            color = ds["phase_color"]
+            if ds["state"] == "slash":
+                slash_list = self._exp_slash_red if color == "red" else self._exp_slash_green
+                if slash_list:
+                    f_idx = min(len(slash_list) - 1, int(ds["anim_t"] / 0.12) % len(slash_list))
+                    s_surf = slash_list[f_idx]
+                    dx = int(ds["x"] - camera_x) - s_surf.get_width() // 2
+                    dy = int(ds["y"] - camera_y) - s_surf.get_height() // 2
+                    surface.blit(s_surf, (dx, dy))
+            elif ds["state"] == "explode":
+                burst_list = self._exp_burst_red if color == "red" else self._exp_burst_green
+                if burst_list:
+                    f_idx = min(len(burst_list) - 1, int(ds["anim_t"] / 0.07))
+                    b_surf = burst_list[f_idx]
+                    dx = int(ds["x"] - camera_x) - b_surf.get_width() // 2
+                    dy = int(ds["y"] - camera_y) - b_surf.get_height() // 2
+                    surface.blit(b_surf, (dx, dy))
+
+        # --- Cortes que caen del cielo (falling_blades) ---
+        for fb in self.falling_blades:
+            color = fb["phase_color"]
+            col_rgb = (255, 70, 70) if color == "red" else (60, 255, 130)
+            tx = int(fb["target_x"] - camera_x)
+
+            if fb["state"] == "warning":
+                # Haz vertical de luz telegrafiado desde el cielo hasta el suelo
+                alpha_pulse = int(45 + 35 * math.sin(fb["timer"] * 24))
+                beam_surf = pygame.Surface((22, 300), pygame.SRCALPHA)
+                beam_surf.fill((*col_rgb, alpha_pulse))
+                pygame.draw.line(beam_surf, (*col_rgb, min(255, alpha_pulse * 2)), (11, 0), (11, 300), 2)
+                surface.blit(beam_surf, (tx - 11, int(-camera_y)))
+                # Retícula en el suelo
+                ground_screen_y = int(238 - camera_y)
+                pygame.draw.ellipse(surface, (*col_rgb, 200), (tx - 14, ground_screen_y - 6, 28, 12), 2)
+
+            elif fb["state"] == "falling":
+                # Estela de velocidad cayendo hacia abajo
+                trail_h = 56
+                trail_surf = pygame.Surface((16, trail_h), pygame.SRCALPHA)
+                for ty in range(trail_h):
+                    a = int(120 * (ty / trail_h))
+                    pygame.draw.line(trail_surf, (*col_rgb, a), (0, ty), (16, ty))
+                by = int(fb["y"] - camera_y)
+                surface.blit(trail_surf, (tx - 8, by - trail_h))
+
+                # Sprite de la hoja vertical cayendo en picada
+                v_frames = self._wb_red_v if color == "red" else self._wb_green_v
+                if v_frames:
+                    f_idx = int(fb["anim_t"] / 0.08) % len(v_frames)
+                    surf = v_frames[f_idx]
+                    aura_w, aura_h = surf.get_width() + 10, surf.get_height() + 10
+                    aura_surf = pygame.Surface((aura_w, aura_h), pygame.SRCALPHA)
+                    pygame.draw.ellipse(aura_surf, (*col_rgb, 75), (0, 0, aura_w, aura_h))
+                    surface.blit(aura_surf, (tx - aura_w // 2, by - aura_h // 2))
+                    surface.blit(surf, (tx - surf.get_width() // 2, by - surf.get_height() // 2))
+
         super().render(surface, camera_x, camera_y)
 
     def take_damage(self, amount: float) -> None:
@@ -443,7 +808,20 @@ class Boss(Enemy):
             return
         if self.shield_active or getattr(self, "invulnerable", False):
             self.hit_flash_timer = 0.15
+            if self.room:
+                self.room._spawn_popup("ESCUDO", self.hitbox.centerx, self.hitbox.top - 8, 0.45, (220, 110, 255))
             return
+
+        if self.enemy_type == "the_harvester":
+            # Phase 1: Only vulnerable to matching phase color
+            if getattr(self, "boss_phase", 1) == 1 and self.phase in ("green", "red"):
+                if self.player and self.player.phase_color != self.phase:
+                    self.hit_flash_timer = 0.15
+                    if self.room:
+                        col = (255, 90, 90) if self.phase == "red" else (90, 240, 150)
+                        self.room._spawn_popup("INMUNE", self.hitbox.centerx, self.hitbox.top - 8, 0.45, col)
+                    return
+
         if self.state_name == "death":
             return
         self._health = max(0.0, self._health - amount)
@@ -451,4 +829,7 @@ class Boss(Enemy):
         if self._health <= 0.0:
             self.change_state("death")
         else:
-            self.change_state("hit")
+            if self.enemy_type == "the_harvester" and getattr(self, "boss_phase", 1) == 3:
+                self._schedule_p3_chase_teleport()
+            if self.state_name != "stun":
+                self.change_state("hit")

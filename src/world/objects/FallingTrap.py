@@ -9,7 +9,7 @@ from gale.timer import Timer
 
 import settings
 from src.definitions import entity as entity_defs
-from src.world.tile_collision import collision_type_in_layers
+from src.world.systems.tile_collision import collision_type_in_layers
 from gale.tilemap.collision import CollisionType
 
 

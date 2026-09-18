@@ -8,7 +8,7 @@ from gale.animation import Animation
 
 import settings
 from src.entities.Player import Player
-from src.world.tile_collision import move_and_collide_layers
+from src.world.systems.tile_collision import move_and_collide_layers
 
 
 class HealthOrb:
