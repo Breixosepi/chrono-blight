@@ -252,6 +252,7 @@ ENTITY_DEFS: Dict[str, Any] = {
                     "special": {
                         "name": "Infernal Flame Area",
                         "damage": 60,
+                        "boss_damage": 20,
                         "mana_cost": 25,
                         "is_aoe": True,
                         "duration": 1.2,

@@ -22,8 +22,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - *Sumo Sacerdote del Vacío (`cultist_priest`)*: Salud incrementada a 350 HP, daño de contacto a 10 y proyectil a 12 (cooldown 2.4s).
   - *The Harvester (`the_harvester`)*: Salud incrementada a 520 HP, permitiendo que sus 3 fases (combate regular, oscuridad con monolitos y duelo de plataformas) tengan la duración adecuada. Daño de corte y dash calibrado a 14.
   - *El Acechador Temporal (`monster2_boss`)*: Mantenido en modo supervivencia temporal (60s) con daño ajustado a 8 y 12.
-- **Rebalanceo de Formas del Jugador (`src/definitions/entity.py`)**:
-  - *Phase Mage*: 55 HP, 75 MP, 4.0 MP/s regen. Arcane Bolt (25 dmg, 0 MP) e Infernal Flame Area (60 dmg, 25 MP).
+- **Rebalanceo de Formas del Jugador (`src/definitions/entity.py` y `combat.py`)**:
+  - *Phase Mage*: 55 HP, 75 MP, 4.0 MP/s regen. Arcane Bolt (25 dmg, 0 MP) e Infernal Flame Area (60 dmg en área a enemigos normales, calibrado a 20 dmg con 1 impacto por casteo contra jefes para evitar daño desproporcionado, 25 MP).
   - *Beast Morph*: 90 HP, 45 MP, 3.0 MP/s regen, 1 salto. Beast Claw (14 dmg, 0 MP), Primal Impact (25 dmg, 15 MP), Beast Dash (12 MP).
   - *Swordmaster*: 70 HP, 30 MP, 2.2 MP/s regen, 2 saltos (doble salto). Combo de espada (16 y 22 dmg, 0 MP) y Thrust Dash (20 MP).
 
