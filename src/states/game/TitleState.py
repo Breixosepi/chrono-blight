@@ -9,6 +9,7 @@ from gale.text import render_text
 
 import settings
 from src.states.game.SlotSelectState import SlotSelectState
+from src.ui.MenuBackground import menu_background
 
 
 class TitleState(BaseState):
@@ -62,8 +63,11 @@ class TitleState(BaseState):
         elif choice == "SALIR":
             pygame.event.post(pygame.event.Event(pygame.QUIT))
 
+    def update(self, dt: float) -> None:
+        menu_background.update(dt)
+
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((16, 12, 24))
+        menu_background.render(surface)
 
         render_text(
             surface,

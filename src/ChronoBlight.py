@@ -4,6 +4,7 @@ from gale.input_handler import InputData
 from gale.state import StateStack
 import settings
 from src.states.game.TitleState import TitleState
+from src.states.game.SplashState import SplashState
 
 
 class ChronoBlight(Game):
@@ -13,7 +14,7 @@ class ChronoBlight(Game):
             settings.TEXTURES[key] = settings.TEXTURES[key].convert_alpha()
 
         self.state_stack = StateStack()
-        self.state_stack.push(TitleState(self.state_stack))
+        self.state_stack.push(SplashState(self.state_stack))
         
     def reset_to_title(self) -> None:
         settings.stop_all_music()

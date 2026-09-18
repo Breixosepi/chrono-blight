@@ -4,6 +4,24 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.20.0] - 2026-09-18
+
+### Añadido
+- **Secuencia Cinemática de Apertura (`src/states/game/SplashState.py`)**:
+  - Presentación inicial de `logo_past` durante 1.0s y transición temporal hacia `logo_future` durante 1.0s con destello dimensional rojizo y efecto sonoro `phase_shift_future`.
+  - Transición fluida hacia `TitleState` tras completar los 2.0s, con soporte para saltar la intro de inmediato con cualquier tecla (`[ENTER]`, `[ESPACIO]`, `[ESC]`).
+  - Activación exclusiva en el arranque inicial del juego (`ChronoBlight.init()`), mientras que los reinicios por derrota o pausa (`reset_to_title()`) retornan directo al menú sin forzar la intro.
+- **Gestor de Fondos Dinámicos con Crossfade (`src/ui/MenuBackground.py`)**:
+  - Componente de fondo compartido y continuo entre `TitleState` y `SlotSelectState`.
+  - Alternancia cíclica cada 30 segundos entre la era del Pasado (`gothic_castle_past`) y la era del Futuro (`gothic_castle_future`).
+  - Fundido cruzado suave (*crossfade*) de 1.5 segundos entre texturas con capa translúcida protectora de contraste (`(14, 10, 20, 130)`), garantizando máxima legibilidad en fuentes doradas y pixel art.
+
+### Cambiado / Mejorado
+- **Ambientación Visual de Menús (`TitleState.py` y `SlotSelectState.py`)**:
+  - Sustitución de fondos sólidos monótonos (`surface.fill((16, 12, 24))`) por el ciclo coordinado de `menu_background`, manteniendo la transición temporal activa y continua al navegar entre ambas pantallas sin reinicios ni cortes.
+
+---
+
 ## [0.19.0] - 2026-09-18
 
 ### Añadido

@@ -11,6 +11,7 @@ from gale.text import render_text
 
 import settings
 from src.world.room_connections import DEFAULT_START_ROOM, DEFAULT_START_SPAWN
+from src.ui.MenuBackground import menu_background
 
 ROOM_DISPLAY_NAMES = {
     "middle": "Zona Central",
@@ -154,8 +155,11 @@ class SlotSelectState(BaseState):
         save_path.unlink(missing_ok=True)
         self._refresh_metadata()
 
+    def update(self, dt: float) -> None:
+        menu_background.update(dt)
+
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((16, 12, 24))
+        menu_background.render(surface)
 
         title_text = "Nueva Partida" if self.mode == "new" else "Cargar Partida"
         render_text(

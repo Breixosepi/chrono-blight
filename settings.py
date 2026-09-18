@@ -81,6 +81,10 @@ TEXTURES = {
     "keyboard_ui":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "keyboard.png"),
     "save_icon":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "save_icon.png"),
     "humble_ui":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "Humble Gift - v1.3" / "PNG" / "SpriteSheet.png"),
+    "gothic_castle_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_past.png"),
+    "gothic_castle_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_future.png"),
+    "logo_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo_past.png"),
+    "logo_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo_future.png"),
 }
 
 SAVE_SLOTS = ["slot_1", "slot_2", "slot_3"]
