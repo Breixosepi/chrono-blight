@@ -12,10 +12,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
     - Efectos `change` y `enter` para navegación interactiva y confirmación en menús (`TitleState`, `GameOverState`, `SlotSelectState`).
     - Efectos táctiles de pergamino `paper-unfold` (`unfold_map.mp3`) y `paper-fold` (`fold_map.wav`) al abrir y cerrar la interfaz de papel en `MapState` y `PauseState`.
   - **Habilidades y Estados del Jugador**:
-    - `jump`: Sonido de impulso al despegar en salto.
-    - `dash`: Efecto aerodinámico al ejecutar el impulso de la forma Morph (`DashState`).
+    - `jump`: Sonido de impulso al despegar en salto (`jump.wav`).
+    - `morph-dash`: Efecto sonoro aerodinámico al ejecutar el impulso de la forma Morph (`dash_morph.mp3` en `DashState`).
+    - `change-skin`: Efecto de transformación mágica al alternar entre formas (`change_skin.mp3` en `Player.change_skin`).
+    - `on-land`: Contacto e impacto con el suelo al aterrizar tras saltar o caer (`on_land.mp3` en `Player.on_land`).
     - `sword` y `slash-hit`: Efecto de balanceo de espada y corte de impacto contra carne al golpear enemigos (`AttackState`, `combat.py`).
-    - `sword-dash`: Desplazamiento sónico al rematar con el ataque especial de espada (`AttackSpecialState`).
+    - `sword-dash`: Desplazamiento sónico al rematar con el ataque especial de espada (`sword_dash.wav` en `AttackSpecialState`).
     - `mage-attack` y `mage-special`: Disparo de proyectil mágico e invocación de pilares de llamas arcanas (`AttackState`, `AttackSpecialState`).
     - `morph-fire` y `morph-power`: Ataque básico y explosión ígnea de la forma Morph.
     - `phase_shift_past` y `phase_shift_future`: Efectos temporales al alternar entre la era del Pasado y del Futuro (`PhaseShiftState`).
@@ -48,6 +50,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Detención Inmediata de Peligros de Lava al Morir (`DeathState.py` y `settings.py`)**:
   - Corte forzado inmediato de los sonidos en bucle `lava`, `lava-shower` y `saw-hazard` en `DeathState.enter()`, evitando que el magma siga sonando durante la animación de muerte del personaje.
   - Parada segura del sonido `lava` al entrar en `InactiveState` y de `lava-shower` al reiniciar la trampa en `LavaShower.reset()` y `settings.stop_all_music()`.
+- **Corte Limpio de Música al Regresar al Menú Principal (`TitleState.py`, `GameOverState.py`, `ChronoBlight.py`)**:
+  - Detención automática de cualquier canal de música activo (`game-over`, `ambient`, música de jefes) y peligros ambientales persistentes al entrar en `TitleState.enter()` o al reiniciar la pila con `_reset_to_title()`, erradicando la superposición de bandas sonoras con el tema de inicio (`intro`).
 
 ---
 

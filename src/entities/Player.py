@@ -187,6 +187,8 @@ class Player(Entity):
     def on_land(self) -> None:
         super().on_land()
         self.jumps_left = self.form_stats[self.skin]["jumps"]
+        if "on-land" in settings.SOUNDS:
+            settings.SOUNDS["on-land"].play()
 
     def get_form_data(self) -> dict:
         return entity_defs.ENTITY_DEFS["player"]["forms"][self.skin]
@@ -244,6 +246,9 @@ class Player(Entity):
             c = form_colors.get(self.skin, (255, 255, 255))
             self.tilemap.room.spawn_dust(self.hitbox.centerx, self.hitbox.centery, 12, c)
             
+        if "change-skin" in settings.SOUNDS:
+            settings.SOUNDS["change-skin"].play()
+
         self.dash_requested = False
         self.attack_requested = False
         self.special_attack_requested = False
