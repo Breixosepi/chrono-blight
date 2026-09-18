@@ -88,6 +88,15 @@ _CULTIST_PRIEST_ANIMATIONS = {
     "death":  {"frames": list(range(20, 26)), "interval": 1/7.0, "loops": 1},
 }
 
+_THE_HARVESTER_ANIMATIONS = {
+    "idle":    {"frames": list(range(0, 14)),  "interval": 1/8.0, "loops": None},
+    "startup": {"frames": list(range(14, 21)), "interval": 1/8.0, "loops": 1},
+    "walk":    {"frames": list(range(21, 34)), "interval": 1/9.0, "loops": None},
+    "attack":  {"frames": list(range(34, 47)), "interval": 1/10.0, "loops": 1},
+    "hit":     {"frames": list(range(47, 52)), "interval": 1/8.0, "loops": 1},
+    "death":   {"frames": list(range(52, 72)), "interval": 1/8.0, "loops": 1},
+}
+
 _GOBLIN_ANIMATIONS = {
     "idle":    {"frames": [64, 65, 66, 67, 68, 69, 70, 71], "interval": 1/7.0, "loops": None},
     "walk":    {"frames": [80, 81, 82, 83, 84, 85, 86, 87], "interval": 1/8.0, "loops": None},
@@ -341,8 +350,8 @@ ENTITY_DEFS: Dict[str, Any] = {
             "name":           "Cultist Priest",
             "phase":          "red",
             "default_facing": "right",
-            "hitbox":         {"width": 30, "height": 64},
-            "render_offset":  {"x": -79, "y": -118},
+            "hitbox":         {"width": 64, "height": 140},
+            "render_offset":  {"x": -68, "y": -42},
             "stats": {
                 "max_health":     120.0,
                 "contact_damage":  14.0,
@@ -617,6 +626,40 @@ ENTITY_DEFS: Dict[str, Any] = {
                 },
             },
         },
+        "the_harvester": {
+            "name":           "The Harvester",
+            "phase":          "neutral",
+            "default_facing": "right",
+            "hitbox":         {"width": 46, "height": 43},
+            "render_offset":  {"x": -63, "y": -64},
+            "stats": {
+                "max_health":     300.0,
+                "contact_damage":  15.0,
+                "knockback_speed":  0.0,
+                "hit_duration":      0.25,
+                "death_duration":    2.50,
+            },
+            "ai": {
+                "walk_speed":      80.0,
+                "patrol_dist":    120.0,
+                "detect_range":   400.0,
+                "attack_range":    80.0,
+                "attack_reach":    60.0,
+                "attack_timing":   (0.30, 0.60),
+                "attack_duration": 1.30,
+                "attack_cooldown": 2.0,
+            },
+            "animations": _THE_HARVESTER_ANIMATIONS,
+            "actions": {
+                "attack": {
+                    "name":     "Scythe Slash",
+                    "damage":   18.0,
+                    "reach":    60.0,
+                    "timing":   (0.30, 0.60),
+                    "duration": 1.30,
+                },
+            },
+        },
     },
 }
 
@@ -632,7 +675,7 @@ ENTITY_DEFS["animations"] = {
 }
 
 
-_BOSS_KEYS = {"cultist_priest", "monster2_boss"}
+_BOSS_KEYS = {"cultist_priest", "monster2_boss", "the_harvester"}
 
 BOSS_DEFS: Dict[str, Any] = {
     k: v for k, v in ENTITY_DEFS["enemies"].items() if k in _BOSS_KEYS

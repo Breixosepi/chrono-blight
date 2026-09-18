@@ -30,11 +30,13 @@ class PlayState(BaseState):
         self.current_slot: str = params.get("slot", "slot_1")
         self.cleared_events: set[str] = set()
         self.visited_rooms: set[str] = {"middle"}
+        self.playtime: float = 0.0
 
         if "save_data" in params:
             save_data = params["save_data"]
             self.cleared_events = set(save_data.get("cleared_events", []))
             self.visited_rooms.update(save_data.get("visited_rooms", []))
+            self.playtime = float(save_data.get("playtime", 0.0))
             self.player.sync_progression(self.cleared_events)
             
             self.player.skin = save_data.get("player_skin", "mage")
@@ -53,10 +55,12 @@ class PlayState(BaseState):
         )
 
     def save_game_checkpoint(self, spawn_pos: Any = None) -> None:
-        """Centralized save handler for checkpoints, altars and world events."""
         from gale.save import SaveManager
         sx = float(spawn_pos[0]) if spawn_pos else self.player.hitbox.centerx
         sy = float(spawn_pos[1]) if spawn_pos else (self.player.hitbox.top - 20)
+        exploration_pct = min(100, int((len(self.visited_rooms) / 8.0) * 100))
+        forms_count = len(getattr(self.player, "available_skins", ["mage"]))
+        bosses_defeated = len([e for e in self.cleared_events if "defeated" in e])
         save_data = {
             "room": self.room.map_name,
             "spawn_x": sx,
@@ -66,13 +70,21 @@ class PlayState(BaseState):
             "player_skin": self.player.skin,
             "cleared_events": list(self.cleared_events),
             "visited_rooms": list(self.visited_rooms),
+            "playtime": self.playtime,
+            "exploration": exploration_pct,
+            "forms_count": forms_count,
+            "bosses_defeated": bosses_defeated,
         }
         metadata = {
             "room_name": self.room.map_name,
             "health": self.player.health,
             "skin": self.player.skin,
+            "playtime": self.playtime,
+            "exploration": exploration_pct,
+            "forms_count": forms_count,
+            "bosses_defeated": bosses_defeated,
         }
-        SaveManager().save(self.current_slot, save_data, metadata=metadata)
+        SaveManager().save(self.current_slot, save_data, **metadata)
 
     def change_room(self, target_room_name: str, target_spawn_x: float, target_spawn_y: float) -> None:
         if self.in_transition:
@@ -80,6 +92,10 @@ class PlayState(BaseState):
 
         if "lava" in settings.SOUNDS:
             settings.SOUNDS["lava"].stop()
+        if "lava-shower" in settings.SOUNDS:
+            settings.SOUNDS["lava-shower"].stop()
+        if hasattr(self.room, "arena") and self.room.arena and hasattr(self.room.arena, "lava_shower"):
+            self.room.arena.lava_shower.reset()
 
         if self.room.map_name in ("subida", "subida_past", "subida_future"):
             if "subida_cleared" not in self.cleared_events:
@@ -124,8 +140,8 @@ class PlayState(BaseState):
 
         if target_room_name == "esquina_1" and "subida_cleared" in self.cleared_events and "morph" not in self.player.available_skins:
             self.waiting_for_unlock = True
-            self.player.x = 120.0
-            self.player.y = 248.0
+            self.player.x = 200.0
+            self.player.y = 120.0
             self.player.hitbox.topleft = (int(self.player.x), int(self.player.y))
             self.player.on_ground = True
             self.player.change_state("unlock", form="morph")
@@ -180,6 +196,7 @@ class PlayState(BaseState):
         self.waiting_for_unlock = False
 
     def update(self, dt: float) -> None:
+        self.playtime += dt
         if self.player.is_dead() and self.player.is_animation_finished():
             self.state_machine.push(GameOverState(self.state_machine), play_state=self)
             return

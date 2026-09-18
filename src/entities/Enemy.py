@@ -80,6 +80,8 @@ class Enemy(Entity):
         self.float_timer: float = 0.0   # for monster_eyes oscillation
 
         self.hit_flash_timer: float = 0.0
+        self.room: Any = None
+        self.player: Any = None
 
         # Build animations using base Entity helper
         enemy_anims = defn.get("animations", {})

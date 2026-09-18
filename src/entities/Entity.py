@@ -136,7 +136,7 @@ class Entity:
 
     def _apply_movement_and_collision(self, dt: float) -> None:
         if self.tilemap is not None and self.active_collision_layers:
-            from src.world.tile_collision import move_and_collide_layers, check_on_ground
+            from src.world.systems.tile_collision import move_and_collide_layers, check_on_ground
             dx = self.vx * dt
             dy = self.vy * dt
 

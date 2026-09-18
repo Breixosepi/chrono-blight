@@ -64,7 +64,7 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "right_top",
             "check": lambda p, r: _check_exit_right(p, r, y_max=260.0),
             "target_room": "esquina_1",
-            "target_spawn": (48.0, 224.0),
+            "target_spawn": (48.0, 104.0),
         },
         {
             "direction": "right_bottom",
@@ -100,21 +100,15 @@ ROOM_CONNECTIONS: Dict[str, List[Dict[str, Any]]] = {
             "direction": "top",
             "check": lambda p, r: _check_exit_top(p, 100.0, 180.0),
             "target_room": "esquina_1",
-            "target_spawn": (120.0, 248.0),
+            "target_spawn": (200.0, 120.0),
         },
     ],
     "esquina_1": [
         {
-            "direction": "bottom",
-            "check": lambda p, r: _check_exit_bottom(p, r, 160.0, 240.0),
-            "target_room": "subida",
-            "target_spawn": (136.0, 32.0),
-        },
-        {
             "direction": "left_bottom",
-            "check": lambda p, r: p.hitbox.left <= MARGIN and p.vx <= 0 and p.hitbox.bottom >= 160,
+            "check": lambda p, r: _check_exit_left(p),
             "target_room": "middle",
-            "target_spawn": (440.0, 160.0),
+            "target_spawn": (440.0, 180.0),
         },
     ],
     "abismo_fixed": [

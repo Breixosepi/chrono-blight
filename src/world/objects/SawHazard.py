@@ -1,8 +1,5 @@
-"""
-Chrono Blight - Saw/Shuriken Hazard
-"""
-import pygame
 from typing import Any
+import pygame
 from gale.animation import Animation
 import settings
 

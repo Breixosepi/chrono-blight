@@ -1,16 +1,13 @@
-"""
-Chrono Blight - Falling Trap
-"""
-import pygame
 import random
 from typing import Any
+import pygame
 from gale.animation import Animation
 from gale.timer import Timer
+from gale.tilemap.collision import CollisionType
 
 import settings
 from src.definitions import entity as entity_defs
-from src.world.tile_collision import collision_type_in_layers
-from gale.tilemap.collision import CollisionType
+from src.world.systems.tile_collision import collision_type_in_layers
 
 
 class FallingTrap:

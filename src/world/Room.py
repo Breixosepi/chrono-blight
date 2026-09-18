@@ -1,27 +1,25 @@
-"""
-Chrono Blight - World Room Component
-"""
 import json
 import math
-import pathlib
 import random
 from typing import Any, Dict, List, Optional, Tuple, Set
 
 import pygame
-from gale.text import render_text
 from gale.tilemap import TileMap, load_tiled_map
 
 import settings
 from src.definitions import entity as entity_defs
 from src.entities.Player import Player
 from src.entities.Enemy import Enemy
-from src.world.Camera import Camera as SmoothCamera
-from src.world.FallingTrap import FallingTrap
-from src.world.SawHazard import SawHazard
-from src.world.RisingHazard import RisingHazard
-from src.world.Elevator import Elevator
-from src.world.ArenaManager import ArenaManager
-from src.world.combat import CombatResolver
+from src.world.systems.Camera import Camera as SmoothCamera
+from src.world.objects.FallingTrap import FallingTrap
+from src.world.objects.SawHazard import SawHazard
+from src.world.objects.RisingHazard import RisingHazard
+from src.world.objects.Elevator import Elevator
+from src.world.systems.ArenaManager import ArenaManager
+from src.world.systems.combat import CombatResolver
+from src.world.systems.ParticleSystem import ParticleSystem
+from src.world.systems.RoomRenderer import RoomRenderer
+from src.world.systems.RoomEventLogic import RoomEventLogic
 
 _ENEMY_MASS: Dict[str, float] = {
     "big_monster":    3.5,
@@ -71,6 +69,10 @@ class Room:
             bounds=pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT),
         )
 
+        self.particle_system = ParticleSystem(self.MAP_WIDTH, self.MAP_HEIGHT)
+        self.renderer = RoomRenderer(self)
+        self.room_events = RoomEventLogic(self)
+
         self._init_player(player)
         self.camera.snap_to(self.player.hitbox.centerx, self.player.hitbox.centery)
 
@@ -80,152 +82,49 @@ class Room:
         self.elevators: List[Elevator] = []
         self.enemy_projectiles: List[dict] = []
         
-        self.dust_particles: List[dict] = []
         self.health_orbs: list = []
         self.damage_popups: List[Dict[str, Any]] = []
         self.respawn_queue: List[Dict[str, Any]] = []
         self.combat_resolver = CombatResolver(self)
         self.rising_hazard = RisingHazard(self) if self.map_name == "subida" else None
-        self.solid_blockers: List[pygame.Rect] = []
+        self._is_sword_special: bool = False
 
         self._init_enemies()
         self._init_traps()
-        self._init_graphics()
+        self.renderer.init_graphics(self.map_data)
 
-        self.arena = ArenaManager(self) if self.map_name in ("sala_future", "sala_past") else None
+        self.arena = ArenaManager(self) if self.map_name in ("sala_future", "sala_past", "big_room") else None
         self.cleared_events: set = getattr(self.play_state, "cleared_events", set()) if hasattr(self, "play_state") and self.play_state else set()
-        self._check_cleared_events()
+        self.room_events.check_cleared_events()
 
     def _check_cleared_events(self) -> None:
-        cleared = getattr(self.play_state, "cleared_events", None)
-        if cleared is None:
-            cleared = getattr(self, "cleared_events", set())
-        
-        if "boss_cultist_defeated" in cleared and self.map_name == "sala_future":
-            if self.arena and self.arena.state not in ("cleared", "clearing", "unlocking"):
-                self.arena = None
-            self.enemies = []
-            for elev in self.elevators:
-                if elev.state not in ("descending", "ascending", "arriving", "arriving_open"):
-                    elev.state = "open"
-                    elev.image = elev.tex_open
-                    elev.y = elev.start_y - elev.height
-                    elev.hitbox.y = int(elev.y)
+        self.room_events.check_cleared_events()
 
-        if "survival_boss_defeated" in cleared and self.map_name == "sala_past":
-            if "lava" in settings.SOUNDS:
-                settings.SOUNDS["lava"].stop()
-            if self.arena and self.arena.state not in ("cleared", "clearing", "unlocking"):
-                self.arena = None
-            self.enemies = []
-            if getattr(self, "rising_hazard", None):
-                self.rising_hazard.reset()
-            self.rising_hazard = None
-            self.lava_rising = False
-            for saw in self.saw_hazards:
-                saw.stop()
-            for elev in self.elevators:
-                if elev.state not in ("descending", "ascending", "arriving", "arriving_open"):
-                    elev.state = "open"
-                    elev.image = elev.tex_open
-                    elev.y = elev.start_y - elev.height
-                    elev.hitbox.y = int(elev.y)
-
-        if "subida_cleared" in cleared and self.map_name in ("subida", "subida_past", "subida_future"):
-            if "lava" in settings.SOUNDS:
-                settings.SOUNDS["lava"].stop()
-            if getattr(self, "rising_hazard", None):
-                self.rising_hazard.reset()
-            self.rising_hazard = None
-
-        # Elevator to Final Boss in 'middle' (unlocked only when all major challenges are cleared)
-        all_major_events = {"survival_boss_defeated", "boss_cultist_defeated", "subida_cleared"}
-        all_cleared = all_major_events.issubset(cleared)
-        if self.map_name == "middle":
-            for elev in self.elevators:
-                if "middle_elevator_unlocked" in cleared:
-                    if elev.state not in ("ascending", "arriving", "arriving_open"):
-                        elev.state = "open"
-                        elev.image = elev.tex_open
-                        elev.y = elev.start_y - elev.height
-                        elev.hitbox.y = int(elev.y)
-                elif all_cleared:
-                    if elev.state in ("hidden", "hidden_permanently"):
-                        elev.activate()
-                        cleared.add("middle_elevator_unlocked")
-                        if self.play_state:
-                            self.play_state.cleared_events.add("middle_elevator_unlocked")
-                    elif elev.state not in ("descending", "ascending", "arriving", "arriving_open"):
-                        elev.state = "open"
-                        elev.image = elev.tex_open
-                        elev.y = elev.start_y - elev.height
-                        elev.hitbox.y = int(elev.y)
-                else:
-                    elev.state = "hidden"
-
-        # Dynamic door / passage blockers defined via Tiled objects (e.g. in 'traps' layer)
-        self.solid_blockers = []
-        for layer in self.map_data.get("layers", []):
-            if layer.get("type") == "objectgroup":
-                for obj in layer.get("objects", []):
-                    props = self._parse_props(obj)
-                    obj_name = str(obj.get("name", "")).lower()
-                    obj_type = str(obj.get("type", "")).lower()
-                    req_event = props.get("requires_event", props.get("event"))
-
-                    # If object has an event requirement or is a blocker/door
-                    if req_event or "block" in obj_name or "block" in obj_type or "door" in obj_name or "door" in obj_type:
-                        if not req_event:
-                            continue
-
-                        # Determine tile range: either from explicit properties (col, row, count) or bounding box
-                        if "col" in props or "column" in props:
-                            c = int(props.get("col", props.get("column", 0)))
-                            r = int(props.get("row", 0))
-                            count = int(props.get("count", 1))
-                            axis = str(props.get("axis", "vertical")).lower()
-                            if axis == "vertical":
-                                start_col, end_col = c, c
-                                start_row, end_row = r, r + count - 1
-                            else:
-                                start_col, end_col = c, c + count - 1
-                                start_row, end_row = r, r
-                            ox = float(start_col * self.TILE_SIZE)
-                            oy = float(start_row * self.TILE_SIZE)
-                            ow = float((end_col - start_col + 1) * self.TILE_SIZE)
-                            oh = float((end_row - start_row + 1) * self.TILE_SIZE)
-                        else:
-                            ox = float(obj.get("x", 0.0))
-                            oy = float(obj.get("y", 0.0))
-                            ow = max(1.0, float(obj.get("width", 16.0)))
-                            oh = max(1.0, float(obj.get("height", 16.0)))
-                            start_col = int(ox // self.TILE_SIZE)
-                            end_col = int((ox + ow - 1) // self.TILE_SIZE)
-                            start_row = int(oy // self.TILE_SIZE)
-                            end_row = int((oy + oh - 1) // self.TILE_SIZE)
-
-                        is_event_cleared = (
-                            req_event in cleared
-                            or (req_event in ("all_events", "all_bosses_defeated", "all_cleared") and all_cleared)
-                        )
-                        if is_event_cleared:
-                            # Event completed: remove tiles from tilemap layers
-                            for row_idx in range(start_row, end_row + 1):
-                                for col_idx in range(start_col, end_col + 1):
-                                    if 0 <= row_idx < self.MAP_ROWS and 0 <= col_idx < self.MAP_COLS:
-                                        self.tilemap.set_gid("ground", row_idx, col_idx, 0)
-                                        self.tilemap.set_gid("red_ground", row_idx, col_idx, 0)
-                                        self.tilemap.set_gid("green_ground", row_idx, col_idx, 0)
-                        else:
-                            # Event NOT completed: add solid blocker
-                            blocker_rect = pygame.Rect(int(ox), int(oy), int(ow), int(oh))
-                            if not any(s == blocker_rect for s in self.solid_blockers):
-                                self.solid_blockers.append(blocker_rect)
+    @property
+    def solid_blockers(self):
+        return self.room_events.solid_blockers
 
     @property
     def camera_offset(self) -> Tuple[float, float]:
         ox, oy = self.camera.offset
         return (round(ox), round(oy))
+
+    def _preprocess_tilemap(self) -> None:
+        self.flipped_tiles: Dict[Tuple[str, int, int], Tuple[bool, bool, bool]] = {}
+        for layer_name in self.tilemap.layer_names():
+            for r in range(self.tilemap.rows):
+                for c in range(self.tilemap.cols):
+                    raw = self.tilemap.get_gid(layer_name, r, c)
+                    if raw > 100000:
+                        fh, fv, fd = bool(raw & 0x80000000), bool(raw & 0x40000000), bool(raw & 0x20000000)
+                        self.flipped_tiles[(layer_name, r, c)] = (fh, fv, fd)
+                        self.tilemap.set_gid(layer_name, r, c, raw & 0x1FFFFFFF)
+
+    def _get_active_collision_layers(self) -> List[str]:
+        return _PHASE_LAYERS.get(self.player.phase_color, ["ground", "red_ground"])
+
+    def _get_enemy_collision_layers(self, enemy: Enemy) -> List[str]:
+        return _PHASE_LAYERS.get(enemy.phase, ["ground", "green_ground", "red_ground"])
 
     def _get_tiled_objects(self, valid_layer_names: Set[str]) -> List[Dict[str, Any]]:
         objects = []
@@ -241,7 +140,11 @@ class Room:
         return {p.get("name"): p.get("value") for p in obj.get("properties", []) if isinstance(p, dict) and "name" in p}
 
     def _spawn_enemy(self, x: float, y: float, enemy_type: str) -> None:
-        enemy = Enemy(x, y, enemy_type=enemy_type, floor_y=float(self.MAP_HEIGHT), map_w=float(self.MAP_WIDTH))
+        if enemy_type in entity_defs.BOSS_DEFS:
+            from src.entities.Boss import Boss
+            enemy = Boss(x, y, enemy_type=enemy_type, floor_y=float(self.MAP_HEIGHT), map_w=float(self.MAP_WIDTH))
+        else:
+            enemy = Enemy(x, y, enemy_type=enemy_type, floor_y=float(self.MAP_HEIGHT), map_w=float(self.MAP_WIDTH))
         enemy.room, enemy.player, enemy.tilemap = self, self.player, self.tilemap
         enemy.active_collision_layers = self._get_enemy_collision_layers(enemy)
         enemy.on_hazard_hit = self._on_hazard_hit
@@ -329,7 +232,8 @@ class Room:
             if t_name in ("spawn", "player", "start", "arena_trigger", "boss_survival", "safe_point") or t_type in ("spawn", "player", "start", "arena_trigger", "boss_survival", "safe_point"):
                 continue
 
-            enemy_type = t_name if t_name in entity_defs.ENEMY_DEFS else (t_type if t_type in entity_defs.ENEMY_DEFS else None)
+            all_defs = {**entity_defs.ENEMY_DEFS, **entity_defs.BOSS_DEFS}
+            enemy_type = t_name if t_name in all_defs else (t_type if t_type in all_defs else None)
             if enemy_type:
                 self._spawn_enemy(float(obj.get("x", 0.0)), float(obj.get("y", 0.0)), enemy_type)
 
@@ -347,7 +251,7 @@ class Room:
             x, y = float(obj.get("x", 0.0)), float(obj.get("y", 0.0))
 
             if "altar" in combined_id or "obelisk" in combined_id:
-                from src.world.Altar import Altar
+                from src.world.objects.Altar import Altar
                 obj_h = float(obj.get("height", 16.0))
                 self.altars.append(Altar(x, y, self, obj_height=obj_h))
             elif "saw" in combined_id or "shuriken" in combined_id:
@@ -397,80 +301,9 @@ class Room:
                 self.safe_point_x = x
                 self.safe_point_y = y
 
-    def _preprocess_tilemap(self) -> None:
-        self.flipped_tiles: Dict[Tuple[str, int, int], Tuple[bool, bool, bool]] = {}
-        for layer_name in self.tilemap.layer_names():
-            for r in range(self.tilemap.rows):
-                for c in range(self.tilemap.cols):
-                    raw = self.tilemap.get_gid(layer_name, r, c)
-                    if raw > 100000:
-                        fh, fv, fd = bool(raw & 0x80000000), bool(raw & 0x40000000), bool(raw & 0x20000000)
-                        self.flipped_tiles[(layer_name, r, c)] = (fh, fv, fd)
-                        self.tilemap.set_gid(layer_name, r, c, raw & 0x1FFFFFFF)
-        self._tile_cache, self._ghost_tile_cache = {}, {}
-
-    def _get_active_collision_layers(self) -> List[str]:
-        return _PHASE_LAYERS.get(self.player.phase_color, ["ground", "red_ground"])
-
-    def _get_enemy_collision_layers(self, enemy: Enemy) -> List[str]:
-        return _PHASE_LAYERS.get(enemy.phase, ["ground", "green_ground", "red_ground"])
-
-    def _init_graphics(self) -> None:
-        props = self._parse_props(self.map_data)
-        bg_configs = [
-            ("green", props.get("bg_past", f"{self.map_name}_past"), f"{self.map_name}_past", (8, 16, 20, 130)),
-            ("red", props.get("bg_future", f"{self.map_name}_future"), f"{self.map_name}_future", (22, 10, 14, 135)),
-        ]
-        self.bg_surfaces = {}
-        for phase, target, fallback, wash_color in bg_configs:
-            raw_bg = self._load_background_image(target) or self._load_background_image(fallback)
-            if raw_bg:
-                bg = raw_bg.copy()
-                wash = pygame.Surface(bg.get_size(), pygame.SRCALPHA)
-                wash.fill(wash_color)
-                bg.blit(wash, (0, 0))
-                self.bg_surfaces[phase] = bg
-
-        self._ambient_particles = [{
-            "x": random.uniform(0, self.MAP_WIDTH), "y": random.uniform(0, self.MAP_HEIGHT),
-            "speed_y": random.uniform(-14.0, -5.0), "speed_x": random.uniform(-4.0, 4.0),
-            "drift_timer": random.uniform(0.0, 6.28), "radius": random.choice([1, 1, 2]), "alpha": random.randint(85, 175)
-        } for _ in range(40)]
-        self._particles_surface = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA)
-        
-        self._bullet_surf = pygame.Surface((14, 8), pygame.SRCALPHA)
-        pygame.draw.ellipse(self._bullet_surf, (255, 100, 30, 220), (0, 0, 14, 8))
-        pygame.draw.ellipse(self._bullet_surf, (255, 250, 180, 255), (3, 1, 8, 6))
-        
-        self._trail_surf = pygame.Surface((8, 6), pygame.SRCALPHA)
-        
-        tex = settings.TEXTURES.get("destructible_block")
-        frames = settings.FRAMES.get("destructible_block", [])
-        if tex and frames:
-            self._brick_tile = pygame.transform.scale(tex.subsurface(frames[0]), (self.TILE_SIZE, self.TILE_SIZE))
-        else:
-            self._brick_tile = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE))
-            self._brick_tile.fill((120, 110, 100))
-
-    def _load_background_image(self, candidate_name: str) -> Optional[pygame.Surface]:
-        if not candidate_name: return None
-        if candidate_name in settings.TEXTURES: return settings.TEXTURES[candidate_name]
-        
-        bg_dir = settings.BASE_DIR / "assets" / "graphics" / "backgrounds"
-        clean_name = pathlib.Path(candidate_name).stem
-        for p in (bg_dir / candidate_name, bg_dir / f"{candidate_name}.png", bg_dir / f"{clean_name}.png"):
-            if p.is_file():
-                try:
-                    surf = pygame.image.load(str(p)).convert_alpha()
-                    settings.TEXTURES[candidate_name] = surf
-                    return surf
-                except (pygame.error, FileNotFoundError):
-                    pass
-        return None
-
     def update(self, dt: float) -> None:
         self._is_sword_special = (self.player.state_name == "attack_special" and self.player.skin == "sword")
-        self._update_particles(dt)
+        self.particle_system.update(dt)
         self._update_projectiles(dt)
         
         self.player.active_collision_layers = self._get_active_collision_layers()
@@ -525,21 +358,6 @@ class Room:
 
         self._update_enemies_and_combat(dt)
         self._process_respawns(dt)
-
-    def _update_particles(self, dt: float) -> None:
-        for p in self._ambient_particles:
-            p["drift_timer"] += dt * 1.5
-            p["y"] += p["speed_y"] * dt
-            p["x"] += (p["speed_x"] + math.sin(p["drift_timer"]) * 6.0) * dt
-            if p["y"] < 0: p["y"], p["x"] = float(self.MAP_HEIGHT), random.uniform(0, self.MAP_WIDTH)
-            elif p["x"] < 0: p["x"] = float(self.MAP_WIDTH)
-            elif p["x"] > self.MAP_WIDTH: p["x"] = 0.0
-
-        for d in self.dust_particles[:]:
-            d["life"] -= dt
-            d["x"] += d["vx"] * dt
-            d["y"] += d["vy"] * dt
-            if d["life"] <= 0.0: self.dust_particles.remove(d)
 
     def _update_projectiles(self, dt: float) -> None:
         for p in self.enemy_projectiles[:]:
@@ -598,7 +416,6 @@ class Room:
                         col = int(self.safe_point_x // self.TILE_SIZE)
                         row = 6
                         
-                        # Position player squarely on top of the solid platform
                         self.player.x = float(col * self.TILE_SIZE)
                         self.player.y = float(row * self.TILE_SIZE - self.player.height)
                         self.player.hitbox.topleft = (int(self.player.x), int(self.player.y))
@@ -617,7 +434,6 @@ class Room:
                             for c in valid_cols:
                                 self.tilemap.set_gid("ground", row, c, solid_gid)
                             
-                            # Add 2 crumbling 32x32 blocks to room for rendering and shaking
                             self.crumbling_blocks = [
                                 {"x": float((col - 1) * self.TILE_SIZE), "y": float(row * self.TILE_SIZE), "timer": 2.0},
                                 {"x": float((col + 1) * self.TILE_SIZE), "y": float(row * self.TILE_SIZE), "timer": 2.0},
@@ -652,7 +468,7 @@ class Room:
 
             if enemy.dead:
                 if random.random() < 0.25:
-                    from src.world.HealthOrb import HealthOrb
+                    from src.world.objects.HealthOrb import HealthOrb
                     self.health_orbs.append(HealthOrb(enemy.hitbox.centerx - 8, enemy.hitbox.centery - 8, self))
                 
                 if not getattr(enemy, "in_arena", False) and self.map_name != "sala_future" and self.arena is None:
@@ -662,6 +478,19 @@ class Room:
                 
         self.enemies = active_enemies
         self._resolve_enemy_collisions()
+
+        arena_monoliths = getattr(self.arena, "monoliths", []) if self.arena else []
+        if arena_monoliths and not self.player.is_dead():
+            atk_hb = self.player.get_attack_hitbox()
+            is_atk = self.player.state_name in ("attack", "attack_special")
+            for m in arena_monoliths:
+                if is_atk and atk_hb and atk_hb.colliderect(m.hitbox):
+                    m.take_hit(self.player.phase_color, self)
+                if self.player.skin == "mage" and getattr(self.player, "area_active", False):
+                    for fl in getattr(self.player, "flames", []):
+                        fl_rect = pygame.Rect(int(fl["x"]) - 32, int(fl["y"]) - 56, 64, 56)
+                        if fl_rect.colliderect(m.hitbox):
+                            m.take_hit(self.player.phase_color, self)
 
     def _resolve_enemy_collisions(self) -> None:
         active = [e for e in self.enemies if e.is_active() and e.state_name != "death" and not e.dead and e.enemy_type != "monster2"]
@@ -690,16 +519,7 @@ class Room:
                 self._spawn_enemy(req["x"], req["y"], req["type"])
 
     def check_room_exits(self) -> Optional[Tuple[str, float, float]]:
-        if self.arena and self.arena.is_locked(): return None
-        if self.player.state_name == "unlock": return None
-        if not getattr(self.player, "active", True): return None
-        if getattr(self.player, "hidden", False): return None
-        
-        from src.world.room_connections import ROOM_CONNECTIONS
-        for exit_def in ROOM_CONNECTIONS.get(self.map_name, []):
-            if exit_def["check"](self.player, self):
-                return exit_def["target_room"], float(exit_def["target_spawn"][0]), float(exit_def["target_spawn"][1])
-        return None
+        return self.room_events.check_room_exits()
 
     def spawn_enemy_projectile(self, x: float, y: float, vx: float, damage: int = 12, color: tuple = (255, 220, 80)) -> None:
         self.enemy_projectiles.append({"x": float(x), "y": float(y), "vx": float(vx), "damage": int(damage), "life": 2.2, "color": color, "trail": []})
@@ -712,13 +532,7 @@ class Room:
         self.damage_popups.append({"text": text, "x": x, "y": y, "timer": timer, "color": color})
 
     def spawn_dust(self, x: float, y: float, count: int = 4, color: Optional[tuple] = None) -> None:
-        for _ in range(count):
-            self.dust_particles.append({
-                "x": x + random.uniform(-5.0, 5.0), "y": y + random.uniform(-1.0, 1.0),
-                "vx": random.uniform(-30.0, 30.0), "vy": random.uniform(-14.0, -4.0),
-                "life": 0.22, "max_life": 0.22, "radius": random.choice([1, 2]),
-                "color": color
-            })
+        self.particle_system.spawn_dust(x, y, count, color)
 
     def _reset_player_to_spawn(self) -> None:
         self.player.x, self.player.y = self.spawn_x, self.spawn_y
@@ -726,152 +540,5 @@ class Room:
         self.player.hitbox.topleft = (int(self.spawn_x), int(self.spawn_y))
         self.player.change_state("idle")
 
-    def _get_tile_surface(self, gid: int, flip_h: bool = False, flip_v: bool = False, flip_d: bool = False, ghost: bool = False) -> Optional[pygame.Surface]:
-        key = (gid, flip_h, flip_v, flip_d)
-        cache = self._ghost_tile_cache if ghost else self._tile_cache
-        if key in cache: return cache[key]
-        
-        tileset = self.tilemap.tileset_for_gid(gid)
-        if not tileset: return None
-        
-        sub = tileset.image.subsurface(tileset.rect_for(gid))
-        if flip_d: sub = pygame.transform.flip(pygame.transform.rotate(sub, 270), True, False)
-        if flip_h or flip_v: sub = pygame.transform.flip(sub, flip_h, flip_v)
-        
-        if ghost:
-            ghost_surf = sub.copy()
-            ghost_surf.set_alpha(75)
-            cache[key] = ghost_surf
-            return ghost_surf
-            
-        cache[key] = sub
-        return sub
-
-    def _render_layer(self, layer_name: str, surface: pygame.Surface, ghost: bool = False) -> None:
-        if layer_name not in self.tilemap.layer_names(): return
-        
-        cam_x, cam_y = self.camera_offset
-        min_col, min_row = max(0, int(cam_x // self.TILE_SIZE)), max(0, int(cam_y // self.TILE_SIZE))
-        max_col = min(self.MAP_COLS - 1, int((cam_x + settings.VIRTUAL_WIDTH) // self.TILE_SIZE) + 1)
-        max_row = min(self.MAP_ROWS - 1, int((cam_y + settings.VIRTUAL_HEIGHT) // self.TILE_SIZE) + 1)
-        
-        grid = self.tilemap.get_layer(layer_name)
-        for row in range(min_row, max_row + 1):
-            for col in range(min_col, max_col + 1):
-                gid = grid[row][col]
-                if gid == 0: continue
-                
-                flip_h, flip_v, flip_d = self.flipped_tiles.get((layer_name, row, col), (False, False, False))
-                tile_surf = self._get_tile_surface(gid, flip_h, flip_v, flip_d, ghost=ghost)
-                if tile_surf:
-                    surface.blit(tile_surf, (col * self.TILE_SIZE - cam_x, row * self.TILE_SIZE - cam_y))
-
     def render(self, surface: pygame.Surface) -> None:
-        cam_x, cam_y = self.camera_offset
-        phase = self.player.phase_color
-        surface.fill((10, 10, 15))
-
-        self._render_environment(surface, cam_x, cam_y, phase)
-        self._render_vfx_background(surface, cam_x, cam_y, phase)
-        self._render_entities(surface, cam_x, cam_y, phase)
-        self._render_ui(surface, cam_x, cam_y)
-
-    def _render_environment(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:
-        bg_surf = self.bg_surfaces.get(phase, settings.TEXTURES.get(f"{self.map_name}_{'past' if phase == 'green' else 'future'}"))
-        if bg_surf:
-            bg_w, bg_h = bg_surf.get_size()
-            if bg_w < self.MAP_WIDTH:
-                scroll_x, scroll_y = -int(cam_x * 0.4) % bg_w - bg_w, -cam_y if bg_h >= self.MAP_HEIGHT else -int(cam_y * 0.3)
-                curr_x = scroll_x
-                while curr_x < settings.VIRTUAL_WIDTH:
-                    surface.blit(bg_surf, (curr_x, scroll_y))
-                    curr_x += bg_w
-            else:
-                surface.blit(bg_surf, (-cam_x, -cam_y))
-
-        self._render_layer("background", surface)
-        self._render_layer("ground", surface)
-        self._render_layer("decoration", surface)
-
-        active_pfx, inactive_pfx = ("green", "red") if phase == "green" else ("red", "green")
-        self._render_layer(f"{active_pfx}_background", surface)
-        self._render_layer(f"{active_pfx}_ground", surface)
-        self._render_layer(f"{active_pfx}_decoration", surface)
-        self._render_layer(f"{inactive_pfx}_ground", surface, ghost=True)
-
-        # Render visible stone/brick blocks for active solid blockers (temporary door/boss locks)
-        if self.solid_blockers and hasattr(self, "_brick_tile") and self._brick_tile:
-            ground_grid = self.tilemap.get_layer("ground") if "ground" in self.tilemap.layer_names() else None
-            for rect in self.solid_blockers:
-                for bx in range(rect.left, rect.right, self.TILE_SIZE):
-                    for by in range(rect.top, rect.bottom, self.TILE_SIZE):
-                        col = bx // self.TILE_SIZE
-                        row = by // self.TILE_SIZE
-                        has_tile = False
-                        if ground_grid and 0 <= row < self.MAP_ROWS and 0 <= col < self.MAP_COLS:
-                            has_tile = (ground_grid[row][col] != 0)
-                        if not has_tile:
-                            surface.blit(self._brick_tile, (bx - cam_x, by - cam_y))
-
-    def _render_vfx_background(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:
-        self._particles_surface.fill((0, 0, 0, 0))
-        part_col = (120, 255, 190) if phase == "green" else (255, 135, 80)
-        
-        for p in self._ambient_particles:
-            px, py = int(p["x"] - cam_x), int(p["y"] - cam_y)
-            if 0 <= px < settings.VIRTUAL_WIDTH and 0 <= py < settings.VIRTUAL_HEIGHT:
-                pygame.draw.circle(self._particles_surface, (*part_col, p["alpha"]), (px, py), p["radius"])
-
-        dust_default = (140, 240, 190) if phase == "green" else (240, 150, 130)
-        for d in self.dust_particles:
-            px, py = int(d["x"] - cam_x), int(d["y"] - cam_y)
-            alpha = int(220 * max(0.0, min(1.0, d["life"] / d["max_life"])))
-            if 0 <= px < settings.VIRTUAL_WIDTH and 0 <= py < settings.VIRTUAL_HEIGHT:
-                c = d.get("color") or dust_default
-                pygame.draw.circle(self._particles_surface, (*c, alpha), (px, py), d["radius"])
-                
-        surface.blit(self._particles_surface, (0, 0))
-
-    def _render_entities(self, surface: pygame.Surface, cam_x: float, cam_y: float, phase: str) -> None:
-        for t in self.falling_traps: t.render(surface, cam_x, cam_y)
-        for e in self.elevators: e.render(surface, cam_x, cam_y)
-        for s in self.saw_hazards: s.render(surface, cam_x, cam_y)
-        for a in self.altars: a.render(surface, cam_x, cam_y)
-        for enemy in self.enemies: enemy.render(surface, cam_x, cam_y)
-
-        for orb in self.health_orbs:
-            orb.render(surface, cam_x, cam_y)
-            
-        for p in self.enemy_projectiles:
-            px, py = int(p["x"] - cam_x), int(p["y"] - cam_y)
-            for tr in p.get("trail", []):
-                self._trail_surf.fill((0,0,0,0))
-                pygame.draw.ellipse(self._trail_surf, (*p.get("color", (255, 120, 40))[:3], int(180 * (tr["life"] / 0.14))), (0, 0, 8, 6))
-                surface.blit(self._trail_surf, (int(tr["x"] - cam_x) - 4, int(tr["y"] - cam_y) - 3))
-                
-            surface.blit(self._bullet_surf, (px - 7, py - 4))
-
-        self.player.render(surface, cam_x, cam_y)
-        
-        if hasattr(self, "crumbling_blocks") and self.crumbling_blocks:
-            tex = settings.TEXTURES.get("destructible_block")
-            frames = settings.FRAMES.get("destructible_block", [])
-            if tex and frames:
-                idle_surf = tex.subsurface(frames[0])
-                for b in self.crumbling_blocks:
-                    shaking = b["timer"] < 1.2
-                    offset_x = random.uniform(-2, 2) if shaking else 0.0
-                    offset_y = random.uniform(-1, 1) if shaking else 0.0
-                    surface.blit(idle_surf, (b["x"] - cam_x + offset_x, b["y"] - cam_y + offset_y))
-
-        if self.rising_hazard: self.rising_hazard.render_world(surface, cam_x, cam_y, phase)
-        if self.arena: self.arena.render(surface, cam_x, cam_y)
-
-    def _render_ui(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
-        for p in self.damage_popups:
-            render_text(surface, p["text"], settings.FONTS["hud"], int(p["x"] - cam_x), int(p["y"] - cam_y), p["color"], center=True, shadowed=True)
-            
-        for a in self.altars: a.render_ui(surface)
-            
-        if self.rising_hazard: self.rising_hazard.render_hud(surface, self.player)
-        if self.arena: self.arena.render_hud(surface)
+        self.renderer.render(surface)

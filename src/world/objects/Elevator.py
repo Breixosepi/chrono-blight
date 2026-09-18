@@ -1,8 +1,6 @@
-"""
-Chrono Blight - Elevator
-"""
-import pygame
 from typing import Any
+import pygame
+from gale.timer import Timer
 
 import settings
 
@@ -29,7 +27,7 @@ class Elevator:
         
         self.dest_map = dest_map
         self.state = start_state
-        self.timer = 0.0
+        self._timer_handle = None
         
         self.descend_speed = 90.0
         self.ascend_speed = 140.0
@@ -75,6 +73,16 @@ class Elevator:
             if hasattr(self.room, "camera"):
                 self.room.camera.shake(4.0, 1.2)
 
+    def _finish_arriving_open(self) -> None:
+        if self.state == "arriving_open":
+            self.state = "departing"
+            self.image = self.tex_closed
+            settings.SOUNDS["open"].play()
+            player = self.room.player
+            player.state_machine.change("idle")
+            player.active = True
+            player.hidden = False
+
     def update(self, dt: float) -> None:
         if self.state in ("hidden", "hidden_permanently"):
             return
@@ -110,24 +118,16 @@ class Elevator:
                     self.room.camera.shake(3.0, 0.25)
                 if hasattr(self.room, "spawn_dust"):
                     self.room.spawn_dust(self.hitbox.centerx, self.start_y, count=16)
-                self.timer = 0.8
                 player.hidden = False
                 player.active = False
                 self._center_player(player)
+                self._timer_handle = Timer.after(0.8, self._finish_arriving_open)
                 
         elif self.state == "arriving_open":
-            self.timer -= dt
             player = self.room.player
             self._center_player(player)
             player.hidden = False
             player.active = False
-            if self.timer <= 0:
-                self.state = "departing"
-                self.image = self.tex_closed
-                settings.SOUNDS["open"].play()
-                player.state_machine.change("idle")
-                player.active = True
-                player.hidden = False
                 
         elif self.state == "departing":
             self.y -= self.ascend_speed * dt

@@ -34,8 +34,11 @@ class UnlockState(EntityBaseState):
         elif self.form_to_unlock == "morph":
             self.unlock_text = "¡FORMA DESBLOQUEADA: MORPH!"
             self.flash_color = (80, 255, 120)
+        elif self.form_to_unlock == "victory":
+            self.unlock_text = "¡VICTORIA!"
+            self.flash_color = (255, 215, 80)
         else:
-            self.unlock_text = "¡ESTADÍSTICAS MEJORADAS!"
+            self.unlock_text = "¡ESTADISTICAS MEJORADAS!"
             self.flash_color = (255, 255, 255)
             
         self.start_y = float(self.entity.y)
@@ -69,7 +72,7 @@ class UnlockState(EntityBaseState):
         ceiling_bottom = 0.0
         if tilemap and collision_layers:
             from gale.tilemap.collision import CollisionType
-            from src.world.tile_collision import collision_type_in_layers
+            from src.world.systems.tile_collision import collision_type_in_layers
 
             tile_h = tilemap.tile_height
             tile_w = tilemap.tile_width
@@ -132,7 +135,7 @@ class UnlockState(EntityBaseState):
             tilemap = getattr(self.entity, "tilemap", None)
             collision_layers = getattr(self.entity, "active_collision_layers", None)
             if tilemap and collision_layers:
-                from src.world.tile_collision import move_and_collide_layers
+                from src.world.systems.tile_collision import move_and_collide_layers
                 nx, ny, cx, cy = move_and_collide_layers(
                     tilemap,
                     collision_layers,
