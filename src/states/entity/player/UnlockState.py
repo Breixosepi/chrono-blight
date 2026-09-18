@@ -29,13 +29,16 @@ class UnlockState(EntityBaseState):
         self.form_to_unlock = params.get("form", "sword")
         
         if self.form_to_unlock == "sword":
-            self.unlock_text = "ﾂ｡FORMA DESBLOQUEADA: CABALLERO!"
+            self.unlock_text = "¡FORMA DESBLOQUEADA: CABALLERO!"
             self.flash_color = (255, 210, 80)
         elif self.form_to_unlock == "morph":
-            self.unlock_text = "ﾂ｡FORMA DESBLOQUEADA: MORPH!"
+            self.unlock_text = "¡FORMA DESBLOQUEADA: MORPH!"
             self.flash_color = (80, 255, 120)
+        elif self.form_to_unlock == "victory":
+            self.unlock_text = "¡VICTORIA!"
+            self.flash_color = (255, 215, 80)
         else:
-            self.unlock_text = "ﾂ｡ESTADﾃ拘TICAS MEJORADAS!"
+            self.unlock_text = "¡ESTADISTICAS MEJORADAS!"
             self.flash_color = (255, 255, 255)
             
         self.start_y = float(self.entity.y)

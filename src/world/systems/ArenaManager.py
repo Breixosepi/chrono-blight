@@ -143,7 +143,7 @@ class ArenaManager:
             settings.play_music(boss_track)
             self.state = "active"
             self.boss_phase = 1
-            self.lava_shower.reset()
+            self.lava_shower.start()
             pos_boss = self.spawn_positions.get("right", (464.0, 128.0))
             self.boss = self.spawn_enemy("cultist_priest", pos_boss[0], pos_boss[1], is_boss=True)
             if self.boss:
@@ -266,6 +266,9 @@ class ArenaManager:
         settings.stop_music("final_boss")
         if "lava" in settings.SOUNDS:
             settings.SOUNDS["lava"].stop()
+        if "lava-shower" in settings.SOUNDS:
+            settings.SOUNDS["lava-shower"].stop()
+        self.lava_shower.reset()
         settings.SOUNDS["arena-cleared"].play()
         settings.play_music("ambient")
         
@@ -313,7 +316,7 @@ class ArenaManager:
             self.floor_split_active = False
             if hasattr(self.room, "play_state") and self.room.play_state:
                 self.room.play_state.cleared_events.add("the_harvester_defeated")
-                form_to_unlock = "sword"
+                form_to_unlock = "victory"
         else:
             self._show_banner("ﾂ｡SUMO SACERDOTE DERROTADO!", (100, 255, 140), 3.5)
             for en in list(self.room.enemies):
@@ -342,6 +345,11 @@ class ArenaManager:
                 elev.activate()
         if hasattr(self.room, "_check_cleared_events"):
             self.room._check_cleared_events()
+        if self.is_final_boss:
+            play_state = getattr(self.room, "play_state", None)
+            if play_state and hasattr(play_state, "state_machine"):
+                from src.states.game.VictoryState import VictoryState
+                play_state.state_machine.push(VictoryState(play_state.state_machine, play_state=play_state))
 
     def update(self, dt: float) -> None:
         if self.state == "inactive":

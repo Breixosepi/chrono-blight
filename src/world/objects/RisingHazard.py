@@ -212,6 +212,8 @@ class RisingHazard:
             pygame.draw.lines(surface, crest_bright, False, points_bright, 1)
 
     def render_hud(self, surface: pygame.Surface, player: "Player") -> None:
+        if getattr(self, "is_pool", False) or getattr(self.room, "map_name", "") != "subida":
+            return
         if self.alert_timer > 0.0:
             if int(self.alert_timer * 8) % 2 == 0:
                 col = (255, 230, 80) if self.state == self.STATE_TRIGGERED else (255, 70, 70)

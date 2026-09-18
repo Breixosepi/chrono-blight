@@ -4,6 +4,31 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.17.0] - 2026-09-18
+
+### Añadido
+- **Pantalla de Victoria (`VictoryState`)**:
+  - Implementación de pantalla cinemática de victoria tras vencer al jefe final The Harvester en la Gran Pirámide (`big_room`).
+  - Animación de ascensión y levitación del protagonista con rótulo de victoria y destello ceremonial en `UnlockState`.
+  - Tarjeta de estadísticas finales con tiempo total de juego (`playtime`), porcentaje de exploración del mapa (`exploration`) y retorno limpio al menú principal con `[ENTER]`.
+  - Guardado de punto de control automático al completar la partida.
+
+### Cambiado / Mejorado
+- **Interfaz y Metadatos de Ranuras de Guardado (`SlotSelectState.py` y `PlayState.py`)**:
+  - Desempaquetado correcto de metadatos de Gale (`extra["metadata"]`) para visualizar información real de partida en lugar de valores por defecto (12% y 00m 00s).
+  - Rediseño de las etiquetas de ranura: ahora se exhibe el nombre formal de la zona (`Zona Central`, `Abismo Oeste`, `Santuario Pasado`, `Gran Piramide`, etc.), cantidad de formas activas (`Formas: X/3`), tiempo acumulado de juego y porcentaje real de exploración.
+  - Compatibilidad hacia atrás mediante resolución de datos guardados para saves creados previamente.
+- **Optimización de Peligro de Lava (`RisingHazard.py`)**:
+  - El indicador HUD de escape de lava ahora se muestra exclusivamente en el mapa vertical (`subida`), ocultándose en zonas con estanques estáticos de magma como `sala_past`.
+
+### Corregido
+- **Ciclo Residual del Sonido de Lava (`LavaShower.py` y `ArenaManager.py`)**:
+  - Corrección del bucle infinito de audio de `lava-shower` (`lava_boss.wav`) que sonaba periódicamente cada 2-3 segundos durante toda la partida.
+  - `LavaShower` ahora inicia en estado inactivo y no reprograma temporizadores fuera de la batalla del sacerdote cultista.
+  - Detención segura y limpieza de timers y canales de sonido de lava al vencer a los jefes y en las transiciones de sala (`PlayState.change_room`).
+
+---
+
 ## [0.16.0] - 2026-09-17
 
 ### Añadido

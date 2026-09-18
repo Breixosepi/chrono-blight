@@ -12,6 +12,17 @@ from gale.text import render_text
 import settings
 from src.world.room_connections import DEFAULT_START_ROOM, DEFAULT_START_SPAWN
 
+ROOM_DISPLAY_NAMES = {
+    "middle": "Zona Central",
+    "left_corner": "Abismo Oeste",
+    "sala_future": "Santuario Futuro",
+    "abismo_fixed": "Abismo Este",
+    "sala_past": "Santuario Pasado",
+    "esquina_1": "Santuario Noreste",
+    "subida": "Subida al Abismo",
+    "big_room": "Gran Pirámide",
+}
+
 
 class SlotSelectState(BaseState):
     def enter(self, **params: Any) -> None:
@@ -23,7 +34,7 @@ class SlotSelectState(BaseState):
         self.confirming_overwrite = False
         self._refresh_metadata()
 
-        self.card_w = 220
+        self.card_w = 230
         self.card_h = 34
         self.card_gap = 8
 
@@ -196,13 +207,61 @@ class SlotSelectState(BaseState):
                 )
             else:
                 extra = getattr(meta, "extra", {}) or {}
-                room_name = extra.get("room_name", "Sala").replace("_", " ").title()
-                skin = extra.get("skin", "Mago").capitalize()
-                hp = int(extra.get("health", 100))
-                date_str = time.strftime("%d/%m %H:%M", time.localtime(meta.updated_at))
+                if "metadata" in extra and isinstance(extra["metadata"], dict):
+                    extra = {**extra["metadata"], **extra}
 
-                details = f"{room_name} | {skin} | HP: {hp} | {date_str}"
-                detail_color = (130, 230, 170) if is_selected else (110, 180, 140)
+                raw_room = extra.get("room_name") or extra.get("room", "middle")
+                room_display = ROOM_DISPLAY_NAMES.get(raw_room, raw_room.replace("_", " ").title())
+
+                exploration = extra.get("exploration")
+                playtime_sec = extra.get("playtime")
+                forms_count = extra.get("forms_count")
+
+                if exploration is None or playtime_sec is None or forms_count is None:
+                    try:
+                        data = self.manager.load(self.slots[i])
+                        if data:
+                            if exploration is None:
+                                visited = data.get("visited_rooms", [])
+                                exploration = data.get("exploration", min(100, int((len(visited) / 8.0) * 100)) if visited else 0)
+                            if playtime_sec is None:
+                                playtime_sec = data.get("playtime", 0)
+                            if forms_count is None:
+                                cleared = set(data.get("cleared_events", []))
+                                f_count = 1
+                                if "survival_boss_defeated" in cleared:
+                                    f_count += 1
+                                if "subida_cleared" in cleared:
+                                    f_count += 1
+                                forms_count = data.get("forms_count", f_count)
+                    except Exception:
+                        pass
+
+                exploration = int(exploration if exploration is not None else 0)
+                playtime_sec = int(playtime_sec if playtime_sec is not None else 0)
+                forms_count = int(forms_count if forms_count is not None else 1)
+
+                hours = playtime_sec // 3600
+                mins = (playtime_sec % 3600) // 60
+                secs = playtime_sec % 60
+                if hours > 0:
+                    time_str = f"{hours}h {mins:02d}m"
+                else:
+                    time_str = f"{mins:02d}m {secs:02d}s"
+
+                exp_text = f"Explorado: {exploration}%"
+                render_text(
+                    surface,
+                    exp_text,
+                    settings.FONTS["hud"],
+                    self.start_x + self.card_w - 10 - settings.FONTS["hud"].size(exp_text)[0],
+                    cy + 4,
+                    (130, 230, 170) if is_selected else (100, 180, 130),
+                    shadowed=True,
+                )
+
+                details = f"{room_display} | Formas: {forms_count}/3 | {time_str}"
+                detail_color = (220, 215, 230) if is_selected else (160, 150, 170)
                 render_text(
                     surface,
                     details,

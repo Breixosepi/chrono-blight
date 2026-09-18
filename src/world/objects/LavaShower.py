@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class LavaShower:
     def __init__(self, room: "Room"):
         self.room = room
-        self.state = "cooldown"
+        self.state = "inactive"
         
         self.cooldown_duration = 5.0
         self.warning_duration = 1.0
@@ -25,15 +25,18 @@ class LavaShower:
         self.liquid_particles: List[Dict[str, Any]] = []
         self.phase_timer: Optional[After] = None
         self.damage_timer: Optional[After] = None
+
+    def start(self) -> None:
+        self.reset()
         self._start_cooldown(3.5)
 
     def reset(self) -> None:
         if "lava-shower" in settings.SOUNDS:
             settings.SOUNDS["lava-shower"].stop()
+        self.state = "inactive"
         self.current_lava_y = 0.0
         self.liquid_particles.clear()
         self._cancel_timers()
-        self._start_cooldown(3.5)
 
     def _cancel_timers(self) -> None:
         if self.phase_timer:
@@ -44,12 +47,19 @@ class LavaShower:
             self.damage_timer = None
 
     def _start_cooldown(self, duration: float = None) -> None:
+        if self.state == "inactive":
+            return
+        if self.damage_timer:
+            self.damage_timer.remove()
+            self.damage_timer = None
         self.state = "cooldown"
         self.current_lava_y = 0.0
         duration = duration if duration is not None else self.cooldown_duration
         self.phase_timer = Timer.after(duration, self._start_warning)
 
     def _start_warning(self) -> None:
+        if self.state != "cooldown":
+            return
         player_x = self.room.player.hitbox.centerx
         zone_w = 110.0
         min_x = max(48.0, min(float(self.room.MAP_WIDTH) - 48.0 - zone_w, player_x - (zone_w / 2.0)))
@@ -60,6 +70,8 @@ class LavaShower:
         self.phase_timer = Timer.after(self.warning_duration, self._start_active)
 
     def _start_active(self) -> None:
+        if self.state != "warning":
+            return
         self.state = "active"
         self.current_lava_y = 0.0
         settings.SOUNDS["lava-shower"].play()
@@ -86,6 +98,8 @@ class LavaShower:
                 self.room._spawn_popup("-12", player.hitbox.centerx, player.hitbox.top - 10, 0.6, (255, 60, 60))
 
     def update(self, dt: float) -> None:
+        if self.state == "inactive":
+            return
         self.wave_timer += dt * 3.0
         
         for p in self.liquid_particles[:]:
