@@ -86,7 +86,7 @@ class HarvesterAttackState(BossBaseState):
         phase = getattr(boss, "boss_phase", 1)
         dir_x = -1.0 if boss.facing == "left" else 1.0
 
-        if phase in (1, 2):
+        if phase == 1:
             color = boss.phase if boss.phase in ("green", "red") else ("green" if random.random() < 0.5 else "red")
             if random.random() < 0.50:
                 spawn_x = boss.hitbox.left - 12 if dir_x < 0 else boss.hitbox.right + 12
@@ -101,14 +101,28 @@ class HarvesterAttackState(BossBaseState):
                 target_x = player.hitbox.centerx
                 if hasattr(boss, "spawn_falling_blade"):
                     boss.spawn_falling_blade(target_x, phase_color=color, delay=0.45)
-                    # En fase 2, puede encadenar un segundo corte con predicción
-                    if phase == 2 and random.random() < 0.45:
-                        lead = 45.0 if player.vx >= 0 else -45.0
-                        boss.spawn_falling_blade(target_x + lead, phase_color=color, delay=0.70)
                 if "boss-wind-spell" in settings.SOUNDS:
                     settings.SOUNDS["boss-wind-spell"].play()
                 if boss.room:
                     boss.room.spawn_dust(boss.hitbox.centerx, boss.hitbox.bottom, count=8)
+
+        elif phase == 2:
+            color = "green" if random.random() < 0.5 else "red"
+            target_x = player.hitbox.centerx
+            if hasattr(boss, "spawn_falling_blade"):
+                boss.spawn_falling_blade(target_x, phase_color=color, delay=0.35)
+                lead = 50.0 if (player.vx >= 0 and player.facing == "right") else -50.0
+                boss.spawn_falling_blade(target_x + lead, phase_color="red" if color == "green" else "green", delay=0.60)
+
+            spawn_x = boss.hitbox.left - 12 if dir_x < 0 else boss.hitbox.right + 12
+            spawn_y = boss.hitbox.bottom - 10
+            if hasattr(boss, "spawn_wind_blade"):
+                boss.spawn_wind_blade(spawn_x, spawn_y, dir_x, phase_color=color, is_vertical=False, speed=220.0)
+
+            if "boss-wind-spell" in settings.SOUNDS:
+                settings.SOUNDS["boss-wind-spell"].play()
+            if boss.room:
+                boss.room.spawn_dust(boss.hitbox.centerx, boss.hitbox.bottom, count=8)
 
         elif phase == 3:
             color = "red" if random.random() < 0.5 else "green"

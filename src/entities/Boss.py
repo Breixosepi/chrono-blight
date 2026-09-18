@@ -128,15 +128,14 @@ class Boss(Enemy):
                 return
             px = self.player.hitbox.centerx if self.player else 800.0
             platforms = [
-                (785.0, 85.0),   # Altar Summit
-                (295.0, 101.0),  # Left High Wing
-                (1255.0, 101.0), # Right High Wing
-                (552.0, 133.0),  # Left Mid Platform
-                (1048.0, 133.0), # Right Mid Platform
-                (200.0, 53.0),   # Left Upper Platform
-                (1350.0, 53.0),  # Right Upper Platform
+                (785.0, 85.0),
+                (295.0, 101.0),
+                (1255.0, 101.0),
+                (672.0, 133.0),
+                (896.0, 133.0),
+                (200.0, 53.0),
+                (1350.0, 53.0),
             ]
-            # Escoger una plataforma lejana al jugador (al menos 260px de distancia)
             far_plats = [p for p in platforms if abs(p[0] - px) >= 260]
             if not far_plats:
                 far_plats = platforms
@@ -808,16 +807,6 @@ class Boss(Enemy):
             if self.room:
                 self.room._spawn_popup("ESCUDO", self.hitbox.centerx, self.hitbox.top - 8, 0.45, (220, 110, 255))
             return
-
-        if self.enemy_type == "the_harvester":
-            # Phase 1: Only vulnerable to matching phase color
-            if getattr(self, "boss_phase", 1) == 1 and self.phase in ("green", "red"):
-                if self.player and self.player.phase_color != self.phase:
-                    self.hit_flash_timer = 0.15
-                    if self.room:
-                        col = (255, 90, 90) if self.phase == "red" else (90, 240, 150)
-                        self.room._spawn_popup("INMUNE", self.hitbox.centerx, self.hitbox.top - 8, 0.45, col)
-                    return
 
         if self.state_name == "death":
             return
