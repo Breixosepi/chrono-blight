@@ -1,638 +1,443 @@
-# Changelog - Chrono Blight
+# Changelog — Chrono Blight
 
-Todos los cambios notables realizados en el proyecto **Chrono Blight** (Plataformas de Acción / Mini-Metroidvania en Gale y Pygame) están documentados en este archivo.
+All notable changes to **Chrono Blight** (2D Action Platformer / Metroidvania built with Gale and Pygame) are documented in this file.
 
-El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+---
 
 ## [0.22.0] - 2026-09-18
 
-### Añadido
-- **Prólogo Cinemático estilo Novela Visual de 9 Escenas (`src/states/game/StoryIntroState.py`)**:
-  - Implementación de estado narrativo interactivo con estética de novela visual retro que se activa automáticamente al iniciar una nueva partida desde `SlotSelectState`.
-  - Despliegue de 9 ilustraciones a pantalla completa con transiciones de fundido cruzado (*crossfade*) suave mediante interpolación de transparencia con `Timer.tween`.
-  - Caja de diálogo panorámica inferior, optimizada para no tapar el arte central, con maquetación protegida en fuente `hud_small` (9pt).
-  - Contador de progreso de viñetas e insignias temáticas de orador (*Cronista Ancestral*, *Mago de Fase*, *Voz del Destino*).
-  - Efecto mecanografiado dinámico (*Typewriter*) a 0.022s por carácter con sonido rítmico sutil de pulsación y atenuación de volumen.
-  - Opciones de avance rápido con `[ENTER]` / `[ESPACIO]`, transiciones de audio dimensional entre paneles (`phase_shift_past` y `phase_shift_future`) y atajo para saltar el prólogo directamente al juego con `[ESC]`.
-- **Composición Vectorial de Splash Screen HD (`src/states/game/SplashState.py`)**:
-  - Sustitución de imágenes aplanadas de baja resolución por un pipeline de composición programática en tiempo real.
-  - Generación de degradados radiales elípticos de alta pureza (esmeralda profundo para el Pasado y carmesí para el Futuro) sin bandas de color ni artefactos de compresión.
-  - Renderizado del nuevo logo HD transparente (`2816x1536`) escalado con algoritmo bilineal `pygame.transform.smoothscale`, otorgando máxima nitidez, contraste y legibilidad a las letras y engranajes.
+### Added
+- **9-Panel Visual Novel Cinematic Prologue (`src/states/game/StoryIntroState.py`)**:
+  - Interactive narrative state with retro visual-novel aesthetics, automatically triggered when starting a new game from `SlotSelectState`.
+  - 9 full-screen illustrations displayed with smooth crossfade transitions via `Timer.tween` transparency interpolation.
+  - Panoramic bottom dialogue box optimized to avoid covering the central artwork, laid out in `hud_small` (9pt) font.
+  - Panel progress counter and thematic speaker badges (*Ancient Chronicler*, *Phase Mage*, *Voice of Fate*).
+  - Dynamic typewriter effect at 0.022s per character with subtle rhythmic keystroke sound and volume attenuation.
+  - Fast-forward with `[ENTER]` / `[SPACE]`, dimensional audio transitions between panels (`phase_shift_past` and `phase_shift_future`), and direct prologue skip to game with `[ESC]`.
+- **Vector Composition for HD Splash Screen (`src/states/game/SplashState.py`)**:
+  - Replaced low-resolution flattened graphics with a real-time programmatic composition pipeline.
+  - Procedural generation of pure elliptic radial gradients (deep emerald for the Past and crimson for the Future) eliminating color banding and compression artifacts.
+  - Rendered high-definition transparent logo (`2816x1536`) scaled with bilinear `pygame.transform.smoothscale`, delivering maximum sharpness, contrast, and legibility for lettering and clockwork gears.
 
 ---
 
 ## [0.21.0] - 2026-09-18
 
-### Cambiado / Mejorado
-- **Ajustes y Dinamismo en Jefe Final (The Harvester)**:
-  - *Fase 1*: Eliminada la condición de vulnerabilidad exclusiva según el color de fase; el jefe ahora es vulnerable y recibe daño de cualquiera de las formas del jugador sin forzar cambio de era constante.
-  - *Fase 2*: Mayor desafío durante la oscuridad. Tiempo de espera entre ataques reducido (0.65s - 1.0s), ráfagas combinadas de espadas descendentes rápidas (0.35s de advertencia), corte predictivo hacia el desplazamiento del jugador (0.60s) y cuchillas de viento horizontales para forzar saltos y esquivas activas hacia los monolitos.
-  - *Fase 3*: Reemplazadas las plataformas temporales condicionales por plataformas exclusivamente neutrales de la capa base `ground` (`(672.0, 133.0)`, `(896.0, 133.0)`, `(785.0, 85.0)`, cornisas de alas superiores), eliminando el bug visual donde el jefe levitaba en el aire al alternar entre eras.
-- **Configuración de Controles Ergonómica y Personalizable (`src/controls_manager.py` y `SettingsState.py`)**:
-  - Implementación de pantalla interactiva de reasignación de teclas (`SettingsState`), accesible tanto desde la pantalla de inicio (`TitleState`) como desde el menú de pausa (`PauseState`).
-  - Persistencia automática de controles personalizados en `controls.json`, con botón para restablecer a los valores por defecto recomendados.
-  - Distribución moderna por defecto: WASD (movimiento), Q/E (alternar formas), J (ataque), K (especial), L (cambio de fase temporal), L-SHIFT (dash), ESPACIO (salto), M (mapa) y P (pausa).
-- **Ascensores Dinámicos y Sonorizados (`Elevator.py`)**:
-  - Adaptación de la tecla de interacción del ascensor: ahora utiliza dinámicamente la tecla configurada para subir (`W` o flecha arriba según el binding del usuario), con rótulo contextual indicando la tecla correspondiente `[W] SUBIR` al situarse dentro.
-  - Añadido efecto sonoro de mecanismo y crujido de rocas (`rock-crack` y `close`) al comenzar a descender hacia la sala, y sonido contundente de impacto y apertura (`rock-smash` y `open`) al posarse en el suelo.
+### Changed / Improved
+- **Final Boss Tuning and Dynamism (The Harvester)**:
+  - *Phase 1*: Removed exclusive phase-color vulnerability condition; the boss is now vulnerable to any player form without forcing constant era switching.
+  - *Phase 2*: Increased challenge during darkness. Attack cooldown reduced (0.65s – 1.0s), combined rapid falling-sword bursts (0.35s warning), predictive cut toward player movement (0.60s), and horizontal wind blades to force active jumps and dodges toward monoliths.
+  - *Phase 3*: Replaced conditional temporal platforms with exclusively neutral base-layer `ground` platforms (`(672.0, 133.0)`, `(896.0, 133.0)`, `(785.0, 85.0)`, upper wing ledges), eliminating the visual bug where the boss levitated when alternating eras.
+- **Ergonomic and Remappable Controls (`src/controls_manager.py` and `SettingsState.py`)**:
+  - Interactive key-rebinding screen (`SettingsState`) accessible from both `TitleState` and `PauseState`.
+  - Automatic persistence of custom controls in `controls.json`, with a reset-to-defaults button.
+  - Modern default layout: WASD (movement), Q/E (cycle forms), J (attack), K (special), L (phase shift), L-SHIFT (dash), SPACE (jump), M (map), P (pause).
+- **Dynamic and Soundscaped Elevators (`Elevator.py`)**:
+  - Elevator interaction key now dynamically uses the configured "up" binding (W or arrow key per user settings), with a contextual on-screen prompt `[W] GO UP`.
+  - Added rock-crumbling and mechanism sound effects (`rock-crack` + `close`) when descending, and a heavy impact + open sound (`rock-smash` + `open`) when landing on the ground floor.
 
 ---
 
 ## [0.20.0] - 2026-09-18
 
-### Añadido
-- **Secuencia Cinemática de Apertura (`src/states/game/SplashState.py`)**:
-  - Presentación inicial de `logo_past` durante 1.0s y transición temporal hacia `logo_future` durante 1.0s con destello dimensional rojizo y efecto sonoro `phase_shift_future`.
-  - Transición fluida hacia `TitleState` tras completar los 2.0s, con soporte para saltar la intro de inmediato con cualquier tecla (`[ENTER]`, `[ESPACIO]`, `[ESC]`).
-  - Activación exclusiva en el arranque inicial del juego (`ChronoBlight.init()`), mientras que los reinicios por derrota o pausa (`reset_to_title()`) retornan directo al menú sin forzar la intro.
-- **Gestor de Fondos Dinámicos con Crossfade (`src/ui/MenuBackground.py`)**:
-  - Componente de fondo compartido y continuo entre `TitleState` y `SlotSelectState`.
-  - Alternancia cíclica cada 30 segundos entre la era del Pasado (`gothic_castle_past`) y la era del Futuro (`gothic_castle_future`).
-  - Fundido cruzado suave (*crossfade*) de 1.5 segundos entre texturas con capa translúcida protectora de contraste (`(14, 10, 20, 130)`), garantizando máxima legibilidad en fuentes doradas y pixel art.
+### Added
+- **Opening Cinematic Splash (`src/states/game/SplashState.py`)**:
+  - Initial display of `logo_past` for 1.0s, then a temporal transition to `logo_future` for 1.0s with a red dimensional flash and `phase_shift_future` sound.
+  - Smooth transition to `TitleState` after 2.0s, with support for instant skip via any key (`[ENTER]`, `[SPACE]`, `[ESC]`).
+  - Fires exclusively on initial game boot (`ChronoBlight.init()`); death restarts and pauses return directly to the menu without forcing the intro again.
+- **Dynamic Crossfade Menu Background Manager (`src/ui/MenuBackground.py`)**:
+  - Shared continuous background component between `TitleState` and `SlotSelectState`.
+  - Cyclic alternation every 30 seconds between Past era (`gothic_castle_past`) and Future era (`gothic_castle_future`).
+  - Smooth 1.5-second crossfade between textures with a translucent contrast overlay (`(14, 10, 20, 130)`) ensuring full readability of golden fonts and pixel art.
 
-### Cambiado / Mejorado
-- **Ambientación Visual de Menús (`TitleState.py` y `SlotSelectState.py`)**:
-  - Sustitución de fondos sólidos monótonos (`surface.fill((16, 12, 24))`) por el ciclo coordinado de `menu_background`, manteniendo la transición temporal activa y continua al navegar entre ambas pantallas sin reinicios ni cortes.
+### Changed / Improved
+- **Menu Visual Ambiance (`TitleState.py` and `SlotSelectState.py`)**:
+  - Replaced flat solid backgrounds (`surface.fill((16, 12, 24))`) with the coordinated `menu_background` cycle, keeping the temporal transition active and continuous when navigating between both screens without restarts or cuts.
 
 ---
 
 ## [0.19.0] - 2026-09-18
 
-### Añadido
-- **Capa Superior de UI y HUD Fantasma Inteligente (`render_top_ui` y `HUD.py`)**:
-  - Implementación del método `render_top_ui` en `RoomRenderer`, `Room` y `PlayState` para que los textos de arena, rótulos de desbloqueo y popups de daño se rendericen por encima del HUD del jugador.
-  - Activación dinámica del modo fantasma en el HUD (`alpha = 65`) ante banners de arena activos, popups en la esquina superior izquierda o animaciones de desbloqueo de formas/estadísticas.
-- **Persistencia de Mejora Permanente de Estadísticas (`UnlockState.py` y `Player.py`)**:
-  - Vinculación del evento `stats` tras derrotar al Sumo Sacerdote del Vacío para aplicar efectivamente +30 HP y +20 MP permanentes a todas las formas presentes y futuras del jugador.
+### Added
+- **Top UI Layer and Smart Ghost HUD (`render_top_ui` and `HUD.py`)**:
+  - Added `render_top_ui` method in `RoomRenderer`, `Room`, and `PlayState` so arena text, unlock labels, and damage popups render on top of the player HUD.
+  - Dynamic ghost mode on the HUD (`alpha = 65`) when active arena banners, top-left popups, or form/stat unlock animations are displayed.
+- **Permanent Stat Boost Persistence (`UnlockState.py` and `Player.py`)**:
+  - Linked the `stats` event after defeating the Void High Priest to effectively apply +30 HP and +20 MP permanently to all current and future player forms.
 
-### Cambiado / Mejorado
-- **Guardado Metroidvania Post-Jefe Final (`VictoryState.py` y `SlotSelectState.py`)**:
-  - Eliminación del guardado automático en `VictoryState`: al vencer a The Harvester, no se sobrescribe la ranura dentro de la cámara del jefe final.
-  - La partida mantiene el punto de control del último altar o monolito utilizado, permitiendo reanudar antes del combate con el jefe vivo y libre exploración.
-  - Sanitización en `SlotSelectState`: redirección segura a `middle` frente al elevador y remoción de flags de bloqueo para partidas guardadas previamente en `big_room`.
-- **Rebalanceo de Jefes para Combate Prolongado (`entity.py` y `ArenaManager.py`)**:
-  - *Sumo Sacerdote del Vacío (`cultist_priest`)*: Salud incrementada a 350 HP, daño de contacto a 10 y proyectil a 12 (cooldown 2.4s).
-  - *The Harvester (`the_harvester`)*: Salud incrementada a 520 HP, permitiendo que sus 3 fases (combate regular, oscuridad con monolitos y duelo de plataformas) tengan la duración adecuada. Daño de corte y dash calibrado a 14.
-  - *El Acechador Temporal (`monster2_boss`)*: Mantenido en modo supervivencia temporal (60s) con daño ajustado a 8 y 12.
-- **Rebalanceo de Formas del Jugador (`src/definitions/entity.py` y `combat.py`)**:
-  - *Phase Mage*: 55 HP, 75 MP, 4.0 MP/s regen. Arcane Bolt (25 dmg, 0 MP) e Infernal Flame Area (60 dmg en área a enemigos normales, calibrado a 20 dmg con 1 impacto por casteo contra jefes para evitar daño desproporcionado, 25 MP).
-  - *Beast Morph*: 90 HP, 45 MP, 3.0 MP/s regen, 1 salto. Beast Claw (14 dmg, 0 MP), Primal Impact (25 dmg, 15 MP), Beast Dash (12 MP).
-  - *Swordmaster*: 70 HP, 30 MP, 2.2 MP/s regen, 2 saltos (doble salto). Combo de espada (16 y 22 dmg, 0 MP) y Thrust Dash (20 MP).
+### Changed / Improved
+- **Post-Final-Boss Metroidvania Save (`VictoryState.py` and `SlotSelectState.py`)**:
+  - Removed auto-save in `VictoryState`: defeating The Harvester no longer overwrites the slot from inside the boss chamber.
+  - The run retains the last altar or monolith checkpoint, allowing resumption before the boss fight with the boss alive and free exploration.
+  - Sanitization in `SlotSelectState`: safe redirect to `middle` in front of the elevator and removal of lock flags for saves previously made in `big_room`.
+- **Boss Rebalance for Extended Combat (`entity.py` and `ArenaManager.py`)**:
+  - *Void High Priest (`cultist_priest`)*: Health increased to 350 HP, contact damage to 10, projectile damage to 12 (cooldown 2.4s).
+  - *The Harvester (`the_harvester`)*: Health increased to 520 HP, allowing its 3 phases (regular combat, darkness with monoliths, platform duel) to have proper duration. Slash and dash damage calibrated to 14.
+  - *Temporal Lurker (`monster2_boss`)*: Maintained in timed survival mode (60s) with adjusted damage of 8 and 12.
+- **Player Form Rebalance (`src/definitions/entity.py` and `combat.py`)**:
+  - *Phase Mage*: 55 HP, 75 MP, 4.0 MP/s regen. Arcane Bolt (25 dmg, 0 MP) and Infernal Flame Area (60 dmg to normal enemies in area, calibrated to 20 dmg with 1 hit per cast against bosses to prevent disproportionate damage, 25 MP).
+  - *Beast Morph*: 90 HP, 45 MP, 3.0 MP/s regen, 1 jump. Beast Claw (14 dmg, 0 MP), Primal Impact (25 dmg, 15 MP), Beast Dash (12 MP).
+  - *Swordmaster*: 70 HP, 30 MP, 2.2 MP/s regen, 2 jumps (double jump). Sword combo (16 and 22 dmg, 0 MP) and Thrust Dash (20 MP).
 
-### Corregido
-- **Tipografía y Caracteres Rotos en Combate de Jefes (`ArenaManager.py`)**:
-  - Eliminación de caracteres corruptos (mojibake) en anuncios y transiciones de fase de los jefes, erradicando los cuadros de texto sin glifo.
-- **Limpieza de Popups de Daño Flotante (`Room.py`, `Boss.py`, `FallingTrap.py`, `HarvesterAttackState.py`, `HarvesterDashState.py`)**:
-  - Eliminación de descripciones de ataques en los popups, mostrando exclusivamente el número limpio de daño recibido.
+### Fixed
+- **Mojibake in Boss Combat Announcements (`ArenaManager.py`)**:
+  - Removed corrupt characters (mojibake) in boss phase announcements and transitions, eliminating glyph-missing text boxes.
+- **Floating Damage Popup Cleanup (`Room.py`, `Boss.py`, `FallingTrap.py`, `HarvesterAttackState.py`, `HarvesterDashState.py`)**:
+  - Removed attack descriptions from popups, now displaying only the clean damage number received.
 
 ---
 
 ## [0.18.0] - 2026-09-18
 
-### Añadido
-- **Estandarización de Tipografías Pixel-Art (`settings.FONTS` y `assets/fonts/`)**:
-  - Configuración del conjunto oficial de fuentes en `settings.FONTS`: `hud` (10pt), `hud_small` (9pt), `ui` (10pt), `title` (18pt) con `golden-apple.ttf`, y `main-title` (24pt) con `Undaunted-DEMO.otf`.
-  - Establecimiento del umbral mínimo de tamaño de fuente en 9pt (`hud_small`), garantizando máxima nitidez pixel-art y legibilidad en resolución virtual retro ($320 \times 180$).
-- **Soporte de Texto Multilínea y Clamping Perimetral en `_crisp_render_text` (`settings.py`)**:
-  - Soporte nativo para saltos de línea (`\n`) con cálculo dinámico de espaciado vertical proporcional (`font.get_linesize()`), evitando glifos no imprimibles.
-  - Clamping perimetral automático a los límites de superficie (`clamp_to_surface=True`): contención de textos y números flotantes de combate dentro de los márgenes visibles de la pantalla ($X \in [2, W-3]$, $Y \in [2, H-3]$), impidiendo que alertas o popups se corten fuera de la ventana.
-- **Documentación Técnica de Arquitectura (`ARCHITECTURE.md`)**:
-  - Creación del documento técnico arquitectónico en la raíz del proyecto detallando módulos, subsistemas desacoplados (FSM, StateStack, Command Pattern), pipeline de renderizado, topología del mundo y diagramas Mermaid.
+### Added
+- **Pixel-Art Typography Standardization (`settings.FONTS` and `assets/fonts/`)**:
+  - Official font set in `settings.FONTS`: `hud` (10pt), `hud_small` (9pt), `ui` (10pt), `title` (18pt) with `golden-apple.ttf`, and `main-title` (24pt) with `Undaunted-DEMO.otf`.
+  - Minimum font size threshold set at 9pt (`hud_small`), ensuring maximum pixel-art sharpness and readability at retro virtual resolution (320×180).
+- **Multiline Text and Perimeter Clamping in `_crisp_render_text` (`settings.py`)**:
+  - Native newline (`\n`) support with dynamic proportional vertical spacing (`font.get_linesize()`), avoiding non-printable glyph artifacts.
+  - Automatic perimeter clamping to surface bounds (`clamp_to_surface=True`): contains floating text and combat numbers within visible screen margins, preventing popups from being clipped out of the window.
+- **Technical Architecture Documentation (`ARCHITECTURE.md`)**:
+  - Created the architectural technical document at the project root detailing modules, decoupled subsystems (FSM, StateStack, Command Pattern), rendering pipeline, world topology, and Mermaid diagrams.
 
-### Cambiado / Mejorado
-- **Prevención de Desbordamiento y Maquetación en Menú de Pausa (`src/states/game/PauseState.py`)**:
-  - Ampliación del ancho del pergamino a `BOARD_W = 264` px para dar margen visual holgado en la resolución de 320 px.
-  - Reorganización de la subpantalla `CONTROLES Y FORMAS` en dos columnas limpias (`tecla` en `bx + 12`, `descripción` en `bx + 84`).
-  - Adopción de la fuente `hud_small` (9pt) y síntesis de descripciones de habilidades, eliminando el corte que ocurría con frases largas como `"Mago: Orbe | Cab: Espada | Morph: Rodar"`.
-- **Reestructuración Anticolisión en el Mapa del Mundo (`src/states/game/MapState.py`)**:
-  - Sustitución de la descripción de sala inexplorada: condensada de `"Niebla densa. Explora este sector para descubrir su contenido."` (283 px, excedía la pantalla por 17 px) a `"Niebla densa. Sector aun sin explorar."` en `hud_small` (146 px).
-  - Reorganización total del pie de página del mapa: separación limpia entre controles a la izquierda (`[M] Cerrar [FLECHAS] Explorar`) y el porcentaje de exploración con barra de progreso a la derecha, erradicando la triple colisión visual anterior y dejando 58 px de separación.
-- **Ajustes de Márgenes en Ranuras de Guardado (`src/states/game/SlotSelectState.py`)**:
-  - Incremento del ancho de las tarjetas a `card_w = 236` px.
-  - Aplicación de `hud_small` (9pt) en detalles de guardado, tiempo de juego, porcentaje de exploración y texto de ranura vacía, asegurando más de 50 px de margen de seguridad frente al borde de la tarjeta.
-- **Calibración Visual del HUD (`src/ui/HUD.py`)**:
-  - Ajuste de las dimensiones del contenedor a $88 \times 36$ px para albergar cómodamente los indicadores.
-  - Reubicación vertical de los rótulos de formas activas a `row_forms_y = 20`, evitando que sobrepasen el borde inferior del marco.
+### Changed / Improved
+- **Overflow Prevention and Layout in Pause Menu (`src/states/game/PauseState.py`)**:
+  - Expanded scroll board width to `BOARD_W = 264` px for comfortable visual margin at 320 px resolution.
+  - Reorganized `CONTROLS & FORMS` sub-screen into two clean columns (`key` at `bx + 12`, `description` at `bx + 84`).
+  - Adopted `hud_small` (9pt) font and condensed skill descriptions, eliminating clipping from long phrases.
+- **Anti-Collision Restructuring in the World Map (`src/states/game/MapState.py`)**:
+  - Condensed unexplored room description from a 283px overflowing string to a 146px `hud_small` string.
+  - Full footer reorganization: clean separation between controls on the left and exploration percentage with progress bar on the right.
+- **Save Slot Card Margin Adjustments (`src/states/game/SlotSelectState.py`)**:
+  - Increased card width to `card_w = 236` px.
+  - Applied `hud_small` (9pt) for save details, playtime, exploration %, and empty slot text.
+- **HUD Visual Calibration (`src/ui/HUD.py`)**:
+  - Adjusted container dimensions to 88×36 px.
+  - Repositioned active form labels to `row_forms_y = 20`, preventing overflow below the frame border.
 
-### Corregido
-- **Solapamiento de Barra vs Dígitos en HUD (`src/ui/HUD.py`)**:
-  - Reducción del ancho de las barras de HP y MP a 26 px (`bar_w = 26`, finaliza en $X=63$), erradicando la superposición gráfica de la barra sobre los dígitos de vida cuando el jugador supera los 100 HP (3 dígitos, inicio en $X=70$).
+### Fixed
+- **HP/MP Bar vs Digit Overlap in HUD (`src/ui/HUD.py`)**:
+  - Reduced HP and MP bar widths to 26 px (`bar_w = 26`, ending at X=63), eliminating graphical overlap of the bar over the life digit when the player exceeds 100 HP (3-digit values starting at X=70).
 
-### Eliminado
-- **Depuración de Tipografía Obsoleta (`assets/fonts/Minimal4.ttf`)**:
-  - Eliminación del archivo de fuente anterior tras completar la migración hacia `golden-apple.ttf`.
+### Removed
+- **Obsolete Font Cleanup (`assets/fonts/Minimal4.ttf`)**:
+  - Removed the previous font file after completing migration to `golden-apple.ttf`.
 
 ---
 
 ## [0.17.0] - 2026-09-18
 
-### Añadido
-- **Pantalla de Victoria (`VictoryState`)**:
-  - Implementación de pantalla cinemática de victoria tras vencer al jefe final The Harvester en la Gran Pirámide (`big_room`).
-  - Animación de ascensión y levitación del protagonista con rótulo de victoria y destello ceremonial en `UnlockState`.
-  - Tarjeta de estadísticas finales con tiempo total de juego (`playtime`), porcentaje de exploración del mapa (`exploration`) y retorno limpio al menú principal con `[ENTER]`.
-  - Guardado de punto de control automático al completar la partida.
+### Added
+- **Victory Screen (`VictoryState`)**:
+  - Cinematic victory screen triggered after defeating the final boss The Harvester in the Grand Pyramid (`big_room`).
+  - Player ascension and levitation animation with victory title and ceremonial flash in `UnlockState`.
+  - Final stat card showing total playtime (`playtime`), map exploration percentage (`exploration`), and clean return to main menu with `[ENTER]`.
+  - Automatic checkpoint save on run completion.
 
-### Cambiado / Mejorado
-- **Interfaz y Metadatos de Ranuras de Guardado (`SlotSelectState.py` y `PlayState.py`)**:
-  - Desempaquetado correcto de metadatos de Gale (`extra["metadata"]`) para visualizar información real de partida en lugar de valores por defecto (12% y 00m 00s).
-  - Rediseño de las etiquetas de ranura: ahora se exhibe el nombre formal de la zona (`Zona Central`, `Abismo Oeste`, `Santuario Pasado`, `Gran Piramide`, etc.), cantidad de formas activas (`Formas: X/3`), tiempo acumulado de juego y porcentaje real de exploración.
-  - Compatibilidad hacia atrás mediante resolución de datos guardados para saves creados previamente.
-- **Optimización de Peligro de Lava (`RisingHazard.py`)**:
-  - El indicador HUD de escape de lava ahora se muestra exclusivamente en el mapa vertical (`subida`), ocultándose en zonas con estanques estáticos de magma como `sala_past`.
+### Changed / Improved
+- **Save Slot UI and Metadata (`SlotSelectState.py` and `PlayState.py`)**:
+  - Correct unpacking of Gale metadata (`extra["metadata"]`) to display real save info instead of defaults (12% and 00m 00s).
+  - Redesigned slot labels: now shows zone formal name (`Central Zone`, `West Abyss`, `Past Sanctuary`, `Grand Pyramid`, etc.), active form count (`Forms: X/3`), accumulated playtime, and real exploration %.
+  - Backward compatibility via data resolution for saves created previously.
+- **Lava Hazard HUD Optimization (`RisingHazard.py`)**:
+  - The lava escape HUD indicator now shows exclusively in the vertical map (`subida`), hidden in zones with static magma pools such as `sala_past`.
 
-### Corregido
-- **Ciclo Residual del Sonido de Lava (`LavaShower.py` y `ArenaManager.py`)**:
-  - Corrección del bucle infinito de audio de `lava-shower` (`lava_boss.wav`) que sonaba periódicamente cada 2-3 segundos durante toda la partida.
-  - `LavaShower` ahora inicia en estado inactivo y no reprograma temporizadores fuera de la batalla del sacerdote cultista.
-  - Detención segura y limpieza de timers y canales de sonido de lava al vencer a los jefes y en las transiciones de sala (`PlayState.change_room`).
+### Fixed
+- **Residual Lava Sound Loop (`LavaShower.py` and `ArenaManager.py`)**:
+  - Fixed the infinite `lava-shower` audio loop (`lava_boss.wav`) that played periodically every 2-3 seconds during the entire run.
+  - `LavaShower` now starts in inactive state and does not reschedule timers outside the cultist priest battle.
+  - Safe stop and cleanup of lava sound timers and channels when bosses are defeated and on room transitions (`PlayState.change_room`).
 
 ---
 
 ## [0.16.0] - 2026-09-17
 
-### Añadido
-- **Integración Integral del Paisaje Sonoro (Efectos de Sonido y Pistas en `settings.SOUNDS`)**:
-  - **Interfaz y Navegación**:
-    - Efectos `change` y `enter` para navegación interactiva y confirmación en menús (`TitleState`, `GameOverState`, `SlotSelectState`).
-    - Efectos táctiles de pergamino `paper-unfold` (`unfold_map.mp3`) y `paper-fold` (`fold_map.wav`) al abrir y cerrar la interfaz de papel en `MapState` y `PauseState`.
-  - **Habilidades y Estados del Jugador**:
-    - `jump`: Sonido de impulso al despegar en salto (`jump.wav`).
-    - `morph-dash`: Efecto sonoro aerodinámico al ejecutar el impulso de la forma Morph (`dash_morph.mp3` en `DashState`).
-    - `change-skin`: Efecto de transformación mágica al alternar entre formas (`change_skin.mp3` en `Player.change_skin`).
-    - `on-land`: Contacto e impacto con el suelo al aterrizar tras saltar o caer (`on_land.mp3` en `Player.on_land`).
-    - `sword` y `slash-hit`: Efecto de balanceo de espada y corte de impacto contra carne al golpear enemigos (`AttackState`, `combat.py`).
-    - `sword-dash`: Desplazamiento sónico al rematar con el ataque especial de espada (`sword_dash.wav` en `AttackSpecialState`).
-    - `mage-attack` y `mage-special`: Disparo de proyectil mágico e invocación de pilares de llamas arcanas (`AttackState`, `AttackSpecialState`).
-    - `morph-fire` y `morph-power`: Ataque básico y explosión ígnea de la forma Morph.
-    - `phase_shift_past` y `phase_shift_future`: Efectos temporales al alternar entre la era del Pasado y del Futuro (`PhaseShiftState`).
-    - `player-death`: Agonía sonora al perecer el jugador en `DeathState`.
-    - `hit-player`: Sonido de impacto al recibir daño el protagonista.
-    - `heart`: Tintineo curativo al recolectar orbes de vida en el mundo (`HealthOrb.py`).
-    - `unlock-state`: Sonido cinemático ceremonial al adquirir una nueva forma (`UnlockState.py`).
-  - **Enemigos y Jefes**:
-    - `enemy-hurt`: Reacción auditiva de dolor al recibir daño regular (`EnemyHitState.py`).
-    - `enemy-death`: Disolución y destrucción de enemigos comunes.
-    - `shield-active`: Rebote metálico al golpear enemigos o jefes protegidos por barreras invulnerables (`combat.py`).
-    - `boss-wind-spell`: Efecto místico de viento para los ataques mágicos del Lurker (`LurkerAttackState.py`).
-    - Bandas sonoras temáticas de jefes: `boss_survive` (desafío de supervivencia en `sala_past`), `giant_boss` (combate contra el Gólem Raíz) y `final_boss` (batalla climática contra el Sumo Sacerdote Cultista en `sala_future`).
-    - `arena-cleared`: Fanfarria triunfal (`arena_fanfare.mp3`) al superar una arena de combate o prueba de supervivencia (`ArenaManager.py`).
-  - **Mundo y Mecánicas de Entorno**:
-    - `save`: Resonancia mística al sintonizar un altar de guardado (`Altar.py`).
-    - `open` y `close`: Apertura y cierre de compuertas en el sistema de ascensores (`Elevator.py`).
-    - `rock-crack` y `rock-smash`: Crujido de advertencia y colapso demoledor en las trampas de roca (`FallingTrap.py`).
-    - `lava` y `lava-shower`: Borboteo y caída de magma en peligros ascendentes y cascadas (`RisingHazard`, `LavaShower`).
-    - `saw-hazard`: Corte al ser impactado por sierras mecánicas (`SawHazard.py`).
+### Added
+- **Full Soundscape Integration (SFX and Tracks in `settings.SOUNDS`)**:
+  - **UI and Navigation**: `change` and `enter` for interactive navigation and confirmation in menus. Tactile `paper-unfold` (`unfold_map.mp3`) and `paper-fold` (`fold_map.wav`) effects when opening and closing the paper UI in `MapState` and `PauseState`.
+  - **Player Abilities and States**: `jump`, `morph-dash`, `change-skin`, `on-land`, `sword`, `slash-hit`, `sword-dash`, `mage-attack`, `mage-special`, `morph-fire`, `morph-power`, `phase_shift_past`, `phase_shift_future`, `player-death`, `hit-player`, `heart`, `unlock-state`.
+  - **Enemies and Bosses**: `enemy-hurt`, `enemy-death`, `shield-active`, `boss-wind-spell`, boss music tracks (`boss_survive`, `giant_boss`, `final_boss`), and `arena-cleared` victory fanfare.
+  - **World and Environment**: `save`, `open`, `close`, `rock-crack`, `rock-smash`, `lava`, `lava-shower`, `saw-hazard`.
 
-### Cambiado / Refactorizado
-- **Rediseño de Fin de Partida con Carga de Partidas (`GameOverState.py` y `SlotSelectState.py`)**:
-  - Sustitución de la opción *"Continuar desde el ultimo altar"* por *"Cargar partida"*.
-  - Navegación fluida hacia `SlotSelectState` en modo carga (`from_game_over=True`), permitiendo al jugador seleccionar cualquiera de sus 3 ranuras de guardado con lectura de metadatos (sala, aspecto, salud y fecha/hora).
-  - Soporte para cancelar y volver a la pantalla de Game Over mediante la tecla `[P]` o `[Backspace]` (`self.state_machine.pop()`).
-  - Limpieza exhaustiva de la pila de estados (`while len(self.state_machine.states) > 0: self.state_machine.pop()`) al cargar o iniciar partida, erradicando estados zombis (`GameOverState` y `PlayState` residual) y previniendo fugas de memoria.
+### Changed / Refactored
+- **Game Over Screen Redesign with Save Loading (`GameOverState.py` and `SlotSelectState.py`)**:
+  - Replaced *"Continue from last altar"* with *"Load Save"*.
+  - Smooth navigation to `SlotSelectState` in load mode (`from_game_over=True`), letting the player select any of their 3 save slots.
+  - Support for canceling back to Game Over with `[P]` or `[Backspace]`.
+  - Full state stack flush (`while len(self.state_machine.states) > 0: self.state_machine.pop()`) on load to eliminate zombie states and prevent memory leaks.
 
-### Corregido
-- **Detención Inmediata de Peligros de Lava al Morir (`DeathState.py` y `settings.py`)**:
-  - Corte forzado inmediato de los sonidos en bucle `lava`, `lava-shower` y `saw-hazard` en `DeathState.enter()`, evitando que el magma siga sonando durante la animación de muerte del personaje.
-  - Parada segura del sonido `lava` al entrar en `InactiveState` y de `lava-shower` al reiniciar la trampa en `LavaShower.reset()` y `settings.stop_all_music()`.
-- **Corte Limpio de Música al Regresar al Menú Principal (`TitleState.py`, `GameOverState.py`, `ChronoBlight.py`)**:
-  - Detención automática de cualquier canal de música activo (`game-over`, `ambient`, música de jefes) y peligros ambientales persistentes al entrar en `TitleState.enter()` o al reiniciar la pila con `_reset_to_title()`, erradicando la superposición de bandas sonoras con el tema de inicio (`intro`).
+### Fixed
+- **Immediate Lava Hazard Stop on Death (`DeathState.py` and `settings.py`)**:
+  - Forced immediate stop of looping sounds `lava`, `lava-shower`, and `saw-hazard` in `DeathState.enter()`.
+  - Safe `lava` stop on entering `InactiveState` and `lava-shower` stop on `LavaShower.reset()` and `settings.stop_all_music()`.
+- **Clean Music Cut When Returning to Main Menu (`TitleState.py`, `GameOverState.py`, `ChronoBlight.py`)**:
+  - Automatic stop of any active music channel and persistent ambient hazards on entering `TitleState.enter()` or resetting the stack with `_reset_to_title()`.
 
 ---
 
 ## [0.15.0] - 2026-09-17
 
-### Añadido
-- **Sistema de UI de Papel Moderno y Animado (Humble Gift - Paper UI System v1.1)**:
-  - **Animación de Despliegue y Plegado Táctil (`PauseState` y `MapState`)**:
-    - Efecto de desenrollado y apertura vertical con rebote suave mediante interpolación `out_back` en apertura (0.24s) y anticipación `in_back` en cierre (0.16s).
-    - Proyección dinámica de sombra de papel (*paper drop shadow*) que escala y modula su opacidad según el progreso de la animación.
-    - Ocultamiento y revelado nítido del contenido interior cuando el pergamino alcanza un umbral de apertura adecuado ($progress \ge 0.6$).
-  - **Niebla Animada Viva en el Mapa (`MapState`)**:
-    - Las salas no exploradas cuentan con una niebla difusa en movimiento continuo mediante ondas senoidales (`math.sin` / `math.cos`) y líneas de trama flotantes que simulan vapor o bruma viva en tiempo real.
-    - Signo de interrogación (`?`) con suave levitación flotante en cada sala misteriosa.
-  - **Faro con Ondas de Radar en el Jugador (`MapState`)**:
-    - Marcador de posición del jugador enriquecido con anillos de radar concéntricos expansivos que se difuminan progresivamente al alejarse del centro.
-  - **Cursor Suave Deslizante (`lerp`)**:
-    - Marco de selección que se desliza fluidamente entre habitaciones en el Mapa del Mundo con velocidad proporcional `dt * 20.0`.
-    - Cursor indicador interactivo con transición suave en el Menú de Pausa.
-  - **Menú de Pausa Rediseñado con Botones Interactivos y Subpantalla**:
-    - Opciones interactivas enmarcadas: `REANUDAR`, `MAPA DEL MUNDO`, `CONTROLES Y FORMAS` y `MENU PRINCIPAL`.
-    - Subpantalla detallada `CONTROLES Y FORMAS` con guía de botones para todas las transformaciones (Mago, Caballero, Morph Ball) y mecánicas de cambio de fase temporal.
-    - Acceso directo al Mapa del Mundo desde el menú de pausa sin necesidad de reanudar el juego.
+### Added
+- **Modern Animated Paper UI System (Humble Gift - Paper UI System v1.1)**:
+  - **Unfold/Fold Animation (`PauseState` and `MapState`)**: Vertical scroll-open with `out_back` bounce easing on open (0.24s) and `in_back` anticipation on close (0.16s). Dynamic paper drop shadow scaling with the animation progress.
+  - **Animated Living Fog in the World Map**: Unexplored rooms feature continuous diffuse fog via sinusoidal waves and floating hatch lines simulating live mist. Floating `?` sign with gentle levitation.
+  - **Player Radar Pulse (`MapState`)**: Player position marker enriched with expanding concentric radar rings that fade progressively.
+  - **Smooth Lerp Cursor**: Selection frame glides smoothly between rooms in the World Map (`dt * 20.0`). Interactive cursor with smooth transition in Pause Menu.
+  - **Redesigned Pause Menu with Interactive Buttons and Sub-screen**: Interactive framed options: `RESUME`, `WORLD MAP`, `CONTROLS & FORMS`, and `MAIN MENU`. Detailed `CONTROLS & FORMS` sub-screen with button guide for all transformations and phase-shift mechanics. Direct access to the World Map from the pause menu.
 
 ---
 
 ## [0.14.0] - 2026-09-16
 
-### Añadido
-- **Pantalla de Mapa del Mundo Completo (`src/states/game/MapState.py`)**:
-  - Acceso instantáneo en cualquier momento mediante la tecla `[M]` (o salida con `[M]` / `[ESC]`).
-  - **Estética de Pergamino Humble Gift**: Inspirado en `ps3Urw.gif` y `Frc_nf.gif`, con marco cálido de pergamino (`#eebd8a`), doble borde de tinta oscura (`#2c1e28`) y filigranas de diamantes en las esquinas.
-  - **Niebla para Salas Inexploradas**: Las habitaciones no visitadas se proyectan como siluetas oscuras atenuadas con trama de niebla y un `?` central, manteniendo ocultos sus secretos y POIs.
-  - **Salas Visitadas y Puntos de Interés (POIs)**: Las salas descubiertas se renderizan con contorno nítido y sus mini-iconos distintivos:
-    - `middle`: Altar ancestral de guardado.
-    - `abismo_fixed`: Bloque desmoronable de piedra.
-    - `sala_past`: Cara del Gran Monstruo (y cruz `X` de victoria tras superarlo).
-    - `sala_future`: Cara del Sumo Sacerdote Cultista (y cruz `X` de victoria tras derrotarlo).
-    - `esquina_1` y `left_corner`: Monolitos/obeliscos con runa cian brillante.
-    - `subida`: Gota / llama de lava fundida.
-    - `big_room`: Calavera del clímax final.
-  - **Faro de Posición del Jugador**: Marcador pulsante en tiempo real indicando en qué sala te encuentras.
-  - **Tarjeta de Información Inferior (`INFO`)**: Caja de detalle que expone el icono enmarcado, título y descripción/estado de la sala seleccionada.
-  - **Exploración Interactiva con Flechas**: Navegación con `[↑/↓/←/→]` para inspeccionar los detalles de cualquier sala conectada en el mapa.
-- **Menú de Muerte y Game Over Interactivo (`src/states/game/GameOverState.py`)**:
-  - Reemplazo del retorno automático al título por un menú de 2 opciones:
-    1. *Continuar desde el último altar*: Restaura al jugador al 100% de vida y resucita todas las formas disponibles en el altar guardado, preservando en memoria el mapa de salas descubiertas.
-    2. *Volver al menú principal*: Retorna limpiamente a la pantalla de título.
-- **Persistencia de Exploración (`visited_rooms`)**:
-  - Registro de salas exploradas en `PlayState` sincronizado con el sistema de guardado `SaveManager`.
+### Added
+- **Full World Map Screen (`src/states/game/MapState.py`)**:
+  - Instant access at any time via `[M]` key.
+  - **Humble Gift Scroll Aesthetics**: Warm parchment frame (`#eebd8a`), double dark ink border (`#2c1e28`), and diamond filigrees at corners.
+  - **Fog for Unexplored Rooms**: Unvisited rooms displayed as dark silhouettes with fog hatch and central `?`.
+  - **Visited Rooms and Points of Interest (POIs)**: Discovered rooms rendered with crisp outline and distinctive mini-icons (save altar, crumbling block, boss faces with `X` after defeat, monolith/obelisk, lava drop, final skull).
+  - **Player Position Beacon**: Pulsing real-time marker showing current room.
+  - **Bottom INFO Card**: Detail box exposing room icon, title, and description/status.
+  - **Arrow Key Exploration**: Navigate with `[↑/↓/←/→]` to inspect any connected room on the map.
+- **Interactive Death / Game Over Menu (`src/states/game/GameOverState.py`)**:
+  - Replaced automatic title return with a 2-option menu: *Continue from last altar* and *Return to main menu*.
+- **Exploration Persistence (`visited_rooms`)**:
+  - Explored room tracking in `PlayState` synced with `SaveManager`.
 
 ---
 
 ## [0.13.0] - 2026-09-16
 
-### Añadido
-- **Bloqueadores de Puertas en Mapas Tiled (`assets/tilemaps/`)**:
-  - `subida.json`: Bloqueador de entrada inferior ($X=0, Y=560$, $32 \times 48$ px) con `requires_event="subida_cleared"`.
-  - `sala_past.json`: Bloqueador de arena de supervivencia ($X=608, Y=112$, $32 \times 64$ px) con `requires_event="survival_boss_defeated"`.
-  - `sala_future.json`: Bloqueador de sala del jefe cultista ($X=0, Y=112$, $32 \times 64$ px) con `requires_event="boss_cultist_defeated"`.
+### Added
+- **Dynamic Door Blockers in Tiled Maps (`assets/tilemaps/`)**:
+  - `subida.json`: Lower entry blocker with `requires_event="subida_cleared"`.
+  - `sala_past.json`: Survival arena blocker with `requires_event="survival_boss_defeated"`.
+  - `sala_future.json`: Cultist boss room blocker with `requires_event="boss_cultist_defeated"`.
 
-### Cambiado / Refactorizado
-- **Eliminación de Muros Invisibles y Barreras Procedurales Hardcodeadas**:
-  - `ArenaManager.py`: Eliminación total del renderizado procedural de campos láser, lógica de pulsos, variables `barrier_active`, `barrier_rect` y empuje forzado del jugador.
-  - `RisingHazard.py`: Eliminación de los barrotes de hierro procedurales descendentes, superficie y lógica de colisión vertical de compuerta.
-  - `TriggeredState.py` y `InactiveState.py` / `MovingState.py`: Limpieza de referencias a `gate_current_y`, `gate_landed` y `drop_tween`.
-  - `room_connections.py`: Desvinculación de la salida de `subida` de coordenadas internas de la compuerta eliminada.
-  - `Room.py`: Inicialización de `solid_blockers` durante `__init__` e invocación reactiva en `ArenaManager.on_unlock_finished()` y `EscapedState.enter()` para apertura inmediata de puertas al superar los desafíos.
+### Changed / Refactored
+- **Removal of Invisible Walls and Hardcoded Procedural Barriers**:
+  - `ArenaManager.py`: Full removal of procedural laser field rendering, pulse logic, `barrier_active`, `barrier_rect`, and forced player push.
+  - `RisingHazard.py`: Removed procedural descending iron bars, surface, and vertical gate collision logic.
+  - `Room.py`: `solid_blockers` initialization during `__init__` and reactive invocation in `ArenaManager.on_unlock_finished()` and `EscapedState.enter()` for instant door opening on challenge completion.
 
 ---
 
 ## [0.12.0] - 2026-09-16
 
-### Añadido
-- **Sistema de Progresión y Cinemática de Desbloqueo de Formas (`src/states/entity/player/UnlockState.py`)**:
-  - Estado dedicado para la obtención de nuevas formas (`UnlockState`) con animación cinemática:
-    - Levitación suave del personaje mediante curvas cúbicas de Gale (`gale.ease_functions.ease_out_cubic`).
-    - Destello con halo resplandeciente, onda expansiva circular y emisión de partículas de polvo al alcanzar el clímax.
-    - Caída al suelo y despliegue del banner superior estilizado indicando la forma obtenida.
-  - Bloqueo de entrada/salida de sala durante la animación para garantizar la integridad cinemática.
-- **Desbloqueo de Formas y Eventos en el Mundo**:
-  - **Forma Caballero (`sword`)**: Desbloqueo al vencer la supervivencia en `sala_past`. Incorpora un retardo dramático tras el combate antes de iniciar la cinemática, revelando el ascensor de escape únicamente tras finalizar la transformación.
-  - **Forma Morph (`morph`)**: Desbloqueo en la sala de la esquina (`middle`) tras superar con éxito la prueba de escape ascendente en `subida`.
-- **Bloqueadores Dinámicos de Puertas y Pasajes (`src/world/Room.py`)**:
-  - Sistema de barreras temporales mediante rectángulos en Tiled (`traps` / capas de objetos) con propiedades personalizadas `requires_event` / `event`.
-  - Mosaico procedural automático con textura de bloques de piedra/ladrillo del juego (`destructible_block`), impidiendo el paso con colisiones AABB sólidas en 4 direcciones mientras el evento no esté superado.
-  - Desaparición automática tanto visual como física al registrarse el evento en `cleared_events` (ej. derrota de jefes o superación de salas).
+### Added
+- **Form Unlock Progression System and Cinematic (`src/states/entity/player/UnlockState.py`)**:
+  - Dedicated form unlock state with cinematic animation: soft player levitation via Gale cubic easing, radiant halo flash, expanding circular shockwave, dust particle burst, fall to ground, and styled top banner revealing the unlocked form.
+  - Room entry/exit locked during the animation to guarantee cinematic integrity.
+- **Form and World Event Unlocks**:
+  - **Swordmaster form (`sword`)**: Unlocked by completing the survival challenge in `sala_past`. Dramatic delay after combat before the cinematic begins; escape elevator revealed only after the transformation completes.
+  - **Beast Morph form (`morph`)**: Unlocked in the corner room (`middle`) after successfully completing the vertical escape challenge in `subida`.
+- **Dynamic Door and Passage Blockers (`src/world/Room.py`)**:
+  - Temporary barrier system via Tiled rectangles with custom `requires_event` / `event` properties. Automatic procedural tiling with brick textures (`destructible_block`), blocking passage with solid AABB collisions in 4 directions until the event is cleared. Instant visual and physical removal when the event is registered in `cleared_events`.
 
-### Cambiado / Refactorizado
-- **Centralización de Persistencia y Encapsulación (SRP)**:
-  - Creación de `PlayState.save_game_checkpoint()` en `src/states/game/PlayState.py`, centralizando el empaquetado del estado de partida y metadatos.
-  - Creación de `Player.restore_all_forms()` en `src/entities/Player.py`, desacoplando a `Altar.py` del acceso directo a diccionarios y propiedades internas del jugador.
-  - Refactorización de `Altar.interact()` para delegar el guardado y restauración a sus respectivos responsables.
-- **Controles Canónicos de Transformación y HUD**:
-  - Establecimiento del orden canónico para el ciclo de formas: `Mago -> Caballero -> Morph`.
-  - Corrección de la orientación de teclas: `[Q]` rota hacia la izquierda (hacia el Mago) y `[E]` rota hacia la derecha (hacia Morph).
-  - HUD adaptativo que lista dinámicamente las formas desbloqueadas en el orden canónico estricto.
+### Changed / Refactored
+- **Persistence Centralization and Encapsulation (SRP)**:
+  - Created `PlayState.save_game_checkpoint()` centralizing save state packaging and metadata.
+  - Created `Player.restore_all_forms()` decoupling `Altar.py` from direct dictionary/property access.
+  - Refactored `Altar.interact()` to delegate save and restore to their respective owners.
+- **Canonical Form Controls and HUD**:
+  - Canonical cycle order: `Mage → Swordmaster → Morph`.
+  - `[Q]` rotates left (toward Mage), `[E]` rotates right (toward Morph).
+  - Adaptive HUD dynamically listing unlocked forms in strict canonical order.
 
-### Optimizado (Rendimiento)
-- **Eliminación de Doble Renderizado de Jugador**:
-  - Supresión de la llamada redundante `self.player.render()` en `PlayState.render()`, delegando la renderización completa de entidades del mundo a `Room.render()`.
-- **Prevención de Presión al Garbage Collector (Eliminación de Asignaciones en Bucle)**:
-  - **Transición de Fase (`PhaseShiftState.py`)**: Pre-asignación y reutilización de la superficie de pantalla completa `_RING_SURF`, evitando la creación de superficies de $400 \times 225$ píxeles a 60 FPS.
-  - **Partículas de Compuerta (`RisingHazard.py`)**: Pre-asignación de la superficie de partículas `_gate_p_surf` ($3 \times 3$ px), eliminando miles de asignaciones por segundo en el ciclo de dibujado.
+### Optimized
+- **Eliminated Double Player Render**: Removed redundant `self.player.render()` call in `PlayState.render()`, fully delegating entity rendering to `Room.render()`.
+- **GC Pressure Prevention**:
+  - `PhaseShiftState.py`: Pre-allocated and reused `_RING_SURF` full-screen surface, avoiding 400×225 px allocations at 60 FPS.
+  - `RisingHazard.py`: Pre-allocated `_gate_p_surf` (3×3 px), eliminating thousands of allocations per second in the draw loop.
 
-### Corregido
-- **Tope Estricto de Vida Máxima del Mago (`Player.py`)**:
-  - Implementación de clamp estricto en los setters de `health` y `mana` vinculados a `self.MAX_HEALTH` y `self.MAX_MANA`.
-  - Ajuste automático de salud al alternar formas (`change_skin`) para evitar que el Mago conserve la vida residual más alta de otras formas (ej. 80 HP de Caballero).
-  - Corrección del orden de carga en `PlayState.enter()` para inicializar el skin antes de restaurar la vida.
+### Fixed
+- **Strict Maximum Health Cap for Mage (`Player.py`)**: Implemented strict clamp in `health` and `mana` setters bound to `self.MAX_HEALTH` and `self.MAX_MANA`. Automatic health adjustment on form switch to prevent the Mage from keeping higher HP from other forms. Fixed load order in `PlayState.enter()` to initialize skin before restoring health.
 
 ---
 
 ## [0.11.0] - 2026-09-16
 
-### Añadido
-- **Altares de Guardado y Restauración (`src/world/Altar.py`)**:
-  - Monumento ancestral interactivo con gráficos de obelisco animado.
-  - Interacción mediante tecla `[↑]` con prompt visual situado directamente sobre la cabeza del jugador.
-  - Al activarse: reproduce su animación de encendido, cura al 100% de HP y Maná a todas las formas, resucita a las formas caídas y guarda el estado en el slot activo mediante `SaveManager`.
-- **Sistema de Ranuras de Guardado y Menú Principal (`src/states/game/SlotSelectState.py` y `TitleState.py`)**:
-  - Menú interactivo en la pantalla de inicio con opciones: *Nueva Partida*, *Cargar Partida* y *Salir*.
-  - Selector para 3 ranuras independientes (`slot_1`, `slot_2`, `slot_3`).
-  - Muestra detalles de partida (sala, forma, vida y fecha/hora de guardado).
-  - Soporte para iniciar nueva partida, cargar partidas previas, modal de confirmación para sobrescribir y borrado de partidas con tecla de ataque especial `[X]`.
-- **Orbes de Vida Coleccionables (`src/world/HealthOrb.py`)**:
-  - Drop con probabilidad de 25% al eliminar enemigos comunes.
-  - Físicas con gravedad, rebote suave en el suelo y recuperación de +20 HP al contacto con texto flotante.
-- **Persistencia de Eventos y Desafíos**:
-  - Registro de eventos superados (`cleared_events`) en el archivo de guardado (`.sav`).
-  - Desactiva reaparición de jefes derrotados (Sumo Sacerdote en `sala_future`) y trampas de parkour superadas (`subida`).
+### Added
+- **Save and Restore Altars (`src/world/Altar.py`)**: Interactive ancient monument with animated obelisk graphics. Activated with `[↑]` with a visual prompt above the player. On activation: plays its ignition animation, fully heals all forms to 100% HP and Mana, revives downed forms, and saves state to the active slot via `SaveManager`.
+- **Save Slot System and Main Menu (`src/states/game/SlotSelectState.py` and `TitleState.py`)**: Interactive menu with *New Game*, *Load Game*, and *Quit* options. 3-slot selector with save details. Supports new game, load, overwrite confirmation modal, and slot deletion with `[X]`.
+- **Collectible Health Orbs (`src/world/HealthOrb.py`)**: 25% drop chance on common enemy death. Physics with gravity, soft floor bounce, and +20 HP recovery on contact with floating text.
+- **Event and Challenge Persistence**: `cleared_events` registered in the `.sav` file. Prevents boss respawns (Void High Priest in `sala_future`) and already-cleared parkour traps (`subida`).
 
-### Cambiado / Corregido
-- **Mapeo de Entradas y Navegación en Menús**:
-  - Incorporación de `KEY_DOWN` (`"down"`) y `KEY_BACKSPACE` (`"back"`) en `settings.py`.
-  - Manejo jerárquico de `ESC` en `ChronoBlight.py` para permitir retroceder menús sin cerrar la aplicación de forma abrupta.
-- **Reubicación Arquitectónica**:
-  - Migración de `HealthOrb` de `src/entities/` a `src/world/` para respetar la separación entre actores con máquinas de estado y objetos coleccionables.
-  - Reducción del tamaño del corazón a escala pixel art de 16x16 (1 tile).
+### Changed / Fixed
+- **Input Mapping and Menu Navigation**: Added `KEY_DOWN` (`"down"`) and `KEY_BACKSPACE` (`"back"`) in `settings.py`. Hierarchical `ESC` handling in `ChronoBlight.py`.
+- **Architectural Relocation**: Moved `HealthOrb` from `src/entities/` to `src/world/` to respect the separation between state-machine actors and collectible objects.
 
 ---
 
 ## [0.10.0] - 2026-09-15
 
-### Añadido
-- **Sistema de Ascensores (`src/world/Elevator.py`)**: Ascensor interactivo con animaciones de puertas abiertas/cerradas. Traslada al jugador invisibilizándolo durante el viaje; entra en escena, suelta al jugador, espera 1 segundo con las puertas abiertas y desaparece por arriba permanentemente.
-- **Módulo de Resolución de Combate (`src/world/combat.py`)**: Extracción completa de la lógica de evaluación de daño, impacto de ataques (cuerpo a cuerpo y magia) y daño por contacto desde `Room.py` a una clase `CombatResolver` independiente.
+### Added
+- **Elevator System (`src/world/Elevator.py`)**: Interactive elevator with open/closed door animations. Transports the player by making them invisible during transit; arrives, releases the player, waits 1 second with doors open, then permanently disappears upward.
+- **Combat Resolution Module (`src/world/combat.py`)**: Full extraction of damage evaluation logic, attack impact (melee and magic), and contact damage from `Room.py` into a standalone `CombatResolver` class.
 
-### Cambiado / Refactorizado
-- **Refactorización Limpieza en `Room.py`**:
-  - Eliminación de abundante código duplicado centralizando la lógica con `_parse_props` y `_spawn_enemy`.
-  - Simplificación del mapeo de capas de colisión con diccionarios limpios a nivel de módulo (`_PHASE_LAYERS`).
-  - Eliminación de argumentos y variables huérfanas en trampas y generadores.
-- **Máquina de Estados de Jefes**:
-  - Reestructuración del paquete de estados de los Jefes, moviendo ataques específicos a sus respectivas carpetas de entidad (ej: `boss/cultist/`) para un mejor desacoplamiento.
+### Changed / Refactored
+- **`Room.py` Cleanup Refactor**: Removed abundant duplicated code by centralizing logic with `_parse_props` and `_spawn_enemy`. Simplified collision layer mapping with clean module-level dictionaries (`_PHASE_LAYERS`). Removed orphaned arguments and variables in traps and spawners.
+- **Boss State Machine**: Restructured boss state packages, moving boss-specific attacks to their respective entity folders (e.g., `boss/cultist/`) for better decoupling.
 
-### Optimizado (Rendimiento)
-- **Eliminación de Fugas de Memoria en Renderizado (Memory Thrashing)**:
-  - **Proyectiles**: Pre-asignación de la superficie `_trail_surf` en memoria caché. Evita la creación destructiva de más de 3000 `pygame.Surface` por segundo al dibujar el rastro de las balas enemigas.
-  - **Magia del Jugador**: Introducción del caché perezoso (`_flame_cache`) para las llamas del ataque de área del mago, evitando llamar a la intensiva operación `pygame.transform.scale` 60 veces por segundo.
+### Optimized
+- **Memory Thrashing Elimination in Rendering**:
+  - *Projectiles*: Pre-allocated `_trail_surf` cache surface. Avoids creation of over 3000 `pygame.Surface` instances per second when drawing enemy bullet trails.
+  - *Player Magic*: Introduced lazy cache (`_flame_cache`) for Mage area-attack flames, avoiding the intensive `pygame.transform.scale` call 60 times per second.
 
 ---
 
 ## [0.9.0] - 2026-09-14
 
-### Añadido
-- **Sistema y Jerarquía de Jefes (`src/entities/Boss.py` y `src/states/entity/boss/`)**:
-  - Creación de la clase dedicada `Boss` que extiende `Enemy`, encapsulando el manejo de fases, escudos arcanos, temporizadores de inmunidad y proyectiles especiales.
-  - Implementación de la máquina de estados desacoplada para jefes: `BossBaseState`, `BossIdleState`, `BossChaseState` y `BossAttackState`.
-  - Separación explícita de `BOSS_DEFS` y `ENEMY_DEFS` en `src/definitions/entity.py`.
-- **Combate de Arena Multifase (`src/world/ArenaManager.py` y `src/world/LavaShower.py`)**:
-  - Sistema de sala de arena con barrera mágica que sella la salida y lluvia de lava ambiental en el techo.
-  - Gestión de 3 fases de combate con oleadas dinámicas de esbirros:
-    - **Fase 1**: Jefe protegido por escudo lanzando ondas de choque terrestres mientras el jugador enfrenta esbirros.
-    - **Fase 2 (70% HP)**: Desbloqueo del Orbe del Vacío con rastreo inteligente y nueva oleada de esbirros.
-    - **Fase 3 (30% HP)**: Furia total combinando onda terrestre y orbe simultáneamente junto al Gólem Raíz.
-  - Escudo protector activo mientras haya esbirros vivos; al eliminarlos, el escudo se rompe permitiendo dañar al jefe.
-- **Efectos y Spritesheets de Habilidades (`assets/graphics/effects/` y `Boss.py`)**:
-  - Integración de spritesheets dedicados para las habilidades del Sumo Sacerdote: `void_orb.png` y `ground_shockwave.png` (variante morada, fila 2).
-  - Máquina de estados interna para proyectiles (`spawn`, `travel`, `despawn`) con volteo dinámico horizontal según dirección.
-  - IA de rastreo activo (*homing*) para el Orbe del Vacío (duración de 5s con estela de partículas).
-  - Hitboxes calibradas para permitir esquivar la onda rasante mediante saltos o plataformas superiores.
+### Added
+- **Boss Hierarchy and System (`src/entities/Boss.py` and `src/states/entity/boss/`)**:
+  - Dedicated `Boss` class extending `Enemy`, encapsulating phase management, arcane shields, immunity timers, and special projectiles.
+  - Decoupled FSM for bosses: `BossBaseState`, `BossIdleState`, `BossChaseState`, `BossAttackState`.
+  - Explicit separation of `BOSS_DEFS` and `ENEMY_DEFS` in `src/definitions/entity.py`.
+- **Multi-Phase Arena Combat (`src/world/ArenaManager.py` and `src/world/LavaShower.py`)**:
+  - Arena room system with magic barrier sealing the exit and ambient lava shower.
+  - 3 combat phases with dynamic minion waves: Phase 1 (boss shielded, ground shockwaves + minions), Phase 2 at 70% HP (Void Orb with homing AI + new wave), Phase 3 at 30% HP (simultaneous shockwave + orb + Root Golem).
+  - Protective shield active while minions are alive; breaking it allows damaging the boss.
+- **Ability Effects and Spritesheets**: `void_orb.png`, `ground_shockwave.png`, internal projectile FSM (`spawn → travel → despawn`) with dynamic horizontal flip, and homing Void Orb AI (5s duration with particle trail).
 
-### Cambiado / Refactorizado
-- **Reorganización Estructural de Assets (`assets/graphics/`)**:
-  - Nueva taxonomía de carpetas siguiendo los estándares del motor Gale:
-    - `player/{sword, morph, mage}/`
-    - `entity/enemies/{goblin, monster2, monster3, monster_eyes, skeleton_sword, crown}/`
-    - `entity/bosses/{cultist_priest, big_monster}/`
-    - `effects/`
-  - Actualización de `settings.TEXTURES` y generadores de recortes en `src/definitions/frames.py`.
-- **Desacoplamiento de `Enemy.py`**:
-  - Purga de lógica específica de jefes en `Enemy.py`, `EnemyAttackState.py` y `EnemyChaseState.py`, dejando los estados de enemigos regulares limpios y enfocados en su IA estándar.
-  - Reparación y actualización de rutas de sprites para `SawHazard.py`.
+### Changed / Refactored
+- **Asset Structural Reorganization (`assets/graphics/`)**: New folder taxonomy: `player/{sword,morph,mage}/`, `entity/enemies/`, `entity/bosses/`, `effects/`. Updated `settings.TEXTURES` and frame generators in `src/definitions/frames.py`.
+- **`Enemy.py` Decoupling**: Purged boss-specific logic from `Enemy.py`, `EnemyAttackState.py`, and `EnemyChaseState.py`, keeping regular enemy states clean and focused on standard AI.
 
 ---
 
 ## [0.8.0] - 2026-09-14
 
-### Añadido
-- **Sistema de Trampas que Caen (`src/world/FallingTrap.py`)**:
-  - Implementación de peligros que caen vinculados a la fase temporal del jugador (`green` o `red`).
-  - Detección de proximidad del jugador en el eje X con tiempo de advertencia/temblor (0.45s) antes de la caída por gravedad.
-  - Soporte para renderizado directo de tiles del tileset mediante propiedades personalizadas en Tiled (`tile_col`, `tile_row`).
-- **Sierras Giratorias y Shurikens (`src/world/SawHazard.py` y `assets/graphics/SawBladeSuriken.png`)**:
-  - Obstáculo de daño por contacto con rotación animada continua.
-  - Soporte de patrullaje configurable en ejes horizontal y vertical (`axis: "x" | "y"`), distancia (`patrol_dist`) y velocidad (`speed`) desde las capas de Tiled.
-- **Spawneo Dinámico de Enemigos desde Tiled (`src/world/Room.py`)**:
-  - Detección y creación automática de cualquier enemigo (`monster2`, `monster3`, `goblin`, `cultist_priest`, `skeleton_sword`, etc.) colocado en capas de objetos (`spawns`, `spwans`, `enemies`).
-  - Asignación de colisión sólida multicapa para que los enemigos colisionen con las plataformas y paredes correspondientes a su fase temporal.
+### Added
+- **Falling Trap System (`src/world/FallingTrap.py`)**: Phase-locked falling hazards (`green` or `red`). Player X-proximity detection with 0.45s warning/tremor before gravity fall. Direct tileset tile rendering via Tiled custom properties (`tile_col`, `tile_row`).
+- **Rotating Saw Blades and Shurikens (`src/world/SawHazard.py`)**: Contact damage obstacle with continuous animated rotation. Configurable horizontal and vertical patrol axis, distance, and speed from Tiled layers.
+- **Dynamic Enemy Spawning from Tiled (`src/world/Room.py`)**: Auto-detection and creation of any enemy placed in Tiled object layers (`spawns`, `spwans`, `enemies`). Multi-layer solid collision assignment for enemies matching their temporal phase.
 
-### Cambiado / Refactorizado
-- **Limpieza de Código Muerto y Deduplicación**:
-  - Eliminación de constantes no utilizadas (`PHASE_PAST`, `PHASE_FUTURE`, `TILE_COLS`, `TILE_ROWS`) y texturas huérfanas en `settings.py`.
-  - Creación de `EntityBaseState.handle_buffered_inputs()` para unificar el manejo de buffers de ataque, ataque especial, dash y salto en `IdleState`, `WalkState`, `JumpState` y `FallState`.
-  - Unificación de popups de daño (`_spawn_popup()`), resets a punto de spawn (`_reset_player_to_spawn()`) y tabla de masas de colisión de enemigos en `Room.py`.
-- **Integración de Lava/Magma Ascendente (`src/world/RisingHazard.py` y `src/states/hazard/RisingState.py`)**:
-  - Lectura de la posición inicial $Y$ del objeto `fire` desde las capas de Tiled.
-  - Ajuste del límite superior de ascenso para detenerse a exactamente 2 tiles del techo del mapa.
+### Changed / Refactored
+- **Dead Code Cleanup and Deduplication**: Removed unused constants and orphaned textures in `settings.py`. Created `EntityBaseState.handle_buffered_inputs()` to unify attack, special, dash, and jump buffer handling across `IdleState`, `WalkState`, `JumpState`, and `FallState`. Unified damage popups (`_spawn_popup()`), spawn-point resets (`_reset_player_to_spawn()`), and enemy collision mass table in `Room.py`.
+- **Rising Lava/Magma Integration (`src/world/RisingHazard.py` and `src/states/hazard/RisingState.py`)**: Read initial Y position from Tiled `fire` layer object. Adjusted upper ascent limit to stop exactly 2 tiles from the map ceiling.
 
 ---
 
 ## [0.7.0] - 2026-09-13
 
-### Añadido
-- **Sistema de Salas y Mapas Tiled (`assets/tilemaps/` y `src/world/Room.py`)**:
-  - Integración nativa con mapas exportados desde Tiled en formato JSON mediante `gale.tilemap.load_tiled_map`, permitiendo crear niveles de dimensiones arbitrarias con capas multicapa de tiles y objetos.
-  - Incorporación de 5 nuevas salas/niveles:
-    - **`abismo_1.json`** (50x24 tiles / 800x384 px): Nivel vertical con fosas profundas, plataformas duales y zonas de trampas.
-    - **`abismo_fixed.json`** (50x13 tiles / 800x208 px): Variante reestructurada del abismo con capas optimizadas, punto de spawn explícito y equilibrio de altura.
-    - **`sala_past.json`** (40x13 tiles / 640x208 px): Sala horizontal ambientada en la era del Pasado con vegetación y estructuras verdes predominantes.
-    - **`sala_future.json`** (40x13 tiles / 640x208 px): Sala horizontal ambientada en la era del Futuro con arquitecturas rojas y estética corrupta.
-    - **`subida.json`** (20x40 tiles / 320x640 px): Nivel vertical de escalada y plataformeo ascendente con trampas y alternancia de fases temporales.
-- **Sistema de Físicas y Colisiones Multicapa (`src/world/tile_collision.py`)**:
-  - Nuevo subsistema de colisiones para Gale Tilemaps con soporte de fases temporales: `collision_type_in_layers()`, `move_and_collide_layers()` y `check_on_ground()`.
-  - Detección precisa de barrido AABB en ejes desacoplados X e Y para azulejos sólidos (`solid`) y plataformas atravesables desde abajo (`platform`).
-  - Capas activas dinámicas según la fase temporal del jugador: `["ground", "green_ground"]` en fase Pasado y `["ground", "red_ground"]` en fase Futuro.
-- **Plataformas Fantasma (*Ghost Platforms*) y Renderizado por Fases (`src/world/Room.py`)**:
-  - Renderizado semitransparente (`alpha = 75`) de las capas del plano temporal opuesto (ej. plataformas rojas visibles como fantasmas en la fase verde), permitiendo al jugador anticipar el terreno antes de realizar un *Phase Shift*.
-  - Desempaquetado y soporte de rotaciones/volteos de Tiled (*flip flags* en bits 31, 30 y 29 para flips horizontal, vertical y diagonal) en `_preprocess_tilemap()`.
-  - Culling de azulejos visibles mediante `_visible_tile_range()`, dibujando únicamente los tiles comprendidos dentro de la vista actual de la cámara.
-- **Fondos Duales con Paralaje y Nuevos Tilesets (`settings.py` y `assets/`)**:
-  - Carga y registro de texturas de fondo duales para cada sala en `settings.TEXTURES`: `abismo_1_past/future`, `abismo_past/future`, `sala_past/future` y `subida_past/future`.
-  - Soporte para fondos con desplazamiento de paralaje continuo (*parallax scrolling* suave con factor `0.4` en X y repetición horizontal automática) en salas que superan el ancho del fondo.
-  - Nuevos conjuntos de tilesets gráficos en `assets/graphics/tilesets/`: `InfernoTiles.png`, `Tilesetv3.png`, `Tile_green.png` y `Tile_red.png`.
-- **Efectos de Partículas y Peligros de Caída (`src/world/Room.py`)**:
-  - Sistema de partículas atmosféricas flotantes con deriva sinusoidal dependiente del viento que colorean el ambiente según la fase activa.
-  - Sistema de partículas de polvo (`dust_particles`) en despegues de salto (`on_jump_effect`) y aterrizajes (`on_land`).
-  - Mecánica de caída al abismo (`_handle_player_fall_hazard()`): detecta caídas en el umbral inferior del mapa (`MAP_HEIGHT - 24`), aplica 20 puntos de daño por pinchos con sacudida de pantalla y reubica al jugador en el punto de spawn.
-- **Resolución Dinámica de Punto de Aparición (*Spawn Point*) (`Room._extract_spawn_point`)**:
-  - Detección automática en cascada: parámetro explícito > objetos Tiled en capas `objectgroup` (`spawn`, `player_spawn`, `start`) > propiedades del mapa (`spawn_x`, `spawn_y`) > coordenadas por defecto.
+### Added
+- **Tiled Map Room System (`assets/tilemaps/` and `src/world/Room.py`)**:
+  - Native integration with Tiled JSON maps via `gale.tilemap.load_tiled_map`, supporting arbitrary-dimension levels with multi-layer tiles and objects.
+  - 5 new rooms: `abismo_1.json` (800×384 px), `abismo_fixed.json`, `sala_past.json` (Past era, green), `sala_future.json` (Future era, red), `subida.json` (vertical climb, 320×640 px).
+- **Multi-Layer Physics and Collision System (`src/world/tile_collision.py`)**: `collision_type_in_layers()`, `move_and_collide_layers()`, `check_on_ground()`. Precise AABB sweep on decoupled X and Y axes for solid tiles and one-way platforms. Dynamic active layers per temporal phase: `["ground", "green_ground"]` in Past, `["ground", "red_ground"]` in Future.
+- **Ghost Platforms and Phase Rendering**: Semitransparent rendering (`alpha = 75`) of the opposite temporal plane's layers, letting the player anticipate terrain before performing a Phase Shift. Tiled flip flags support (bits 31, 30, 29). Visible tile culling via `_visible_tile_range()`.
+- **Dual Parallax Backgrounds**: `abismo_1_past/future`, `abismo_past/future`, `sala_past/future`, `subida_past/future` in `settings.TEXTURES`. Soft parallax scrolling (factor `0.4`) with automatic horizontal repetition for rooms wider than the background.
+- **Particle Effects and Abyss Fall**: Atmospheric floating particles with sinusoidal wind drift colored by active phase. Dust particles on jump (`on_jump_effect`) and landing (`on_land`). Abyss fall detection at `MAP_HEIGHT - 24`: 20 spike damage, screen shake, respawn at spawn point.
+- **Dynamic Spawn Point Resolution (`Room._extract_spawn_point`)**: Cascade detection: explicit parameter → Tiled objectgroup (`spawn`, `player_spawn`, `start`) → map properties → default coordinates.
 
-### Cambiado / Refactorizado
-- **Integración de Entidades con Tilemaps (`src/entities/Entity.py`)**:
-  - Adición de los atributos `tilemap` y `active_collision_layers` a la clase base `Entity`.
-  - Adaptación de `_apply_movement_and_collision()` para consultar el motor de colisión multicapa en lugar de depender únicamente de una altura fija de suelo (`floor_y`).
-  - Rediseño de `render_outline()` con técnica de doble pasada: un halo exterior suave (alpha 65) con desplazamiento a 2 píxeles combinado con el contorno interior nítido, aumentando notablemente la legibilidad del personaje sobre fondos contrastados.
-- **Ajustes Visuales y Paleta del Jugador (`src/entities/Player.py`)**:
-  - Incremento del brillo y opacidad en los colores de contorno neón (`(255, 120, 130, 240)` para rojo y `(100, 255, 175, 240)` para verde).
-- **Animación de Caída Dedicada (`FallState.py` y `src/definitions/entity.py`)**:
-  - `FallState` ahora reproduce la animación específica `"fall"` en lugar de reutilizar el ciclo de `"jump"`.
-  - Añadida la animación `"fall"` a la forma Mago en `_MAGE_ANIMATIONS`.
+### Changed / Refactored
+- **Entity Tilemap Integration (`src/entities/Entity.py`)**: Added `tilemap` and `active_collision_layers` attributes to the base `Entity` class. Adapted `_apply_movement_and_collision()` to use the multi-layer collision engine. Redesigned `render_outline()` with double-pass technique: soft outer halo (alpha 65, 2px offset) + crisp inner outline.
+- **Player Visual Palette**: Increased brightness and opacity on neon outline colors.
+- **Dedicated Fall Animation (`FallState.py`)**: `FallState` now plays the specific `"fall"` animation instead of reusing the `"jump"` cycle.
 
 ---
 
 ## [0.6.0] - 2026-09-12
 
-### Añadido
-- **Capa de Simulación del Mundo (`src/world/Room.py`)**:
-  - Nueva clase `Room` inspirada en la arquitectura de `06-princess` (`Dungeon`/`Room`) y `05-super_martian` (`GameLevel`), encargada de encapsular la geometría del nivel (78x13 tiles / 1248x208 px), el renderizado ambiental (cielo con gradiente por fase, suelo, cuadrícula y paredes), el ciclo de vida y reaparición de los 8 enemigos (cola de 3s), y la física sólida de separación.
-- **Efecto de Sacudida de Pantalla (*Screen Shake*) y Cámara Oficial de Gale (`gale.camera.Camera`)**:
-  - Integración nativa de `gale.camera.Camera` con delimitación automática de límites del mapa (`bounds = pygame.Rect(0, 0, MAP_WIDTH, MAP_HEIGHT)`).
-  - Activación de *Screen Shake* dinámico (`camera.shake(...)`) en impactos cuerpo a cuerpo, combos de espada, pilares de fuego del Mago y al recibir daño por contacto.
-- **Pantalla de Fin de Partida (`src/states/game/GameOverState.py`)**:
-  - Nuevo estado apilado sobre `StateStack` con oscurecimiento ambiental rojizo, activado automáticamente cuando el jugador pierde todas sus formas (`player.is_dead()`), permitiendo reiniciar limpiamente mediante la tecla `Enter`.
-- **Máquina de Estados Desacoplada para Enemigos con Salto Inteligente (`src/states/entity/enemy/`)**:
-  - Desacoplamiento de estados atómicos en Gale: `EnemyPatrolState`, `EnemyChaseState`, `EnemyAttackState`, `EnemyHitState` y `EnemyDeathState`.
-  - Nueva mecánica de persecución 2D con salto inteligente: enemigos con capacidad de salto (`crown` y configurados con `can_jump`) saltan hacia el jugador si este se encuentra en una plataforma superior o en el aire.
+### Added
+- **World Simulation Layer (`src/world/Room.py`)**: New `Room` class inspired by `06-princess` (`Dungeon`/`Room`) and `05-super_martian` (`GameLevel`) architectures, encapsulating level geometry (78×13 tiles / 1248×208 px), ambient rendering (phase-based sky gradient, floor, grid, walls), enemy lifecycle with 3s respawn queue, and solid separation physics.
+- **Screen Shake and Gale's Official Camera (`gale.camera.Camera`)**: Native `gale.camera.Camera` integration with automatic map bounds clamping. Dynamic screen shake (`camera.shake(...)`) on melee hits, sword combos, Mage fire pillars, and contact damage received.
+- **Game Over Screen (`src/states/game/GameOverState.py`)**: New state stacked on `StateStack` with reddish ambient darkening, triggered when the player loses all forms (`player.is_dead()`), allowing clean restart with `Enter`.
+- **Decoupled Enemy State Machine with Smart Jump (`src/states/entity/enemy/`)**: Atomic Gale states: `EnemyPatrolState`, `EnemyChaseState`, `EnemyAttackState`, `EnemyHitState`, `EnemyDeathState`. Smart 2D chase with jump: enemies configured with `can_jump` will jump toward the player if on a higher platform or airborne.
 
-### Cambiado / Refactorizado
-- **Simplificación y Desacoplamiento Radical de `PlayState.py`**:
-  - Reducción del archivo de más de 430 líneas a ~60 líneas, transformándolo en un orquestador de estados puro que solo gestiona entradas globales (pausa, cambio de fase, cambio de forma), transiciones a `GameOverState` y proyección del HUD.
-- **Rediseño y Optimización de la Máquina de Estados del Juego (`src/states/game/`)**:
-  - **`TitleState.py`**: Rediseño centrado con título sombreado en dorado, subtítulo estilizado, animación de parpadeo para *"Presiona ENTER para iniciar"* y leyenda completa de controles.
-  - **`PauseState.py` y `PhaseShiftState.py`**: Pre-creación de superficies de superposición (`self.overlay`) en `enter()`, eliminando la creación de `pygame.Surface(..., pygame.SRCALPHA)` y fuentes a 60 FPS en `render()`. Corrección de coordenadas que situaban los textos fuera de pantalla (-40 px).
-  - **`__init__.py`**: Exportación explícita de `TitleState`, `PlayState`, `PauseState`, `PhaseShiftState` y `GameOverState`.
-- **Renderizado Nítido de Fuentes Pixel Art (*Pixel-Crisp Rendering*) (`settings.py`)**:
-  - Configuración del helper de texto con `antialias=False` para la tipografía oficial de assets (`Minimal4.ttf`), erradicando el suavizado difuminado/borroso de FreeType en resolución nativa (320x180) y obteniendo bordes de píxel afilados y fieles al estilo retro.
-- **Centralización del Movimiento Horizontal (`src/states/entity/EntityBaseState.py`)**:
-  - Método `apply_horizontal_movement()` compartido entre `WalkState`, `JumpState`, `FallState` y `AttackState`, eliminando duplicaciones de código de aceleración y desaceleración.
-- **Compatibilidad de Cámara (`src/world/Camera.py`)**:
-  - Adaptación como extensión directa de `gale.camera.Camera` preservando retrocompatibilidad para `get_offset()`.
+### Changed / Refactored
+- **Radical `PlayState.py` Simplification**: Reduced from 430+ lines to ~60, transforming it into a pure state orchestrator managing only global inputs (pause, phase shift, form change), `GameOverState` transitions, and HUD projection.
+- **Game State Machine Redesign**: `TitleState` centered with golden shadowed title, styled subtitle, blinking *"Press ENTER to start"* animation, and full controls legend. `PauseState` and `PhaseShiftState`: overlay surfaces pre-created in `enter()`, eliminating `pygame.Surface(SRCALPHA)` creation at 60 FPS. Fixed coordinates that placed text off-screen (−40 px).
+- **Pixel-Crisp Font Rendering (`settings.py`)**: Font helper with `antialias=False` for the official pixel-art font, eliminating FreeType blur at native 320×180 resolution.
+- **Centralized Horizontal Movement (`src/states/entity/EntityBaseState.py`)**: `apply_horizontal_movement()` shared between `WalkState`, `JumpState`, `FallState`, and `AttackState`, eliminating acceleration/deceleration code duplication.
+- **Camera Compatibility (`src/world/Camera.py`)**: Adapted as a direct extension of `gale.camera.Camera` preserving backward compatibility for `get_offset()`.
 
-### Corregido
-- **Animación Estática al Caminar (`Player.change_animation`)**:
-  - Incorporación de cláusula de guarda para evitar reiniciar animaciones idénticas que ya se encuentren en reproducción a 60 FPS, permitiendo que las tres transformaciones (`mage`, `sword`, `morph`) caminen y corran fluidamente en ambas fases.
-- **Sincronización de Ventanas de Daño y Hitboxes Activos (`Player.is_attack_active`)**:
-  - Calibración exacta de frames de windup vs impacto real: el enemigo ya no recibe daño en el frame 0 al presionar el botón de ataque, sino cuando la espada o el báculo conectan visualmente con el objetivo.
-  - Soporte de combo para el segundo golpe de espada con identificación de impacto independiente (`swing_id`) y aplicación de daño de remate (`hit2_damage: 20`).
-- **Prevención de Fuga de Estados en Habilidades Interrumpidas**:
-  - Limpieza forzada de `area_active` en `AttackSpecialState.exit()` si el Mago sufre daño o muere durante la canalización de llamas.
-  - Anulación de velocidad en `DashState.exit()` ante interrupciones.
+### Fixed
+- **Static Walk Animation (`Player.change_animation`)**: Guard clause to avoid restarting identical animations already playing, allowing all three forms to walk and run fluidly in both phases.
+- **Attack Damage Window Sync (`Player.is_attack_active`)**: Calibrated windup vs actual impact frames: enemy no longer receives damage on frame 0; damage fires when the weapon visually connects. Sword second-hit combo support with independent `swing_id` and finisher damage (`hit2_damage: 20`).
+- **State Leak Prevention on Interrupted Abilities**: Forced `area_active` cleanup in `AttackSpecialState.exit()` if the Mage takes damage or dies during flame channeling. Velocity cleared in `DashState.exit()` on interruptions.
 
-### Eliminado
-- **Purga de Código Muerto y Archivos Duplicados**:
-  - Eliminación de `PlayerCommands.py` (obsoleto tras la migración al Command Pattern de Gale).
-  - Eliminación de 8 archivos duplicados/huérfanos en `src/states/entity/player/` (`PlayerWalkState.py`, `PlayerAttackState.py`, etc.).
-  - Eliminación de métodos no utilizados en entidades: `Entity.heal()`, `Player.toggle_skin()`, `Player._get_anim_dict()`, `Entity._anim_idx` y superficies no utilizadas de enemigos.
+### Removed
+- **Dead Code and Duplicate Files Purge**: Removed `PlayerCommands.py`, 8 duplicate/orphaned files in `src/states/entity/player/`, unused entity methods (`Entity.heal()`, `Player.toggle_skin()`, `Player._get_anim_dict()`, `Entity._anim_idx`), and unused enemy surfaces.
 
 ---
 
 ## [0.5.0] - 2026-09-12
 
-### Añadido
-- **Sistema Integral de Enemigos e Inteligencia Artificial (`src/entities/Enemy.py` y `src/states/entity/enemy/`)**:
-  - Implementación de la entidad base `Enemy` extendiendo `Entity` con detección de rango de visión, rango de des-aggro (abandono de persecución si el jugador se aleja) y cese de hostilidad cuando el jugador es derrotado (retorno al patrullaje).
-  - Máquina de estados modular y desacoplada para enemigos:
-    - **`EnemyBaseState.py`**: Clase base para los estados de IA de los enemigos.
-    - **`EnemyPatrolState.py`**: Patrullaje horizontal delimitado, persecución reactiva al detectar al jugador y alternancia entre múltiples tipos de ataques (`attack` y `attack2`).
-    - **`EnemyHitState.py`**: Reacción a impactos con aturdimiento temporal, efecto de flash visual y retroceso.
-    - **`EnemyDeathState.py`**: Secuencia de muerte con animación específica, desactivación de colisiones de ataque y remoción limpia del escenario.
-  - **Física de Separación entre Enemigos**: Sistema de colisión y repulsión horizontal mutua para evitar que múltiples enemigos se superpongan o atraviesen al agruparse.
-- **Integración y Calibración de los 8 Tipos de Enemigos (`settings.py` y `src/definitions/entity.py`)**:
-  - **`skeleton_sword` (Espadachín Esqueleto - Fase Pasado / Verde)**: 45 frames con canvas uniforme acolchado (100x65) y pies alineados en (39, 59). Dos ataques cuerpo a cuerpo (estocada y corte alto).
-  - **`monster_eyes` (Creeper de Ojos - Fase Futuro / Rojo)**: Dos ataques (mordisco cercano y embestida con garras), patrulla y persecución con límite de rango.
-  - **`goblin` (Goblin Scout - Fase Pasado / Verde)**: Animaciones de doble daga (corte rápido y puñalada baja).
-  - **`crown` (Cuervo - Fase Pasado / Verde)**: Picotazo rápido, animación de salto y vuelo bajo.
-  - **`big_monster` (Gólem Raíz / Mini-jefe - Fase Futuro / Rojo)**: Animación limpia de pisotón corporal (80x64) y sistema sincronizado de peligros en el suelo (`boss_vines` con variantes `2a`, `2b`, `2c` y `miss` de 48x48) según referencias visuales.
-  - **`monster2` (Shadow Lurker - Fase Pasado / Verde)**: Extracción y calibración de frames desde `pack 2 m1.aseprite` (48x48) con dos variantes de ataque sombrío.
-  - **`monster3` (Horned Imp - Fase Futuro / Rojo)**: Extracción y calibración de frames desde `pack 3 monster 1.aseprite` (64x64) con animaciones completas.
-  - **`cultist_priest` (Sacerdote Cultista - Fase Futuro / Rojo)**: 26 frames individuales en 200x200 con anclaje de pies en `feet_y = 182`, animación de invocación/ataque, impacto y muerte.
-  - Estandarización de la altura de suelo en `floor_y = 160.0` para todos los enemigos según su bounding box.
-- **Comandos Oficiales con Gale (`src/commands.py`)**:
-  - Implementación completa del Command Pattern utilizando `CommandBindings` de Gale.
-  - Registro de comandos de acción y de estado: `JUMP`, `STOP_JUMP`, `MOVE_LEFT`, `STOP_MOVE_LEFT`, `MOVE_RIGHT`, `STOP_MOVE_RIGHT`, `LOOK_UP`, `STOP_LOOK_UP`, `RUN`, `STOP_RUN`, `ATTACK`, `SPECIAL_ATTACK`, `DASH`, `NEXT_FORM`, `PREV_FORM` y `SHIFT_PHASE`.
-  - Mapeo de teclas limpio y desacoplado del bucle principal (`W/A/S/D` y flechas para movimiento, `Espacio` para salto, `J` para ataque, `K` para especial, `C` para dash, `Q`/`E` para cambio de forma, `LShift` para correr).
-- **Pruebas Automatizadas de Físicas y Habilidades Aéreas**:
-  - Suite de validación en entorno headless (`dummy` video driver) para verificar aislamiento de gravedad, bloqueo vertical de dash y transiciones entre estados.
+### Added
+- **Full Enemy System and AI (`src/entities/Enemy.py` and `src/states/entity/enemy/`)**:
+  - Base `Enemy` entity extending `Entity` with vision range detection, de-aggro range (abandons chase if player moves far away), and hostility cease when the player is defeated (returns to patrol).
+  - Modular decoupled FSM: `EnemyBaseState`, `EnemyPatrolState`, `EnemyChaseState`, `EnemyAttackState`, `EnemyHitState`, `EnemyDeathState`.
+  - **Enemy Separation Physics**: Mutual horizontal collision and repulsion to prevent enemies from overlapping when grouping.
+- **8 Enemy Types Integrated and Calibrated**:
+  - `skeleton_sword` (Past/Green): 45 frames, two melee attacks.
+  - `monster_eyes` (Future/Red): Bite and claw charge, patrol and chase with range limit.
+  - `goblin` (Past/Green): Double dagger combo.
+  - `crown` (Past/Green): Quick peck, jump animation, low flight.
+  - `big_monster` (Future/Red): Body stomp, synchronized `boss_vines` ground hazard (`2a`, `2b`, `2c`, `miss`).
+  - `monster2` Shadow Lurker (Past/Green): 48×48 frames, two shadow attack variants.
+  - `monster3` Horned Imp (Future/Red): 64×64 frames with full animations.
+  - `cultist_priest` (Future/Red): 26 individual frames, 200×200 canvas, feet at `feet_y = 182`.
+- **Official Gale Command Pattern (`src/commands.py`)**: Full Command Pattern with `CommandBindings`. Actions: `JUMP`, `STOP_JUMP`, `MOVE_LEFT`, `STOP_MOVE_LEFT`, `MOVE_RIGHT`, `STOP_MOVE_RIGHT`, `LOOK_UP`, `STOP_LOOK_UP`, `RUN`, `STOP_RUN`, `ATTACK`, `SPECIAL_ATTACK`, `DASH`, `NEXT_FORM`, `PREV_FORM`, `SHIFT_PHASE`.
+- **Automated Physics and Aerial Ability Tests**: Headless validation suite (`dummy` video driver) for gravity isolation, dash vertical lock, and state transition verification.
 
-### Cambiado
-- **Ajustes de Combate e Invulnerabilidad del Jugador**:
-  - El ataque especial del espadachín (`AttackSpecialState.py`) ahora otorga invulnerabilidad temporal durante su ejecución y un breve margen al concluir (similar al dash de Morph), impidiendo interrupciones por daño en medio del ataque.
-  - Sincronización del frame de impacto: el daño y la animación de `HitState` del jugador ahora se ejecutan exactamente cuando el ataque enemigo impacta visualmente, eliminando el daño anticipado.
-- **Depuración Visual de Cajas de Golpeo**:
-  - Eliminación de los marcos de depuración visual que aparecían en pantalla al asestar golpes, dejando una presentación limpia de los efectos e impactos.
+### Changed
+- **Combat and Player Invulnerability Adjustments**: Swordmaster special attack (`AttackSpecialState.py`) now grants temporary invulnerability during execution and a brief window after, preventing damage interruption mid-attack. Improved damage frame sync: `HitState` animation fires exactly when the attack visually impacts.
+- **Attack Hitbox Debug Cleanup**: Removed debug visual hitbox frames from the combat display.
 
-### Eliminado
-- **Limpieza de Spritesheets Temporales Obsoletos**:
-  - Eliminación de las hojas de sprites combinadas sintéticas (`big_monster.png`, `cultist_priest.png`, `skeleton_sword.png`) tras migrar toda la carga a los frames y tiras originales modulares en `assets/graphics/monsters/`.
+### Removed
+- **Temporary Spritesheet Cleanup**: Removed combined synthetic sprite sheets (`big_monster.png`, `cultist_priest.png`, `skeleton_sword.png`) after migrating to modular original frame strips.
 
-### Corregido
-- **Bloqueo de Altura Vertical en Dash Aéreo de Morph (`src/states/entity/player/DashState.py`)**:
-  - Se forzó `vy = 0.0` al entrar y durante la actualización del dash. Se erradicó la inercia ascendente residual que provocaba elevaciones no deseadas al iniciar el dash en medio de un salto.
-  - Al concluir la animación, el personaje pasa de forma limpia a `FallState` si sigue en el aire, reanudando la gravedad solo tras el dash.
-- **Suspensión Aérea del Ataque Especial de la Espada (`src/states/entity/player/AttackSpecialState.py`)**:
-  - Se configuró `has_gravity = False` y se fijó `vy = 0.0` durante la animación del ataque especial.
-  - El espadachín ahora queda suspendido en el aire sin perder altura mientras carga y ejecuta el corte, ejecutando el impulso final (`_sword_special_finish`, 78 px) y pasando a `FallState` solo al terminar.
-- **Prevención de Dash Involuntario al Cambiar a Morph**:
-  - Consumo inmediato y descarte del flag `dash_requested` en todos los estados (`IdleState`, `WalkState`, `JumpState`, `FallState`) cuando la forma activa no tiene dash (Mago y Espadachín).
-  - Limpieza explícita de todos los buffers de intención en `Player.change_skin()`.
-- **Restauración del Ataque Especial del Mago**:
-  - Reconexión de los callbacks `on_update` (`_mage_special_update`) y `on_finish` (`_mage_special_finish`) en `AttackSpecialState`, permitiendo el despliegue progresivo de los 3 círculos de llamas.
-- **Sensibilidad y Altura del Salto Variable**:
-  - Eliminación del recorte prematuro de velocidad vertical en `JumpState.py`, restaurando la parábola natural y completa de salto con soporte auténtico de salto variable vía `jump_held`.
+### Fixed
+- **Morph Aerial Dash Height Lock (`src/states/entity/player/DashState.py`)**: Forced `vy = 0.0` on enter and during update. Eliminated residual upward inertia causing unintended elevation when dashing mid-jump. Clean transition to `FallState` after animation with gravity resuming only post-dash.
+- **Swordmaster Special Attack Air Suspension (`src/states/entity/player/AttackSpecialState.py`)**: `has_gravity = False` and `vy = 0.0` during animation. Swordmaster stays suspended without losing height while charging and executing the slash; transitions to `FallState` only on completion.
+- **Morph Form Involuntary Dash Prevention**: Immediate `dash_requested` flag discard in all states when the active form has no dash (Mage and Swordmaster). Explicit buffer flush in `Player.change_skin()`.
+- **Mage Special Attack Restoration**: Reconnected `on_update` (`_mage_special_update`) and `on_finish` (`_mage_special_finish`) callbacks in `AttackSpecialState`, enabling progressive deployment of the 3 flame circles.
+- **Variable Jump Height and Sensitivity**: Removed premature vertical velocity clipping in `JumpState.py`, restoring the natural full jump parabola with authentic variable jump support via `jump_held`.
 
 ---
 
 ## [0.4.0] - 2026-09-12
 
-### Cambiado / Refactorizado
-- **Arquitectura Base Inspirada en *Ultimate Fantasy* (`Entity` vs `Player`)**:
-  - Desacoplamiento total entre la lógica física genérica y la lógica específica del jugador.
-  - **`src/entities/Entity.py`**: Nueva clase base generalizada que gestiona posición (`x`, `y`), velocidades (`vx`, `vy`), bounding boxes (`hitbox`), máquina de estados (`StateMachine`), gravedad condicional (`apply_gravity`), temporizador de animaciones y colisiones con los límites del mapa y piso.
-  - **`src/entities/Player.py`**: Subclase especializada en el protagonista. Administra transformaciones de piel (`sword`, `morph`, `mage`), fases cromáticas (`red`, `green`), estadísticas de HP/MP, cooldowns, combo buffers y el sistema de comandos.
-- **Modularización de la Máquina de Estados Inspirada en *Super Martian***:
-  - Sustitución del estado monolítico `PlayerAirborneState` por dos estados aéreos atómicos:
-    - **`JumpState.py`**: Gestiona el impulso ascendente, salto variable y doble salto.
-    - **`FallState.py`**: Gestiona la caída libre por gravedad, control direccional horizontal y aterrizaje.
-  - Estandarización de nombres de archivos en `src/states/entity/player/` (`IdleState`, `WalkState`, `JumpState`, `FallState`, `DashState`, `AttackState`, `AttackSpecialState`, `HitState`, `DeathState`).
-  - Cada estado ahora interactúa de manera limpia a través de intenciones (`jump_requested`, `attack_requested`, `dash_requested`, etc.).
+### Changed / Refactored
+- **Base Architecture Inspired by *Ultimate Fantasy* (`Entity` vs `Player`)**:
+  - Complete decoupling of generic physics logic from player-specific logic.
+  - **`src/entities/Entity.py`**: New generalized base class managing position (`x`, `y`), velocities (`vx`, `vy`), bounding boxes (`hitbox`), state machine (`StateMachine`), conditional gravity (`apply_gravity`), animation timer, and map/floor boundary collisions.
+  - **`src/entities/Player.py`**: Specialized player subclass managing skin transformations (`sword`, `morph`, `mage`), chromatic phases (`red`, `green`), HP/MP stats, cooldowns, combo buffers, and the command system.
+- **State Machine Modularization Inspired by *Super Martian***:
+  - Replaced the monolithic `PlayerAirborneState` with two atomic aerial states: `JumpState.py` (upward impulse, variable jump, double jump) and `FallState.py` (free-fall, horizontal control, landing).
+  - Standardized state file names in `src/states/entity/player/` (`IdleState`, `WalkState`, `JumpState`, `FallState`, `DashState`, `AttackState`, `AttackSpecialState`, `HitState`, `DeathState`).
+  - Each state now interacts cleanly through intent flags (`jump_requested`, `attack_requested`, `dash_requested`, etc.).
 
 ---
 
 ## [0.3.0] - 2026-09-11
 
-### Añadido
-- **Interfaz de Usuario y HUD Permanente (`src/ui/HUD.py`)**:
-  - Barras proporcionales de vida (`HP`) y maná (`MP`) con contornos y relleno dinámico.
-  - Integración de tipografía pixel art personalizada (`assets/fonts/Minimal4.ttf`).
-  - Indicador numérico de vida y maná alineado con las barras.
-  - Avatar de la forma activa en el HUD con borde temático.
-  - Indicador visual de enfriamiento (cooldown de 5 segundos) al cambiar de forma: medidor circular/aro radial de progreso alrededor del icono.
-- **Paleta Cromática de Fase Verde (`green`)**:
-  - Reemplazo de la variante azul original por la variante verde para sincronizar con la fase temporal del juego (`Mage_green.png`, `Morph_green.png`, `sword_green.png`, `flame_green.png`).
-  - Soporte para renderizado de contornos destacados (`Entity.render_outline`) para maximizar visibilidad del personaje sobre fondos oscuros.
-- **Sistema de Combos y Ataque Direccional**:
-  - Ataque vertical hacia arriba (`is_looking_up` + botón de ataque).
-  - Ventana de buffer de combo en `AttackState` para encadenar el segundo golpe de espada antes de que finalice la primera fase de la animación.
+### Added
+- **HUD and Persistent UI (`src/ui/HUD.py`)**: Proportional HP and MP bars with outlines and dynamic fill. Custom pixel-art font integration (`assets/fonts/Minimal4.ttf`). Numeric HP/MP indicators aligned with bars. Active form avatar with themed border. Cooldown visual indicator (5-second) on form switch: radial arc progress around the icon.
+- **Green Phase Color Palette**: Replaced original blue variant with green to sync with the game's temporal phase (`Mage_green.png`, `Morph_green.png`, `sword_green.png`, `flame_green.png`). Added `Entity.render_outline` for maximum character visibility on dark backgrounds.
+- **Combo and Directional Attack System**: Upward attack (`is_looking_up` + attack button). Combo buffer window in `AttackState` to chain the second sword hit before the first phase animation ends.
 
-### Cambiado
-- **Ajuste de Tiempos e Intervalos de Animación**:
-  - Modificación de los intervalos de animación en `src/definitions/entity.py` para permitir mayor legibilidad visual en los ataques rápidos y combos de la espada.
+### Changed
+- **Animation Timing Adjustments (`src/definitions/entity.py`)**: Modified animation intervals for better visual legibility in fast attacks and sword combos.
 
 ---
 
 ## [0.2.0] - 2026-09-11
 
-### Añadido
-- **Mapeo Centralizado de Entidades (`src/definitions/entity.py`)**:
-  - Extracción de todas las constantes, hitboxes, parámetros de física (`GRAVITY = 850.0`, `WALK_SPEED = 90.0`, `RUN_SPEED = 140.0`, `JUMP_VELOCITY = -320.0`) y diccionarios de animación fuera de `settings.py`.
-  - Definición de estadísticas base por personaje (`health`, `max_health`, `mana`, `max_mana`, costos de maná y daño).
-  - Callbacks modulares de acción: `_sword_special_finish`, `_mage_special_update`, `_mage_special_finish`, `_morph_dash`.
-- **Estados Base de Entidad (`src/states/entity/EntityBaseState.py`)**:
-  - Arquitectura estándar para estados de entidad que soporta flags por estado como `has_gravity`.
-- **Estados de Daño y Muerte (`HitState`, `DeathState`)**:
-  - Manejo de daño con retroceso y tiempo de recuperación.
-  - Detección de vida en cero con transición al estado de muerte o rotación entre formas disponibles.
+### Added
+- **Centralized Entity Mapping (`src/definitions/entity.py`)**: Extracted all constants, hitboxes, physics parameters (`GRAVITY = 850.0`, `WALK_SPEED = 90.0`, `RUN_SPEED = 140.0`, `JUMP_VELOCITY = -320.0`), and animation dictionaries out of `settings.py`. Base stat definitions per character (`health`, `max_health`, `mana`, `max_mana`, mana costs, damage). Modular action callbacks: `_sword_special_finish`, `_mage_special_update`, `_mage_special_finish`, `_morph_dash`.
+- **Entity Base States (`src/states/entity/EntityBaseState.py`)**: Standard architecture for entity states supporting per-state flags such as `has_gravity`.
+- **Damage and Death States (`HitState`, `DeathState`)**: Damage handling with knockback and recovery time. Zero-health detection with transition to death state or form rotation.
 
-### Corregido
-- **Detección de Fin de Animación**:
-  - Implementación de `is_animation_finished()` con temporizador de respaldo (`fallback_duration`) para prevenir que las animaciones de un solo ciclo queden atascadas indefinidamente.
-- **Movimiento y Volteo (`facing`)**:
-  - Solución al sprite estático al desplazarse de izquierda a derecha; orientación dinámica de sprites según `move_direction`.
-- **Ataques en el Aire e Inercia Horizontal**:
-  - Permitir activar ataques básicos y dashes mientras se está en suspensión aérea sin detener el juego en seco.
+### Fixed
+- **Animation End Detection**: Implemented `is_animation_finished()` with fallback timer (`fallback_duration`) to prevent single-cycle animations from stalling indefinitely.
+- **Movement and Flip (`facing`)**: Fixed static sprite when moving left-to-right; dynamic sprite orientation based on `move_direction`.
+- **Aerial Attacks and Horizontal Inertia**: Allowed basic attacks and dashes while airborne without freezing the game.
 
 ---
 
-## [0.1.0] - Inicio del Proyecto
+## [0.1.0] - Project Start
 
-### Añadido
-- **Estructura Base del Juego con el Motor Gale**:
-  - Configuración inicial de ventana en `main.py` y `settings.py` (resolución base 320x180, escalado a 1280x720).
-  - Inicialización de `ChronoBlight.py` gestionando el ciclo de vida del juego.
-  - Carga de texturas, hojas de sprites y recortes de frames (`assets/graphics/`).
-  - Máquina de estados principal del juego (`PlayState`, `TitleState`, `PauseState`, `PhaseShiftState`).
-  - Cámara de seguimiento suave del jugador (`src/world/Camera.py`).
-  - Prototipo inicial de las tres transformaciones del jugador: Espada (`Sword`), Mago (`Mage`) y Forma Amorfa (`Morph`).
-
+### Added
+- **Game Base Structure with Gale Engine**: Initial window setup in `main.py` and `settings.py` (320×180 base resolution, scaled to 1280×720). `ChronoBlight.py` initialization managing the game lifecycle. Texture, spritesheet, and frame clip loading (`assets/graphics/`). Main game state machine (`PlayState`, `TitleState`, `PauseState`, `PhaseShiftState`). Smooth player-follow camera (`src/world/Camera.py`). Initial prototype of the three player transformations: Sword (`Sword`), Mage (`Mage`), and Morph form (`Morph`).
