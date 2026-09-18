@@ -1,6 +1,3 @@
-"""
-Chrono Blight - Collectible Health Drop (HealthOrb)
-"""
 import random
 from typing import Any, List, Optional
 import pygame

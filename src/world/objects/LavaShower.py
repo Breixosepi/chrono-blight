@@ -1,6 +1,3 @@
-"""
-Chrono Blight - Lava Shower
-"""
 import math
 import random
 from typing import TYPE_CHECKING, List, Dict, Any, Optional
@@ -69,11 +66,9 @@ class LavaShower:
         self.room.camera.shake(2.5, 0.2)
         
         self.phase_timer = Timer.after(self.active_duration, self._start_cooldown)
-        
         self.damage_timer = Timer.every(0.45, self._apply_damage_tick)
 
     def _apply_damage_tick(self) -> None:
-        """Aplica daño si el jugador está dentro de la cascada activa."""
         if self.state != "active":
             return
             

@@ -124,8 +124,8 @@ class PlayState(BaseState):
 
         if target_room_name == "esquina_1" and "subida_cleared" in self.cleared_events and "morph" not in self.player.available_skins:
             self.waiting_for_unlock = True
-            self.player.x = 120.0
-            self.player.y = 248.0
+            self.player.x = 200.0
+            self.player.y = 120.0
             self.player.hitbox.topleft = (int(self.player.x), int(self.player.y))
             self.player.on_ground = True
             self.player.change_state("unlock", form="morph")

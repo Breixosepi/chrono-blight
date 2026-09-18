@@ -1,8 +1,4 @@
-"""
-Chrono Blight - LightMonolith
-Interactive monoliths that illuminate the arena and stun The Harvester in Phase 2.
-"""
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 import math
 import pygame
 from gale.animation import Animation
@@ -11,20 +7,37 @@ import settings
 
 
 class LightMonolith:
-    def __init__(self, x: float, y: float, phase: str = "green", on_activated=None) -> None:
+    _SCALED_FRAMES_CACHE: Dict[float, List[pygame.Surface]] = {}
+
+    def __init__(self, x: float, y: float, phase: str = "green", on_activated=None, scale: float = 1.0) -> None:
         self.x: float = x
         self.y: float = y
         self.phase: str = phase
         self.on_activated = on_activated
+        self.scale: float = scale
 
-        self.width: int = 54
-        self.height: int = 169
-        self.hitbox: pygame.Rect = pygame.Rect(int(x + 7), int(y + 60), 40, 105)
+        self.width: int = max(16, int(54 * scale))
+        self.height: int = max(32, int(169 * scale))
+        self.hitbox: pygame.Rect = pygame.Rect(
+            int(x + 7 * scale),
+            int(y + 60 * scale),
+            max(16, int(40 * scale)),
+            max(20, int(105 * scale))
+        )
 
         self.is_activated: bool = False
         self.pulse_timer: float = 0.0
 
-        self._frames: List[pygame.Surface] = settings.FRAMES.get("monolith_frames", [])
+        raw_frames = settings.FRAMES.get("monolith_frames", [])
+        if scale != 1.0 and raw_frames:
+            if scale not in self._SCALED_FRAMES_CACHE:
+                self._SCALED_FRAMES_CACHE[scale] = [
+                    pygame.transform.scale(f, (self.width, self.height)) for f in raw_frames
+                ]
+            self._frames = self._SCALED_FRAMES_CACHE[scale]
+        else:
+            self._frames = raw_frames
+
         self.glow_color: Tuple[int, int, int] = (90, 240, 150) if phase == "green" else (255, 90, 90)
 
         self.animation = Animation(
@@ -75,8 +88,9 @@ class LightMonolith:
         ry = int(self.y - camera_y)
 
         pulse_alpha = int(120 + 55 * math.sin(self.pulse_timer))
-        glow_radius = 28 if not self.is_activated else 48
-        core_pos = (rx + self.width // 2, ry + 105)
+        glow_radius = int((28 if not self.is_activated else 48) * self.scale)
+        glow_radius = max(14, glow_radius)
+        core_pos = (rx + self.width // 2, ry + int(105 * self.scale))
 
         glow_surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(glow_surf, (*self.glow_color, pulse_alpha // 2), (glow_radius, glow_radius), glow_radius)
@@ -87,9 +101,9 @@ class LightMonolith:
             frame_surf = self.animation.get_current_frame()
             surface.blit(frame_surf, (rx, ry))
 
-            gem_surf = pygame.Surface((12, 16), pygame.SRCALPHA)
-            pygame.draw.ellipse(gem_surf, (*self.glow_color, 230), (0, 0, 12, 16))
-            pygame.draw.ellipse(gem_surf, (255, 255, 255, 240), (3, 3, 6, 8))
-            surface.blit(gem_surf, (rx + 21, ry + 98))
-
-
+            gem_w = max(6, int(12 * self.scale))
+            gem_h = max(8, int(16 * self.scale))
+            gem_surf = pygame.Surface((gem_w, gem_h), pygame.SRCALPHA)
+            pygame.draw.ellipse(gem_surf, (*self.glow_color, 230), (0, 0, gem_w, gem_h))
+            pygame.draw.ellipse(gem_surf, (255, 255, 255, 240), (max(1, int(3 * self.scale)), max(1, int(3 * self.scale)), max(2, int(6 * self.scale)), max(3, int(8 * self.scale))))
+            surface.blit(gem_surf, (rx + int(21 * self.scale), ry + int(98 * self.scale)))

@@ -1,6 +1,3 @@
-"""
-Chrono Blight - Altar / Checkpoint
-"""
 from typing import Any, List, Optional
 import pygame
 from gale.animation import Animation
@@ -83,13 +80,11 @@ class Altar:
         self.is_saving = True
         self.anim_obelisk.reset()
 
-        # Restore all forms through player's dedicated method
         player.restore_all_forms()
 
         if hasattr(self.room, "_spawn_popup"):
             self.room._spawn_popup("¡FORMAS RESTAURADAS!", player.hitbox.centerx, player.hitbox.top - 20, 2.0, (120, 255, 180))
 
-        # Delegate checkpoint saving to PlayState
         play_state = getattr(self.room, "play_state", None)
         if play_state and hasattr(play_state, "save_game_checkpoint"):
             play_state.save_game_checkpoint(spawn_pos=(self.hitbox.centerx, self.hitbox.top - 20))

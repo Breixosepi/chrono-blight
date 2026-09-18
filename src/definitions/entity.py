@@ -350,8 +350,8 @@ ENTITY_DEFS: Dict[str, Any] = {
             "name":           "Cultist Priest",
             "phase":          "red",
             "default_facing": "right",
-            "hitbox":         {"width": 30, "height": 64},
-            "render_offset":  {"x": -79, "y": -118},
+            "hitbox":         {"width": 64, "height": 140},
+            "render_offset":  {"x": -68, "y": -42},
             "stats": {
                 "max_health":     120.0,
                 "contact_damage":  14.0,

@@ -58,7 +58,7 @@ class ArenaManager:
                         )
                         return
         if self.is_final_boss:
-            self.trigger_rect = pygame.Rect(0, 0, 1600, 500)
+            self.trigger_rect = pygame.Rect(0, 140, 1600, 150)
 
     def _extract_spawn_positions(self) -> Dict[str, Tuple[float, float]]:
         if self.is_final_boss:
@@ -123,22 +123,21 @@ class ArenaManager:
             self.darkness_overlay.set_target_darkness(0.35, speed=1.2)
             
             player_x = self.room.player.x
-            # Spawn in front of player within visible view (~110px away)
-            if self.room.player.facing == "left" or player_x > 1300:
-                pos_boss_x = max(90.0, player_x - 110.0)
-                facing_boss = "right"
-            else:
-                pos_boss_x = min(1480.0, player_x + 110.0)
+            if player_x >= 800:
+                pos_boss_x = 1140.0
                 facing_boss = "left"
+            else:
+                pos_boss_x = 460.0
+                facing_boss = "right"
 
-            self.boss = self.spawn_enemy("the_harvester", pos_boss_x, 195.0, is_boss=True)
+            self.boss = self.spawn_enemy("the_harvester", pos_boss_x, 184.0, is_boss=True)
             if self.boss:
                 self.boss.facing = facing_boss
                 self.boss.phase = "green"
                 self.boss.shield_active = False
                 self.boss.invulnerable = False
                 self.boss.change_state("idle")
-            self._show_banner("ﾂ｡THE HARVESTER! - FASE 1: DESINCRONIZACIﾃ哲", (255, 100, 100), 3.5)
+            self._show_banner("¡THE HARVESTER! - FASE 1: DESINCRONIZACIÓN", (255, 100, 100), 3.5)
         else:
             boss_track = "final_boss" if self.room.map_name == "big_room" else "giant_boss"
             settings.play_music(boss_track)
@@ -454,12 +453,11 @@ class ArenaManager:
     def _spawn_monoliths(self) -> None:
         from src.world.objects.LightMonolith import LightMonolith
         self.monoliths.clear()
-        mono_y = 240.0 - 169.0  # 71.0 px
+        mono_y = 240.0 - 169.0
 
-        # Spread across the 1600px wide room: left wing, center arch, right wing
-        m_left = LightMonolith(420.0, mono_y, phase="green", on_activated=self._on_monolith_activated)
-        m_center = LightMonolith(800.0, mono_y, phase="red", on_activated=self._on_monolith_activated)
-        m_right = LightMonolith(1180.0, mono_y, phase="green", on_activated=self._on_monolith_activated)
+        m_left = LightMonolith(440.0, mono_y, phase="green", on_activated=self._on_monolith_activated)
+        m_center = LightMonolith(785.0, 35.0, phase="red", on_activated=self._on_monolith_activated, scale=0.55)
+        m_right = LightMonolith(1120.0, mono_y, phase="green", on_activated=self._on_monolith_activated)
 
         self.monoliths.extend([m_left, m_center, m_right])
         self.room.monoliths = self.monoliths

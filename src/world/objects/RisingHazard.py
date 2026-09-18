@@ -1,6 +1,3 @@
-"""
-Chrono Blight - Liquid Hazard (Rising / Falling)
-"""
 from typing import TYPE_CHECKING, List, Dict, Any, Optional
 import math
 import random
