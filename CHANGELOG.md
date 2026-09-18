@@ -11,8 +11,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - *Fase 1*: Eliminada la condición de vulnerabilidad exclusiva según el color de fase; el jefe ahora es vulnerable y recibe daño de cualquiera de las formas del jugador sin forzar cambio de era constante.
   - *Fase 2*: Mayor desafío durante la oscuridad. Tiempo de espera entre ataques reducido (0.65s - 1.0s), ráfagas combinadas de espadas descendentes rápidas (0.35s de advertencia), corte predictivo hacia el desplazamiento del jugador (0.60s) y cuchillas de viento horizontales para forzar saltos y esquivas activas hacia los monolitos.
   - *Fase 3*: Reemplazadas las plataformas temporales condicionales por plataformas exclusivamente neutrales de la capa base `ground` (`(672.0, 133.0)`, `(896.0, 133.0)`, `(785.0, 85.0)`, cornisas de alas superiores), eliminando el bug visual donde el jefe levitaba en el aire al alternar entre eras.
-- **Configuración de Controles Ergonómica (`settings.py`)**:
-  - Distribución moderna para mano izquierda (WASD para movimiento, Q/E para alternar formas) y mano derecha (J para ataque, K para especial, L para cambio de fase temporal, LSHIFT para dash, ESPACIO para salto, M para mapa y P para pausa).
+- **Configuración de Controles Ergonómica y Personalizable (`src/controls_manager.py` y `SettingsState.py`)**:
+  - Implementación de pantalla interactiva de reasignación de teclas (`SettingsState`), accesible tanto desde la pantalla de inicio (`TitleState`) como desde el menú de pausa (`PauseState`).
+  - Persistencia automática de controles personalizados en `controls.json`, con botón para restablecer a los valores por defecto recomendados.
+  - Distribución moderna por defecto: WASD (movimiento), Q/E (alternar formas), J (ataque), K (especial), L (cambio de fase temporal), L-SHIFT (dash), ESPACIO (salto), M (mapa) y P (pausa).
+- **Ascensores Dinámicos y Sonorizados (`Elevator.py`)**:
+  - Adaptación de la tecla de interacción del ascensor: ahora utiliza dinámicamente la tecla configurada para subir (`W` o flecha arriba según el binding del usuario), con rótulo contextual indicando la tecla correspondiente `[W] SUBIR` al situarse dentro.
+  - Añadido efecto sonoro de mecanismo y crujido de rocas (`rock-crack` y `close`) al comenzar a descender hacia la sala, y sonido contundente de impacto y apertura (`rock-smash` y `open`) al posarse en el suelo.
 
 ---
 

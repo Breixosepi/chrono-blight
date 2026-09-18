@@ -133,7 +133,7 @@ class ArenaManager:
             self.boss = self.spawn_enemy("the_harvester", pos_boss_x, 184.0, is_boss=True)
             if self.boss:
                 self.boss.facing = facing_boss
-                self.boss.phase = "green"
+                self.boss.phase = "neutral"
                 self.boss.shield_active = False
                 self.boss.invulnerable = False
                 self.boss.change_state("idle")

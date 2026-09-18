@@ -32,7 +32,7 @@ class TitleState(BaseState):
         ch = settings.MUSIC_CHANNELS.get("intro")
         if ch is None or not ch.get_busy():
             settings.play_music("intro")
-        self.options = ["NUEVA PARTIDA", "CARGAR PARTIDA", "SALIR"]
+        self.options = ["NUEVA PARTIDA", "CARGAR PARTIDA", "CONFIGURACION", "SALIR"]
         self.selected_index = 0
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
@@ -60,6 +60,9 @@ class TitleState(BaseState):
             self._open_slot_select(mode="new")
         elif choice == "CARGAR PARTIDA":
             self._open_slot_select(mode="load")
+        elif choice == "CONFIGURACION":
+            from src.states.game.SettingsState import SettingsState
+            self.state_machine.push(SettingsState(self.state_machine), from_pause=False)
         elif choice == "SALIR":
             pygame.event.post(pygame.event.Event(pygame.QUIT))
 

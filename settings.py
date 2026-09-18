@@ -6,22 +6,9 @@ from src.definitions.frames import generate_enemy_frames
 import gale.text
 from typing import Optional
 
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE,"quit")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_BACKSPACE,"back")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN,"enter")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a,"move_left")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d,"move_right")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_w,"up")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_s,"down")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE,"jump")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_j,"attack")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_k,"special")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT,"dash")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_l,"phase_shift")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_q,"prev_form")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_e,"next_form")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p,"pause")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_m,"map")
+from src import controls_manager
+controls_manager.load_controls()
+controls_manager.apply_controls()
 
 TITLE = "Chrono Blight"
 

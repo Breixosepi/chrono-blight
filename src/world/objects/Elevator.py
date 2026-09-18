@@ -72,6 +72,10 @@ class Elevator:
             self.image = self.tex_closed
             if hasattr(self.room, "camera"):
                 self.room.camera.shake(4.0, 1.2)
+            if "rock-crack" in settings.SOUNDS:
+                settings.SOUNDS["rock-crack"].play()
+            if "close" in settings.SOUNDS:
+                settings.SOUNDS["close"].play()
 
     def _finish_arriving_open(self) -> None:
         if self.state == "arriving_open":
@@ -94,6 +98,10 @@ class Elevator:
                 self.y = target_y
                 self.state = "open"
                 self.image = self.tex_open
+                if "rock-smash" in settings.SOUNDS:
+                    settings.SOUNDS["rock-smash"].play()
+                if "open" in settings.SOUNDS:
+                    settings.SOUNDS["open"].play()
                 if hasattr(self.room, "camera"):
                     self.room.camera.shake(3.0, 0.3)
                 if hasattr(self.room, "spawn_dust"):
@@ -139,8 +147,9 @@ class Elevator:
             dist_x = abs(self.hitbox.centerx - player.hitbox.centerx)
             dist_y = abs(self.hitbox.centery - player.hitbox.centery)
             
+            from src.controls_manager import is_up_key_pressed
             keys = pygame.key.get_pressed()
-            if dist_x < 30 and dist_y < 40 and keys[pygame.K_UP]:
+            if dist_x < 30 and dist_y < 40 and is_up_key_pressed(keys):
                 self.state = "ascending"
                 self.image = self.tex_closed
                 settings.SOUNDS["close"].play()
@@ -190,3 +199,23 @@ class Elevator:
                 curr_y -= rope_h
                 
         surface.blit(self.image, (draw_x + offset_x, draw_y))
+
+        if self.state == "open" and hasattr(self.room, "player") and not self.room.player.is_dead():
+            player = self.room.player
+            dist_x = abs(self.hitbox.centerx - player.hitbox.centerx)
+            dist_y = abs(self.hitbox.centery - player.hitbox.centery)
+            if dist_x < 30 and dist_y < 40 and not getattr(player, "hidden", False):
+                from src import controls_manager
+                up_name = controls_manager.get_key_name(controls_manager.CURRENT_KEYBINDS.get("up", pygame.K_w))
+                prompt_str = f"[{up_name}] SUBIR"
+                import gale.text
+                gale.text.render_text(
+                    surface,
+                    prompt_str,
+                    settings.FONTS["hud_small"],
+                    draw_x + self.width // 2,
+                    draw_y - 12,
+                    (255, 230, 90),
+                    center=True,
+                    shadowed=True,
+                )

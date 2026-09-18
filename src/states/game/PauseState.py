@@ -27,7 +27,7 @@ class PauseState(BaseState):
     MENU_OPTIONS: List[Dict[str, str]] = [
         {"id": "resume", "label": "REANUDAR"},
         {"id": "map", "label": "MAPA DEL MUNDO"},
-        {"id": "controls", "label": "CONTROLES Y FORMAS"},
+        {"id": "controls", "label": "CONFIGURACION"},
         {"id": "title", "label": "MENU PRINCIPAL"},
     ]
 
@@ -149,7 +149,8 @@ class PauseState(BaseState):
 
             self._start_close(on_finish_callback=open_map)
         elif chosen == "controls":
-            self.showing_controls = True
+            from src.states.game.SettingsState import SettingsState
+            self.state_machine.push(SettingsState(self.state_machine), from_pause=True)
         elif chosen == "title":
             # Prompt confirmation before abandoning unsaved progress
             self.showing_quit_confirm = True

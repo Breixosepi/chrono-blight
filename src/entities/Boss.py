@@ -4,6 +4,7 @@ Chrono Blight — Boss
 from __future__ import annotations
 
 import math
+import random
 from typing import Any
 
 import pygame
@@ -60,6 +61,7 @@ class Boss(Enemy):
             from src.states.entity.boss.harvester.HarvesterAttackState import HarvesterAttackState
             from src.states.entity.boss.harvester.HarvesterStunState import HarvesterStunState
             from src.states.entity.boss.harvester.HarvesterDashState import HarvesterDashState
+            from src.states.entity.boss.harvester.HarvesterHitState import HarvesterHitState
             boss_states["idle"] = lambda sm: HarvesterIdleState(self, sm)
             boss_states["patrol"] = lambda sm: HarvesterWalkState(self, sm)
             boss_states["walk"] = lambda sm: HarvesterWalkState(self, sm)
@@ -67,9 +69,13 @@ class Boss(Enemy):
             boss_states["attack"] = lambda sm: HarvesterAttackState(self, sm)
             boss_states["stun"] = lambda sm: HarvesterStunState(self, sm)
             boss_states["dash"] = lambda sm: HarvesterDashState(self, sm)
+            boss_states["hit"] = lambda sm: HarvesterHitState(self, sm)
 
         self.state_machine = StateMachine(boss_states)
         self.change_state("idle")
+
+        self._harvester_hit_counter: int = 0
+        self._harvester_hit_window: float = 0.0
 
         self.is_boss: bool = True
         self.boss_phase: int = 1
@@ -599,6 +605,12 @@ class Boss(Enemy):
 
         super().update(dt)
 
+        if self.enemy_type == "the_harvester":
+            if getattr(self, "_harvester_hit_window", 0.0) > 0.0:
+                self._harvester_hit_window = max(0.0, self._harvester_hit_window - dt)
+                if self._harvester_hit_window <= 0.0:
+                    self._harvester_hit_counter = 0
+
         # Harvester Phase 3 Aerial Safety: never walk/stay in acid/lava floor
         if getattr(self, "boss_phase", 1) == 3 and self.enemy_type == "the_harvester":
             if self.hitbox.bottom >= 220:
@@ -815,7 +827,27 @@ class Boss(Enemy):
         if self._health <= 0.0:
             self.change_state("death")
         else:
-            if self.enemy_type == "the_harvester" and getattr(self, "boss_phase", 1) == 3:
-                self._schedule_p3_chase_teleport()
-            if self.state_name != "stun":
+            if self.enemy_type == "the_harvester":
+                if getattr(self, "boss_phase", 1) == 3:
+                    self._schedule_p3_chase_teleport()
+
+                if self.state_name == "stun":
+                    return
+
+                if self.state_name in ("attack", "dash"):
+                    return
+
+                self._harvester_hit_counter = getattr(self, "_harvester_hit_counter", 0) + 1
+                self._harvester_hit_window = 1.4
+
+                if self._harvester_hit_counter >= 3:
+                    self._harvester_hit_counter = 0
+                    if random.random() < 0.60:
+                        self.change_state("attack")
+                    else:
+                        self.change_state("dash")
+                    return
+
+                self.change_state("hit")
+            elif self.state_name != "stun":
                 self.change_state("hit")
