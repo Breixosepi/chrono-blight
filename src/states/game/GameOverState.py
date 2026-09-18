@@ -6,6 +6,8 @@ import pygame
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
+from src.states.game.SlotSelectState import SlotSelectState
+from src.states.game.TitleState import TitleState
 
 import settings
 
@@ -16,11 +18,12 @@ class GameOverState(BaseState):
 
     def enter(self, play_state: Any = None, **params: Any) -> None:
         settings.stop_all_music()
+        settings.play_music("game-over")
         if play_state is not None:
             self.play_state = play_state
         self.selected_index: int = 0
         self.options = [
-            "Continuar desde el ultimo altar",
+            "Cargar partida",
             "Volver al menu principal",
         ]
         self.overlay = pygame.Surface(
@@ -34,22 +37,26 @@ class GameOverState(BaseState):
 
         if input_id in ("up", "move_up"):
             self.selected_index = (self.selected_index - 1) % len(self.options)
+            settings.SOUNDS["change"].play()
         elif input_id in ("down", "move_down"):
             self.selected_index = (self.selected_index + 1) % len(self.options)
+            settings.SOUNDS["change"].play()
         elif input_id in ("enter", "jump", "attack", "special"):
+            settings.SOUNDS["enter"].play()
             self._select_option()
 
     def _select_option(self) -> None:
         if self.selected_index == 0:
-            if self.play_state:
-                self.play_state.respawn_at_checkpoint()
-            self.state_machine.pop()
+            self.state_machine.push(
+                SlotSelectState(self.state_machine),
+                mode="load",
+                from_game_over=True,
+            )
         else:
+            settings.stop_music("game-over")
             self._reset_to_title()
 
     def _reset_to_title(self) -> None:
-        from src.states.game.TitleState import TitleState
-        
         while len(self.state_machine.states) > 0:
             self.state_machine.pop()
             

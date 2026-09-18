@@ -4,6 +4,53 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.16.0] - 2026-09-17
+
+### Añadido
+- **Integración Integral del Paisaje Sonoro (Efectos de Sonido y Pistas en `settings.SOUNDS`)**:
+  - **Interfaz y Navegación**:
+    - Efectos `change` y `enter` para navegación interactiva y confirmación en menús (`TitleState`, `GameOverState`, `SlotSelectState`).
+    - Efectos táctiles de pergamino `paper-unfold` (`unfold_map.mp3`) y `paper-fold` (`fold_map.wav`) al abrir y cerrar la interfaz de papel en `MapState` y `PauseState`.
+  - **Habilidades y Estados del Jugador**:
+    - `jump`: Sonido de impulso al despegar en salto.
+    - `dash`: Efecto aerodinámico al ejecutar el impulso de la forma Morph (`DashState`).
+    - `sword` y `slash-hit`: Efecto de balanceo de espada y corte de impacto contra carne al golpear enemigos (`AttackState`, `combat.py`).
+    - `sword-dash`: Desplazamiento sónico al rematar con el ataque especial de espada (`AttackSpecialState`).
+    - `mage-attack` y `mage-special`: Disparo de proyectil mágico e invocación de pilares de llamas arcanas (`AttackState`, `AttackSpecialState`).
+    - `morph-fire` y `morph-power`: Ataque básico y explosión ígnea de la forma Morph.
+    - `phase_shift_past` y `phase_shift_future`: Efectos temporales al alternar entre la era del Pasado y del Futuro (`PhaseShiftState`).
+    - `player-death`: Agonía sonora al perecer el jugador en `DeathState`.
+    - `hit-player`: Sonido de impacto al recibir daño el protagonista.
+    - `heart`: Tintineo curativo al recolectar orbes de vida en el mundo (`HealthOrb.py`).
+    - `unlock-state`: Sonido cinemático ceremonial al adquirir una nueva forma (`UnlockState.py`).
+  - **Enemigos y Jefes**:
+    - `enemy-hurt`: Reacción auditiva de dolor al recibir daño regular (`EnemyHitState.py`).
+    - `enemy-death`: Disolución y destrucción de enemigos comunes.
+    - `shield-active`: Rebote metálico al golpear enemigos o jefes protegidos por barreras invulnerables (`combat.py`).
+    - `boss-wind-spell`: Efecto místico de viento para los ataques mágicos del Lurker (`LurkerAttackState.py`).
+    - Bandas sonoras temáticas de jefes: `boss_survive` (desafío de supervivencia en `sala_past`), `giant_boss` (combate contra el Gólem Raíz) y `final_boss` (batalla climática contra el Sumo Sacerdote Cultista en `sala_future`).
+    - `arena-cleared`: Fanfarria triunfal (`arena_fanfare.mp3`) al superar una arena de combate o prueba de supervivencia (`ArenaManager.py`).
+  - **Mundo y Mecánicas de Entorno**:
+    - `save`: Resonancia mística al sintonizar un altar de guardado (`Altar.py`).
+    - `open` y `close`: Apertura y cierre de compuertas en el sistema de ascensores (`Elevator.py`).
+    - `rock-crack` y `rock-smash`: Crujido de advertencia y colapso demoledor en las trampas de roca (`FallingTrap.py`).
+    - `lava` y `lava-shower`: Borboteo y caída de magma en peligros ascendentes y cascadas (`RisingHazard`, `LavaShower`).
+    - `saw-hazard`: Corte al ser impactado por sierras mecánicas (`SawHazard.py`).
+
+### Cambiado / Refactorizado
+- **Rediseño de Fin de Partida con Carga de Partidas (`GameOverState.py` y `SlotSelectState.py`)**:
+  - Sustitución de la opción *"Continuar desde el ultimo altar"* por *"Cargar partida"*.
+  - Navegación fluida hacia `SlotSelectState` en modo carga (`from_game_over=True`), permitiendo al jugador seleccionar cualquiera de sus 3 ranuras de guardado con lectura de metadatos (sala, aspecto, salud y fecha/hora).
+  - Soporte para cancelar y volver a la pantalla de Game Over mediante la tecla `[P]` o `[Backspace]` (`self.state_machine.pop()`).
+  - Limpieza exhaustiva de la pila de estados (`while len(self.state_machine.states) > 0: self.state_machine.pop()`) al cargar o iniciar partida, erradicando estados zombis (`GameOverState` y `PlayState` residual) y previniendo fugas de memoria.
+
+### Corregido
+- **Detención Inmediata de Peligros de Lava al Morir (`DeathState.py` y `settings.py`)**:
+  - Corte forzado inmediato de los sonidos en bucle `lava`, `lava-shower` y `saw-hazard` en `DeathState.enter()`, evitando que el magma siga sonando durante la animación de muerte del personaje.
+  - Parada segura del sonido `lava` al entrar en `InactiveState` y de `lava-shower` al reiniciar la trampa en `LavaShower.reset()` y `settings.stop_all_music()`.
+
+---
+
 ## [0.15.0] - 2026-09-17
 
 ### Añadido
