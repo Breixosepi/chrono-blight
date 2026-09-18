@@ -65,10 +65,10 @@ class HarvesterDashState(BossBaseState):
                 and self.entity.hitbox.colliderect(player.hitbox)
             ):
                 self.hit_done = True
-                player.take_damage(16, source_x=self.entity.hitbox.centerx)
+                player.take_damage(14, source_x=self.entity.hitbox.centerx)
                 if self.entity.room:
                     self.entity.room.camera.shake(4.0, 0.2)
-                    self.entity.room._spawn_popup("-16 (DASH)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, (255, 75, 75))
+                    self.entity.room._spawn_popup("-14", player.hitbox.centerx, player.hitbox.top - 10, 0.7, (255, 75, 75))
                     self.entity.room.spawn_dust(player.hitbox.centerx, player.hitbox.bottom, count=8)
 
         if self.dash_timer >= self.dash_duration:

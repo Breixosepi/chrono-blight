@@ -245,7 +245,7 @@ class Boss(Enemy):
         phase_color: str = "green",
         is_vertical: bool = False,
         speed: float = 210.0,
-        damage: int = 14,
+        damage: int = 12,
     ) -> None:
         self.wind_blades.append({
             "x": sx,
@@ -265,7 +265,7 @@ class Boss(Enemy):
         target_x: float,
         phase_color: str = "green",
         delay: float = 0.45,
-        damage: int = 15,
+        damage: int = 14,
     ) -> None:
         self.falling_blades.append({
             "target_x": target_x,
@@ -286,7 +286,7 @@ class Boss(Enemy):
         target_y: float,
         phase_color: str = "red",
         delay: float = 0.8,
-        damage: int = 18,
+        damage: int = 16,
     ) -> None:
         self.dimensional_slashes.append({
             "x": target_x,
@@ -506,8 +506,7 @@ class Boss(Enemy):
                     if self.room:
                         self.room.camera.shake(3.5, 0.18)
                         col = (80, 255, 120) if wb["phase_color"] == "green" else (255, 80, 80)
-                        txt = "-14 (CORTE V)" if is_vert else "-14 (CORTE H)"
-                        self.room._spawn_popup(txt, player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
+                        self.room._spawn_popup(f"-{int(wb['damage'])}", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
                         self.room.spawn_dust(wb["x"], wb["y"], count=8)
                     if wb in self.wind_blades:
                         self.wind_blades.remove(wb)
@@ -517,7 +516,6 @@ class Boss(Enemy):
                 if wb in self.wind_blades:
                     self.wind_blades.remove(wb)
 
-        # Actualizar cortes dimensionales explosivos (dimensional_slashes)
         for ds in self.dimensional_slashes[:]:
             ds["timer"] += dt
             ds["anim_t"] += dt
@@ -552,13 +550,12 @@ class Boss(Enemy):
                             if self.room:
                                 self.room.camera.shake(4.0, 0.2)
                                 col = (255, 80, 80) if ds["phase_color"] == "red" else (80, 255, 120)
-                                self.room._spawn_popup("-18 (EXPLOSIÓN)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
+                                self.room._spawn_popup(f"-{int(ds['damage'])}", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
 
                 if ds["timer"] >= 0.70:
                     if ds in self.dimensional_slashes:
                         self.dimensional_slashes.remove(ds)
 
-        # Actualizar cortes verticales que caen del cielo (falling_blades)
         for fb in self.falling_blades[:]:
             fb["timer"] += dt
             fb["anim_t"] += dt
@@ -590,7 +587,7 @@ class Boss(Enemy):
                         if self.room:
                             self.room.camera.shake(3.5, 0.18)
                             col = (80, 255, 120) if fb["phase_color"] == "green" else (255, 80, 80)
-                            self.room._spawn_popup("-15 (CORTE CAÍDA)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
+                            self.room._spawn_popup(f"-{int(fb['damage'])}", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
                             self.room.spawn_dust(fb["target_x"], fb["y"], count=8)
 
                 if fb["y"] >= 236.0:

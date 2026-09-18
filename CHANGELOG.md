@@ -4,6 +4,37 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.19.0] - 2026-09-18
+
+### Añadido
+- **Capa Superior de UI y HUD Fantasma Inteligente (`render_top_ui` y `HUD.py`)**:
+  - Implementación del método `render_top_ui` en `RoomRenderer`, `Room` y `PlayState` para que los textos de arena, rótulos de desbloqueo y popups de daño se rendericen por encima del HUD del jugador.
+  - Activación dinámica del modo fantasma en el HUD (`alpha = 65`) ante banners de arena activos, popups en la esquina superior izquierda o animaciones de desbloqueo de formas/estadísticas.
+- **Persistencia de Mejora Permanente de Estadísticas (`UnlockState.py` y `Player.py`)**:
+  - Vinculación del evento `stats` tras derrotar al Sumo Sacerdote del Vacío para aplicar efectivamente +30 HP y +20 MP permanentes a todas las formas presentes y futuras del jugador.
+
+### Cambiado / Mejorado
+- **Guardado Metroidvania Post-Jefe Final (`VictoryState.py` y `SlotSelectState.py`)**:
+  - Eliminación del guardado automático en `VictoryState`: al vencer a The Harvester, no se sobrescribe la ranura dentro de la cámara del jefe final.
+  - La partida mantiene el punto de control del último altar o monolito utilizado, permitiendo reanudar antes del combate con el jefe vivo y libre exploración.
+  - Sanitización en `SlotSelectState`: redirección segura a `middle` frente al elevador y remoción de flags de bloqueo para partidas guardadas previamente en `big_room`.
+- **Rebalanceo de Jefes para Combate Prolongado (`entity.py` y `ArenaManager.py`)**:
+  - *Sumo Sacerdote del Vacío (`cultist_priest`)*: Salud incrementada a 350 HP, daño de contacto a 10 y proyectil a 12 (cooldown 2.4s).
+  - *The Harvester (`the_harvester`)*: Salud incrementada a 520 HP, permitiendo que sus 3 fases (combate regular, oscuridad con monolitos y duelo de plataformas) tengan la duración adecuada. Daño de corte y dash calibrado a 14.
+  - *El Acechador Temporal (`monster2_boss`)*: Mantenido en modo supervivencia temporal (60s) con daño ajustado a 8 y 12.
+- **Rebalanceo de Formas del Jugador (`src/definitions/entity.py`)**:
+  - *Phase Mage*: 55 HP, 75 MP, 4.0 MP/s regen. Arcane Bolt (25 dmg, 0 MP) e Infernal Flame Area (60 dmg, 25 MP).
+  - *Beast Morph*: 90 HP, 45 MP, 3.0 MP/s regen, 1 salto. Beast Claw (14 dmg, 0 MP), Primal Impact (25 dmg, 15 MP), Beast Dash (12 MP).
+  - *Swordmaster*: 70 HP, 30 MP, 2.2 MP/s regen, 2 saltos (doble salto). Combo de espada (16 y 22 dmg, 0 MP) y Thrust Dash (20 MP).
+
+### Corregido
+- **Tipografía y Caracteres Rotos en Combate de Jefes (`ArenaManager.py`)**:
+  - Eliminación de caracteres corruptos (mojibake) en anuncios y transiciones de fase de los jefes, erradicando los cuadros de texto sin glifo.
+- **Limpieza de Popups de Daño Flotante (`Room.py`, `Boss.py`, `FallingTrap.py`, `HarvesterAttackState.py`, `HarvesterDashState.py`)**:
+  - Eliminación de descripciones de ataques en los popups, mostrando exclusivamente el número limpio de daño recibido.
+
+---
+
 ## [0.18.0] - 2026-09-18
 
 ### Añadido

@@ -71,10 +71,10 @@ class HarvesterAttackState(BossBaseState):
         if not player.is_dead() and hitbox.colliderect(player.hitbox):
             is_sword_special = (player.state_name == "attack_special" and player.skin == "sword")
             if player.state_name not in ("hit", "death", "dash") and not is_sword_special and player.invulnerable_timer <= 0.0:
-                player.take_damage(16, source_x=self.entity.hitbox.centerx)
+                player.take_damage(14, source_x=self.entity.hitbox.centerx)
                 if self.entity.room:
                     self.entity.room.camera.shake(3.5, 0.2)
-                    self.entity.room._spawn_popup("-16 (GUADAÑA)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, (255, 75, 75))
+                    self.entity.room._spawn_popup("-14", player.hitbox.centerx, player.hitbox.top - 10, 0.7, (255, 75, 75))
                     self.entity.room.spawn_dust(player.hitbox.centerx, player.hitbox.bottom, count=8)
 
     def _fire_ability(self) -> None:

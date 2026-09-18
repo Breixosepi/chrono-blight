@@ -98,7 +98,8 @@ class SawHazard:
         player = self.room.player
         if not player.is_dead() and self.hitbox.colliderect(player.hitbox):
             if player.state_name != "dash" and player.invulnerable_timer <= 0:
-                settings.SOUNDS["saw-hazard"].play()
+                if "saw-hazard" in settings.SOUNDS:
+                    settings.SOUNDS["saw-hazard"].play()
                 player.take_damage(self.damage)
                 self.room.camera.shake(3.0, 0.2)
                 self.room._spawn_popup(

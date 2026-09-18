@@ -23,9 +23,6 @@ class VictoryState(BaseState):
         if play_state is not None:
             self.play_state = play_state
 
-        if self.play_state and hasattr(self.play_state, "save_game_checkpoint"):
-            self.play_state.save_game_checkpoint()
-
         self.timer = 0.0
         self.overlay = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA

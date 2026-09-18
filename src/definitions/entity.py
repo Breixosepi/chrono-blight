@@ -177,9 +177,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "sword": {
                 "name": "Swordmaster",
                 "stats": {
-                    "max_health": 80.0,
-                    "max_mana":   50.0,
-                    "mana_regen":  3.0,
+                    "max_health": 70.0,
+                    "max_mana":   30.0,
+                    "mana_regen":  2.2,
                     "jumps":       2,
                 },
                 "offsets": {"right": -18, "left": -94, "y": -27},
@@ -187,17 +187,17 @@ ENTITY_DEFS: Dict[str, Any] = {
                 "actions": {
                     "attack": {
                         "name": "Sword Slash Combo",
-                        "damage": 15,
+                        "damage": 16,
                         "mana_cost": 0,
                         "combo": {
                             "hit1_frames": 7,
-                            "hit2_damage": 20,
+                            "hit2_damage": 22,
                         },
                         "up_anim": "attack_up",
                     },
                     "special": {
                         "name": "Thrust Dash",
-                        "damage": 30,
+                        "damage": 28,
                         "mana_cost": 20,
                     },
                 },
@@ -206,9 +206,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "morph": {
                 "name": "Beast Morph",
                 "stats": {
-                    "max_health": 120.0,
-                    "max_mana":    30.0,
-                    "mana_regen":   2.0,
+                    "max_health":  90.0,
+                    "max_mana":    45.0,
+                    "mana_regen":   3.0,
                     "jumps":        1,
                 },
                 "offsets": {"right": -23, "left": -89, "y": -26},
@@ -216,19 +216,19 @@ ENTITY_DEFS: Dict[str, Any] = {
                 "actions": {
                     "attack": {
                         "name": "Beast Claw",
-                        "damage": 12,
+                        "damage": 14,
                         "mana_cost": 0,
                     },
                     "special": {
                         "name": "Primal Impact",
-                        "damage": 20,
+                        "damage": 25,
                         "mana_cost": 15,
                         "func": None,
                     },
                     "dash": {
                         "name": "Beast Dash",
                         "dash_speed": 220.0,
-                        "mana_cost": 10,
+                        "mana_cost": 12,
                     },
                 },
             },
@@ -236,9 +236,9 @@ ENTITY_DEFS: Dict[str, Any] = {
             "mage": {
                 "name": "Phase Mage",
                 "stats": {
-                    "max_health":  50.0,
-                    "max_mana":    60.0,
-                    "mana_regen":   3.5,
+                    "max_health":  55.0,
+                    "max_mana":    75.0,
+                    "mana_regen":   4.0,
                     "jumps":        1,
                 },
                 "offsets": {"right": -29, "left": -83, "y": -25},
@@ -246,13 +246,13 @@ ENTITY_DEFS: Dict[str, Any] = {
                 "actions": {
                     "attack": {
                         "name": "Arcane Bolt",
-                        "damage": 18,
-                        "mana_cost": 4,
+                        "damage": 25,
+                        "mana_cost": 0,
                     },
                     "special": {
                         "name": "Infernal Flame Area",
-                        "damage": 50,
-                        "mana_cost": 28,
+                        "damage": 60,
+                        "mana_cost": 25,
                         "is_aoe": True,
                         "duration": 1.2,
                     },
@@ -353,8 +353,8 @@ ENTITY_DEFS: Dict[str, Any] = {
             "hitbox":         {"width": 64, "height": 140},
             "render_offset":  {"x": -68, "y": -42},
             "stats": {
-                "max_health":     120.0,
-                "contact_damage":  14.0,
+                "max_health":     350.0,
+                "contact_damage":  10.0,
                 "knockback_speed":  15.0,  
                 "hit_duration":      0.20, 
                 "death_duration":    2.00, 
@@ -373,7 +373,7 @@ ENTITY_DEFS: Dict[str, Any] = {
             "actions": {
                 "attack": {
                     "name":     "Void Casting",
-                    "damage":   14.0,
+                    "damage":   12.0,
                     "reach":    20.0,
                     "is_spell": True,
                     "timing":   (0.24, 0.48),
@@ -591,7 +591,7 @@ ENTITY_DEFS: Dict[str, Any] = {
             "render_offset":  {"x": -19, "y": -18},
             "stats": {
                 "max_health":     80.0,
-                "contact_damage": 10.0,
+                "contact_damage":  8.0,
                 "knockback_speed":  0.0,  
                 "hit_duration":      0.20, 
                 "death_duration":    2.50, 
@@ -604,13 +604,13 @@ ENTITY_DEFS: Dict[str, Any] = {
                 "attack_reach":    40.0,
                 "attack_timing":   (0.30, 0.60),
                 "attack_duration": 1.0,
-                "attack_cooldown": 2.2,
+                "attack_cooldown": 2.4,
             },
             "animations": _MONSTER2_BOSS_ANIMATIONS,
             "actions": {
                 "attack": {
                     "name":     "Temporal Burst",
-                    "damage":   14.0,
+                    "damage":   12.0,
                     "reach":    500.0,
                     "is_spell": True,
                     "timing":   (0.30, 0.60),
@@ -618,7 +618,7 @@ ENTITY_DEFS: Dict[str, Any] = {
                 },
                 "attack2": {
                     "name":     "Side Sweep",
-                    "damage":   10.0,
+                    "damage":    8.0,
                     "reach":    500.0,
                     "is_spell": True,
                     "timing":   (0.30, 0.60),
@@ -633,8 +633,8 @@ ENTITY_DEFS: Dict[str, Any] = {
             "hitbox":         {"width": 46, "height": 43},
             "render_offset":  {"x": -63, "y": -64},
             "stats": {
-                "max_health":     300.0,
-                "contact_damage":  15.0,
+                "max_health":     520.0,
+                "contact_damage":  12.0,
                 "knockback_speed":  0.0,
                 "hit_duration":      0.25,
                 "death_duration":    2.50,

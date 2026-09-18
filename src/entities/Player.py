@@ -173,16 +173,17 @@ class Player(Entity):
         self.mana = self.MAX_MANA
 
     def apply_permanent_stat_boost(self, hp_bonus: float, mp_bonus: float) -> None:
-        # Avoid applying multiple times by checking a flag
         if getattr(self, "_stats_boosted", False):
             return
         self._stats_boosted = True
+        self.permanent_hp_boost = getattr(self, "permanent_hp_boost", 0.0) + hp_bonus
+        self.permanent_mp_boost = getattr(self, "permanent_mp_boost", 0.0) + mp_bonus
         
         for form_key in self.form_stats:
             self.form_stats[form_key]["max_health"] += hp_bonus
-            self.form_stats[form_key]["health"] += hp_bonus
+            self.form_stats[form_key]["health"] = self.form_stats[form_key]["max_health"]
             self.form_stats[form_key]["max_mana"] += mp_bonus
-            self.form_stats[form_key]["mana"] += mp_bonus
+            self.form_stats[form_key]["mana"] = self.form_stats[form_key]["max_mana"]
 
     def on_land(self) -> None:
         super().on_land()

@@ -113,7 +113,7 @@ class ArenaManager:
         if self.is_survival:
             settings.play_music("boss_survive")
             self.state = "intro_delay"
-            self._show_banner("ﾂ｡LA LAVA VA SUBIENDO!", (255, 120, 80), 3.0)
+            self._show_banner("!LA LAVA VA SUBIENDO!", (255, 120, 80), 3.0)
             Timer.after(1.5, lambda: setattr(self.room, "lava_rising", True))
             Timer.after(3.0, self._start_survival_active)
         elif self.is_final_boss:
@@ -137,7 +137,7 @@ class ArenaManager:
                 self.boss.shield_active = False
                 self.boss.invulnerable = False
                 self.boss.change_state("idle")
-            self._show_banner("¡THE HARVESTER! - FASE 1: DESINCRONIZACIÓN", (255, 100, 100), 3.5)
+            self._show_banner("!THE HARVESTER! - FASE 1: DESINCRONIZACION", (255, 100, 100), 3.5)
         else:
             boss_track = "final_boss" if self.room.map_name == "big_room" else "giant_boss"
             settings.play_music(boss_track)
@@ -150,7 +150,7 @@ class ArenaManager:
                 self.boss.facing = "left"
                 self.boss.change_state("chase")
             self.spawn_minions_for_phase(1)
-            self._show_banner("ﾂ｡SUMO SACERDOTE DEL VACﾃ弘!", (255, 100, 200), 3.0)
+            self._show_banner("!SUMO SACERDOTE DEL VACIO!", (255, 100, 200), 3.0)
 
     def _start_survival_active(self) -> None:
         self.state = "active"
@@ -161,7 +161,7 @@ class ArenaManager:
             self.boss.facing = "right"
             self.boss.shield_active = True
             self.boss.change_state("idle", cooldown=1.5)
-        self._show_banner("ﾂ｡EL ACECHADOR TEMPORAL!", (120, 255, 180), 3.0)
+        self._show_banner("!EL ACECHADOR TEMPORAL!", (120, 255, 180), 3.0)
 
     def spawn_minions_for_phase(self, phase: int) -> None:
         pos_left = self.spawn_positions["left"]
@@ -201,15 +201,18 @@ class ArenaManager:
             enemy.shield_active = True
             enemy.boss_phase = 1
             if enemy_type == "cultist_priest":
-                enemy._max_health = 220.0
-                enemy.health = 220.0
+                enemy._max_health = 350.0
+                enemy.health = 350.0
                 enemy.attack_cooldown = 2.4
                 enemy.walk_speed = 0.0
             elif enemy_type == "monster2_boss":
                 enemy._max_health = 80.0
                 enemy.health = 80.0
-                enemy.attack_cooldown = 2.2
+                enemy.attack_cooldown = 2.4
                 enemy.walk_speed = 0.0
+            elif enemy_type == "the_harvester":
+                enemy._max_health = 520.0
+                enemy.health = 520.0
         else:
             enemy = Enemy(
                 x,
@@ -284,7 +287,7 @@ class ArenaManager:
         self.room.respawn_queue.clear()
 
         if self.is_survival:
-            self._show_banner("ﾂ｡SUPERVIVENCIA COMPLETADA!", (100, 255, 140), 3.5)
+            self._show_banner("!SUPERVIVENCIA COMPLETADA!", (100, 255, 140), 3.5)
             if "lava" in settings.SOUNDS:
                 settings.SOUNDS["lava"].stop()
             if getattr(self.room, "rising_hazard", None):
@@ -306,7 +309,7 @@ class ArenaManager:
 
         elif self.is_final_boss:
             settings.stop_music("final_boss")
-            self._show_banner("ﾂ｡THE HARVESTER DERROTADO!", (255, 215, 80), 4.0)
+            self._show_banner("!THE HARVESTER DERROTADO!", (255, 215, 80), 4.0)
             if self.boss and not self.boss.dead:
                 self.boss.dead = True
                 self.boss.change_state("death")
@@ -318,7 +321,7 @@ class ArenaManager:
                 self.room.play_state.cleared_events.add("the_harvester_defeated")
                 form_to_unlock = "victory"
         else:
-            self._show_banner("ﾂ｡SUMO SACERDOTE DERROTADO!", (100, 255, 140), 3.5)
+            self._show_banner("!SUMO SACERDOTE DERROTADO!", (100, 255, 140), 3.5)
             for en in list(self.room.enemies):
                 if not en.dead:
                     en.dead = True
@@ -378,9 +381,9 @@ class ArenaManager:
                     return
 
                 if self.boss_phase == 1 and self.survival_time <= 55.0:
-                    self._transition_to_phase(2, "ﾂ｡FASE 2: DISPAROS TEMPORALES!", (255, 140, 60), 4.5)
+                    self._transition_to_phase(2, "!FASE 2: DISPAROS TEMPORALES!", (255, 140, 60), 4.5)
                 elif self.boss_phase == 2 and self.survival_time <= 30.0:
-                    self._transition_to_phase(3, "ﾂ｡FASE 3: COLAPSO TEMPORAL!", (255, 80, 80), 5.5)
+                    self._transition_to_phase(3, "!FASE 3: COLAPSO TEMPORAL!", (255, 80, 80), 5.5)
 
             elif self.is_final_boss:
                 self.darkness_overlay.update(dt)
@@ -390,37 +393,33 @@ class ArenaManager:
                     self.on_arena_cleared()
                     return
 
-                # Update monoliths
                 for m in self.monoliths:
                     m.update(dt)
 
-                # Floor split hazard check in Phase 3
                 if self.floor_split_active:
                     player = self.room.player
                     if player and not player.is_dead():
                         if player.hitbox.bottom >= 238 and player.invulnerable_timer <= 0.0:
                             is_acid = (player.hitbox.centerx < 800)
-                            player.take_damage(15)
+                            player.take_damage(14)
                             self.room.camera.shake(4.0, 0.2)
-                            pop_text = "-15 (ﾃ，IDO)" if is_acid else "-15 (LAVA)"
+                            pop_text = "-14"
                             pop_col = (100, 255, 120) if is_acid else (255, 100, 60)
                             self.room._spawn_popup(pop_text, player.hitbox.centerx, player.hitbox.top - 10, 0.8, pop_col)
                             player.vy = -280.0
 
                 hp_pct = max(0.0, self.boss.health / self.boss._max_health)
 
-                # Transiciﾃｳn 1 -> 2 (70% de vida)
                 if self.boss_phase == 1 and hp_pct <= 0.70:
                     self.boss.health = self.boss._max_health * 0.70
                     self.boss_phase = 2
                     self.boss.boss_phase = 2
                     self.boss.invulnerable = True
                     self.darkness_overlay.set_target_darkness(0.95, speed=2.0)
-                    self._show_banner("ﾂ｡FASE 2: OSCURIDAD TOTAL! ﾂ｡ACTIVA LOS 3 MONOLITOS!", (255, 140, 60), 4.5)
+                    self._show_banner("!FASE 2: OSCURIDAD TOTAL! !ACTIVA LOS 3 MONOLITOS!", (255, 140, 60), 4.5)
                     self.room.camera.shake(5.0, 0.45)
                     self._spawn_monoliths()
 
-                # Transiciﾃｳn 2 -> 3 (35% de vida)
                 elif self.boss_phase == 2 and hp_pct <= 0.35:
                     self.boss.health = self.boss._max_health * 0.35
                     self.boss_phase = 3
@@ -431,9 +430,8 @@ class ArenaManager:
                     self.monoliths.clear()
                     self.room.monoliths = []
                     self.floor_split_active = True
-                    self._show_banner("ﾂ｡FASE 3: COLAPSO TEMPORAL! ﾂ｡DUELO EN LAS ALTURAS!", (255, 60, 60), 5.0)
+                    self._show_banner("!FASE 3: COLAPSO TEMPORAL! !DUELO EN LAS ALTURAS!", (255, 60, 60), 5.0)
                     self.room.camera.shake(6.0, 0.6)
-                    # Teletransportar inmediatamente al jefe a la cima del altar (Option C)
                     self.boss.teleport_to(785.0, 85.0)
                     self.boss.change_state("attack")
             else:
@@ -446,17 +444,17 @@ class ArenaManager:
                     self.boss.shield_active = True
                 elif self.boss.shield_active:
                     self.boss.shield_active = False
-                    self._show_banner("ﾂ｡ESCUDO ROTO! ﾂ｡ATACA AL JEFE!", (255, 240, 90), 2.0)
+                    self._show_banner("!ESCUDO ROTO! !ATACA AL JEFE!", (255, 240, 90), 2.0)
                     self.room.camera.shake(3.5, 0.25)
                     self.room.spawn_dust(self.boss.hitbox.centerx, self.boss.hitbox.bottom, count=12)
 
                 hp_pct = max(0.0, self.boss.health / self.boss._max_health)
                 if self.boss_phase == 1 and hp_pct <= 0.70:
                     self.boss.health = self.boss._max_health * 0.70
-                    self._transition_to_phase(2, "ﾂ｡FASE 2: ORBES DEL VACﾃ弘!", (255, 140, 60), 5.0)
+                    self._transition_to_phase(2, "!FASE 2: ORBES DEL VACIO!", (255, 140, 60), 5.0)
                 elif self.boss_phase == 2 and hp_pct <= 0.30:
                     self.boss.health = self.boss._max_health * 0.30
-                    self._transition_to_phase(3, "ﾂ｡FASE 3: DESATAR EL VACﾃ弘!", (255, 80, 80), 6.0)
+                    self._transition_to_phase(3, "!FASE 3: DESATAR EL VACIO!", (255, 80, 80), 6.0)
 
     def _spawn_monoliths(self) -> None:
         from src.world.objects.LightMonolith import LightMonolith
@@ -474,9 +472,9 @@ class ArenaManager:
         act_count = sum(1 for m in self.monoliths if m.is_activated)
         total = len(self.monoliths)
         if act_count < total:
-            self._show_banner(f"ﾂ｡MONOLITO ACTIVADO! ({act_count}/{total})", (120, 255, 180), 2.0)
+            self._show_banner(f"!MONOLITO ACTIVADO! ({act_count}/{total})", (120, 255, 180), 2.0)
         else:
-            self._show_banner("ﾂ｡MONOLITOS ACTIVADOS! ﾂ｡JEFE ATURDIDO!", (255, 230, 80), 4.0)
+            self._show_banner("!MONOLITOS ACTIVADOS! !JEFE ATURDIDO!", (255, 230, 80), 4.0)
             self.darkness_overlay.set_target_darkness(0.20, speed=3.5)
             self.room.camera.shake(5.5, 0.45)
             if self.boss and not self.boss.dead:

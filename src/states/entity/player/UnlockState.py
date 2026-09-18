@@ -29,16 +29,16 @@ class UnlockState(EntityBaseState):
         self.form_to_unlock = params.get("form", "sword")
         
         if self.form_to_unlock == "sword":
-            self.unlock_text = "¡FORMA DESBLOQUEADA: CABALLERO!"
+            self.unlock_text = "!FORMA DESBLOQUEADA: CABALLERO!"
             self.flash_color = (255, 210, 80)
         elif self.form_to_unlock == "morph":
-            self.unlock_text = "¡FORMA DESBLOQUEADA: MORPH!"
+            self.unlock_text = "!FORMA DESBLOQUEADA: MORPH!"
             self.flash_color = (80, 255, 120)
         elif self.form_to_unlock == "victory":
-            self.unlock_text = "¡VICTORIA!"
+            self.unlock_text = "!VICTORIA!"
             self.flash_color = (255, 215, 80)
         else:
-            self.unlock_text = "¡ESTADISTICAS MEJORADAS!"
+            self.unlock_text = "!ESTADISTICAS MEJORADAS! (+30 HP / +20 MP)"
             self.flash_color = (255, 255, 255)
             
         self.start_y = float(self.entity.y)
@@ -175,6 +175,9 @@ class UnlockState(EntityBaseState):
                     if self.form_to_unlock not in self.entity.available_skins:
                         self.entity.available_skins.append(self.form_to_unlock)
                     self.entity.change_skin(self.form_to_unlock)
+                elif self.form_to_unlock == "stats":
+                    if hasattr(self.entity, "apply_permanent_stat_boost"):
+                        self.entity.apply_permanent_stat_boost(30.0, 20.0)
                 
                 if room and hasattr(room, "_spawn_popup"):
                     room._spawn_popup(
@@ -219,6 +222,7 @@ class UnlockState(EntityBaseState):
             pygame.draw.circle(ring_surf, (*self.flash_color, alpha_ring), (90, 90), ring_radius, 4)
             surface.blit(ring_surf, (cx - 90, cy - 90))
 
+    def render_banner(self, surface: pygame.Surface) -> None:
         if self.phase == 3:
             from gale.text import render_text
             bw = 280

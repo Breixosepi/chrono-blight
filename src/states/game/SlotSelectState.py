@@ -127,13 +127,23 @@ class SlotSelectState(BaseState):
             self.state_machine.pop()
         play_state = PlayState(self.state_machine)
 
+        room_name = save_data.get("room", DEFAULT_START_ROOM)
+        spawn_x = save_data.get("spawn_x", DEFAULT_START_SPAWN[0])
+        spawn_y = save_data.get("spawn_y", DEFAULT_START_SPAWN[1])
+        if "big_room" in room_name or "b_r" in room_name:
+            room_name = "middle"
+            spawn_x, spawn_y = 240.0, 48.0
+            cleared_ev = set(save_data.get("cleared_events", []))
+            cleared_ev.discard("the_harvester_defeated")
+            save_data["cleared_events"] = list(cleared_ev)
+            save_data["room"] = room_name
+            save_data["spawn_x"] = spawn_x
+            save_data["spawn_y"] = spawn_y
+
         params = {
             "slot": slot,
-            "map_name": save_data.get("room", DEFAULT_START_ROOM),
-            "spawn_point": (
-                save_data.get("spawn_x", DEFAULT_START_SPAWN[0]),
-                save_data.get("spawn_y", DEFAULT_START_SPAWN[1]),
-            ),
+            "map_name": room_name,
+            "spawn_point": (spawn_x, spawn_y),
             "save_data": save_data,
         }
         self.state_machine.push(play_state, **params)
@@ -211,6 +221,8 @@ class SlotSelectState(BaseState):
                     extra = {**extra["metadata"], **extra}
 
                 raw_room = extra.get("room_name") or extra.get("room", "middle")
+                if "big_room" in raw_room or "b_r" in raw_room:
+                    raw_room = "middle"
                 room_display = ROOM_DISPLAY_NAMES.get(raw_room, raw_room.replace("_", " ").title())
 
                 exploration = extra.get("exploration")

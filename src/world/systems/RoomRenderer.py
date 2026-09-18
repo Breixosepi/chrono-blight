@@ -205,11 +205,17 @@ class RoomRenderer:
         if self.room.arena: self.room.arena.render(surface, cam_x, cam_y)
 
     def _render_ui(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
+        for a in self.room.altars: a.render_ui(surface)
+        if self.room.rising_hazard: self.room.rising_hazard.render_hud(surface, self.room.player)
+
+    def render_top_ui(self, surface: pygame.Surface) -> None:
+        cam_x, cam_y = self.room.camera_offset
+        if self.room.arena:
+            self.room.arena.render_hud(surface)
+        if self.room.player.state_name == "unlock":
+            curr_state = self.room.player.state_machine.current
+            if hasattr(curr_state, "render_banner"):
+                curr_state.render_banner(surface)
         for p in self.room.damage_popups:
             render_text(surface, p["text"], settings.FONTS["hud"], int(p["x"] - cam_x), int(p["y"] - cam_y), p["color"], center=True, shadowed=True)
-            
-        for a in self.room.altars: a.render_ui(surface)
-            
-        if self.room.rising_hazard: self.room.rising_hazard.render_hud(surface, self.room.player)
-        if self.room.arena: self.room.arena.render_hud(surface)
 

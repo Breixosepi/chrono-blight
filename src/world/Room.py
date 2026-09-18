@@ -395,7 +395,7 @@ class Room:
             if self.player.state_name != "death":
                 self.player.take_damage(20)
                 self.camera.shake(4.0, 0.25)
-                self._spawn_popup("-20 (SPIKES)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.8, (255, 50, 50))
+                self._spawn_popup("-20", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.8, (255, 50, 50))
                 if self.player.state_name != "death": self._reset_player_to_spawn()
 
         if self.rising_hazard:
@@ -411,7 +411,7 @@ class Room:
                 if self.map_name == "sala_past":
                     self.player.take_damage(20)
                     self.camera.shake(4.0, 0.25)
-                    self._spawn_popup("-20 (LAVA)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.8, (255, 50, 50))
+                    self._spawn_popup("-20", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.8, (255, 50, 50))
                     if self.player.state_name != "death":
                         col = int(self.safe_point_x // self.TILE_SIZE)
                         row = 6
@@ -452,7 +452,7 @@ class Room:
                 else:
                     self.player.take_damage(25)
                     self.camera.shake(5.0, 0.3)
-                    self._spawn_popup("-25 (HAZARD)", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.9, (255, 60, 40))
+                    self._spawn_popup("-25", self.player.hitbox.centerx, self.player.hitbox.top - 10, 0.9, (255, 60, 40))
                     self.rising_hazard.reset()
                     if self.player.state_name != "death": self._reset_player_to_spawn()
 
@@ -542,3 +542,6 @@ class Room:
 
     def render(self, surface: pygame.Surface) -> None:
         self.renderer.render(surface)
+
+    def render_top_ui(self, surface: pygame.Surface) -> None:
+        self.renderer.render_top_ui(surface)

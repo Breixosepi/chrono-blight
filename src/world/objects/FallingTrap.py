@@ -116,7 +116,7 @@ class FallingTrap:
                 if player.invulnerable_timer <= 0:
                     player.take_damage(self.damage)
                     self.room.camera.shake(3.0, 0.2)
-                    self.room._spawn_popup(f"-{self.damage} (TRAP)", player.hitbox.centerx, player.hitbox.top - 10, 0.7, (255, 60, 60))
+                    self.room._spawn_popup(f"-{self.damage}", player.hitbox.centerx, player.hitbox.top - 10, 0.7, (255, 60, 60))
                 self.break_trap()
                 return
                 

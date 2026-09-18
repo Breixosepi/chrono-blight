@@ -240,6 +240,7 @@ class PlayState(BaseState):
         self.room.render(surface)
         camera_x, camera_y = self.room.camera_offset
         self.hud.render(surface, self.player, camera_x, camera_y)
+        self.room.render_top_ui(surface)
 
         if self.fade_alpha > 0.0:
             clamped_alpha = int(max(0.0, min(255.0, self.fade_alpha)))

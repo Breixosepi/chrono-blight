@@ -238,13 +238,26 @@ class HUD:
             f_rect = f_surf.get_rect(midtop=(fx, row_forms_y))
             hud_surf.blit(f_surf, f_rect)
 
-        # Ghost HUD
         player_screen_x = player.x - cam_x
         player_screen_y = player.y - cam_y
         is_behind_hud = (player_screen_x < base_x + self.width + 12) and (player_screen_y < base_y + self.height + 12)
 
-        if is_behind_hud:
-            hud_surf.set_alpha(85)  
+        has_banner = False
+        if player.state_name == "unlock":
+            has_banner = True
+        room = getattr(player, "room", None)
+        if room:
+            if getattr(room, "arena", None) and getattr(room.arena, "banner_text", None):
+                has_banner = True
+            for p in getattr(room, "damage_popups", []):
+                popup_sx = p["x"] - cam_x
+                popup_sy = p["y"] - cam_y
+                if (popup_sx < base_x + self.width + 16) and (popup_sy < base_y + self.height + 16):
+                    has_banner = True
+                    break
+
+        if is_behind_hud or has_banner:
+            hud_surf.set_alpha(65)
         else:
             hud_surf.set_alpha(245)
 
