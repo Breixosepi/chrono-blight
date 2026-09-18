@@ -147,7 +147,7 @@ SOUNDS = {
     "ambient": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "ambient.mp3"),
     "game-over": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "game_over.mp3"),
 
-    "jump": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "jump1.wav"),
+    "jump": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "jump.wav"),
     "lava": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "lava.wav"),
 
     "close": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "close.wav"),
@@ -163,11 +163,13 @@ SOUNDS = {
     "enemy-death": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "enemy_death.wav"),
 
     "boss-wind-spell": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "boss_wind_spell.wav"),
+
     "morph-power": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "morph_rocks.wav"),
     "morph-fire": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "morph_fire.wav"),
+    "morph-dash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "dash_morph.mp3"),
 
     "sword": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sword.wav"),
-    "sword-dash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "dash.wav"),
+    "sword-dash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sword_dash.wav"),
 
     "mage-special": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "mage_special.wav"),
     "mage-attack": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "mage.wav"),
@@ -178,12 +180,15 @@ SOUNDS = {
 
     "phase_shift_past": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "past.wav"),
     "phase_shift_future": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "future.wav"),
+    "change-skin": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "change_skin.wav"),
+    "on-land": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "on_land.mp3"),
 
     "rock-crack": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "crumble-rocks.wav"),
     "rock-smash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "smash.wav"),
     "saw-hazard": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "saw.wav"),
     "lava-shower": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "lava_boss.wav"),
     "arena-cleared": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "arena_fanfare.mp3"),
+
     "paper-unfold": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "unfold_map.mp3"),
     "paper-fold": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "fold_map.wav"),
 

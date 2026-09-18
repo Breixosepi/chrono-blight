@@ -16,6 +16,17 @@ class TitleState(BaseState):
     MENU_GAP: int = 18
 
     def enter(self, **params: Any) -> None:
+        for name in list(settings.MUSIC_CHANNELS.keys()):
+            if name != "intro":
+                settings.stop_music(name)
+
+        if "lava" in settings.SOUNDS:
+            settings.SOUNDS["lava"].stop()
+        if "saw-hazard" in settings.SOUNDS:
+            settings.SOUNDS["saw-hazard"].stop()
+        if "lava-shower" in settings.SOUNDS:
+            settings.SOUNDS["lava-shower"].stop()
+
         # Only start intro if it isn't already playing (avoids restart on back-press)
         ch = settings.MUSIC_CHANNELS.get("intro")
         if ch is None or not ch.get_busy():

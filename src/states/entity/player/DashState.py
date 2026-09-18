@@ -2,6 +2,7 @@
 Chrono Blight - DashState
 """
 from src.states.entity.EntityBaseState import EntityBaseState
+import settings
 
 
 class DashState(EntityBaseState):
@@ -23,6 +24,9 @@ class DashState(EntityBaseState):
         mana_cost = dash_action.get("mana_cost", 0)
         if mana_cost > 0:
             player.consume_mana(mana_cost)
+
+        if "morph-dash" in settings.SOUNDS:
+            settings.SOUNDS["morph-dash"].play()
 
     def update(self, dt: float) -> None:
         player = self.entity

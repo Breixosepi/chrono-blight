@@ -57,6 +57,7 @@ class GameOverState(BaseState):
             self._reset_to_title()
 
     def _reset_to_title(self) -> None:
+        settings.stop_all_music()
         while len(self.state_machine.states) > 0:
             self.state_machine.pop()
             

@@ -16,6 +16,7 @@ class ChronoBlight(Game):
         self.state_stack.push(TitleState(self.state_stack))
         
     def reset_to_title(self) -> None:
+        settings.stop_all_music()
         while len(self.state_stack.states) > 0:
             self.state_stack.pop()
         self.state_stack.push(TitleState(self.state_stack))
