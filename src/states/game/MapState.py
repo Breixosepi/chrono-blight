@@ -164,6 +164,7 @@ class MapState(BaseState):
         self._init_icons()
 
         # Trigger paper unfolding animation
+        settings.SOUNDS["paper-unfold"].play()
         Timer.tween(
             0.24,
             [(self, {"open_progress": 1.0})],
@@ -174,6 +175,7 @@ class MapState(BaseState):
         if self.is_closing:
             return
         self.is_closing = True
+        settings.SOUNDS["paper-fold"].play()
         cb = on_finish_callback if on_finish_callback else self.state_machine.pop
         Timer.tween(
             0.16,
@@ -334,6 +336,7 @@ class MapState(BaseState):
 
         if best_candidate:
             self.inspected_room_key = best_candidate
+            settings.SOUNDS["change"].play()
 
     def render(self, surface: pygame.Surface) -> None:
         # Dynamic paper unfolding scale (open_progress is eased via out_back / in_back)

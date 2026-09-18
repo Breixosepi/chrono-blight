@@ -3,7 +3,7 @@ Chrono Blight - AttackSpecialState
 """
 from src.states.entity.EntityBaseState import EntityBaseState
 from src.definitions import entity as entity_defs
-
+import settings
 
 class AttackSpecialState(EntityBaseState):
     has_gravity: bool = False
@@ -26,6 +26,13 @@ class AttackSpecialState(EntityBaseState):
             player.area_subframe = 0
 
         player.special_attack_requested = False
+
+        if player.skin == "sword":
+            settings.SOUNDS["sword-dash"].play()
+        elif player.skin == "mage":
+            settings.SOUNDS["mage-special"].play()
+        elif player.skin == "morph":
+            settings.SOUNDS["morph-power"].play()
 
     def _update_mage_fire_area(self, dt: float) -> None:
 

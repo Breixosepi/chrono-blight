@@ -59,6 +59,7 @@ class PauseState(BaseState):
         self.BOARD_H: int = 152
 
         # Trigger unfold animation
+        settings.SOUNDS["paper-unfold"].play()
         Timer.tween(
             0.24,
             [(self, {"open_progress": 1.0})],
@@ -69,6 +70,7 @@ class PauseState(BaseState):
         if self.is_closing:
             return
         self.is_closing = True
+        settings.SOUNDS["paper-fold"].play()
         cb = on_finish_callback if on_finish_callback else self.state_machine.pop
         Timer.tween(
             0.15,
@@ -95,7 +97,9 @@ class PauseState(BaseState):
                 return
             if input_id in ("move_left", "move_right", "left", "right", "up", "down", "move_up", "move_down"):
                 self.confirm_quit_index = 1 - self.confirm_quit_index
+                settings.SOUNDS["change"].play()
             elif input_id in ("enter", "jump", "attack"):
+                settings.SOUNDS["enter"].play()
                 if self.confirm_quit_index == 0:
                     # Cancel
                     self.showing_quit_confirm = False
@@ -124,9 +128,12 @@ class PauseState(BaseState):
 
         if input_id in ("up", "move_up"):
             self.selected_index = (self.selected_index - 1) % len(self.MENU_OPTIONS)
+            settings.SOUNDS["change"].play()
         elif input_id in ("down", "move_down"):
             self.selected_index = (self.selected_index + 1) % len(self.MENU_OPTIONS)
+            settings.SOUNDS["change"].play()
         elif input_id in ("enter", "jump", "attack"):
+            settings.SOUNDS["enter"].play()
             self._select_option()
 
     def _select_option(self) -> None:

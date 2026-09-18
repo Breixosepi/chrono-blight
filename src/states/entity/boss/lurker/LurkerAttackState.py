@@ -3,6 +3,7 @@ Chrono Blight - LurkerAttackState
 """
 import random
 from src.states.entity.boss.BossBaseState import BossBaseState
+import settings
 
 
 class LurkerAttackState(BossBaseState):
@@ -34,6 +35,8 @@ class LurkerAttackState(BossBaseState):
         boss = self.entity
         if boss.player is None:
             return
+
+        settings.SOUNDS["boss-wind-spell"].play()
 
         phase = getattr(boss, "boss_phase", 1)
         px = boss.player.hitbox.centerx

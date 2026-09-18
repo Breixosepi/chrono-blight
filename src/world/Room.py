@@ -590,7 +590,6 @@ class Room:
             self.rising_hazard.update(dt, self.player)
             
             if self.rising_hazard.check_player_hit(self.player) and self.player.state_name != "death" and self.player.invulnerable_timer <= 0:
-                settings.SOUNDS["fall-lava"].play()
                 if self.map_name == "sala_past":
                     self.player.take_damage(20)
                     self.camera.shake(4.0, 0.25)
