@@ -6,11 +6,10 @@ import pygame
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
-
-import settings
+from src.states.game.SettingsState import SettingsState
 from src.states.game.SlotSelectState import SlotSelectState
 from src.ui.MenuBackground import menu_background
-
+import settings
 
 class TitleState(BaseState):
     MENU_START_Y: int = 86
@@ -61,7 +60,6 @@ class TitleState(BaseState):
         elif choice == "CARGAR PARTIDA":
             self._open_slot_select(mode="load")
         elif choice == "CONFIGURACION":
-            from src.states.game.SettingsState import SettingsState
             self.state_machine.push(SettingsState(self.state_machine), from_pause=False)
         elif choice == "SALIR":
             pygame.event.post(pygame.event.Event(pygame.QUIT))

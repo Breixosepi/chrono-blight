@@ -214,7 +214,7 @@ class SettingsState(BaseState):
                 val_col,
             )
 
-        btn_y = self.by + self.board_h - 30
+        btn_y = self.by + self.board_h - 40
         btn_w, btn_h = 100, 16
         def_x = self.cx - btn_w - 6
         back_x = self.cx + 6

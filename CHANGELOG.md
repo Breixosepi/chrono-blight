@@ -4,6 +4,19 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.22.0] - 2026-09-18
+
+### Añadido
+- **Prólogo Cinemático estilo Novela Visual de 9 Escenas (`src/states/game/StoryIntroState.py`)**:
+  - Implementación de estado narrativo interactivo con estética de novela visual retro que se activa automáticamente al iniciar una nueva partida desde `SlotSelectState`.
+  - Despliegue de 9 ilustraciones a pantalla completa con transiciones de fundido cruzado (*crossfade*) suave mediante interpolación de transparencia con `Timer.tween`.
+  - Caja de diálogo panorámica inferior, optimizada para no tapar el arte central, con maquetación protegida en fuente `hud_small` (9pt).
+  - Contador de progreso de viñetas e insignias temáticas de orador (*Cronista Ancestral*, *Mago de Fase*, *Voz del Destino*).
+  - Efecto mecanografiado dinámico (*Typewriter*) a 0.022s por carácter con sonido rítmico sutil de pulsación y atenuación de volumen.
+  - Opciones de avance rápido con `[ENTER]` / `[ESPACIO]`, transiciones de audio dimensional entre paneles (`phase_shift_past` y `phase_shift_future`) y atajo para saltar el prólogo directamente al juego con `[ESC]`.
+
+---
+
 ## [0.21.0] - 2026-09-18
 
 ### Cambiado / Mejorado

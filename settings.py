@@ -71,6 +71,16 @@ TEXTURES = {
     "gothic_castle_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_future.png"),
     "logo_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo_past.png"),
     "logo_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo_future.png"),
+    
+    "page_1":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "1.png"),
+    "page_2":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "2.png"),
+    "page_3":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "3.png"),
+    "page_4":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "4.png"),
+    "page_5":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "5.png"),
+    "page_6":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "6.png"),
+    "page_7":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "7.png"),
+    "page_8":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "8.png"),
+    "page_9":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "9.png"),
 }
 
 SAVE_SLOTS = ["slot_1", "slot_2", "slot_3"]

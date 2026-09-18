@@ -101,20 +101,12 @@ class SlotSelectState(BaseState):
                 self._load_game_from_slot(slot)
 
     def _start_new_game_on_slot(self, slot: str) -> None:
-        from src.states.game.PlayState import PlayState
+        from src.states.game.StoryIntroState import StoryIntroState
 
         while len(self.state_machine.states) > 0:
             self.state_machine.pop()
-        play_state = PlayState(self.state_machine)
-
-        params = {
-            "slot": slot,
-            "map_name": DEFAULT_START_ROOM,
-            "spawn_point": DEFAULT_START_SPAWN,
-        }
-        self.state_machine.push(play_state, **params)
-
-        settings.stop_music("intro")
+        story_state = StoryIntroState(self.state_machine)
+        self.state_machine.push(story_state, slot=slot)
 
     def _load_game_from_slot(self, slot: str) -> None:
         try:
