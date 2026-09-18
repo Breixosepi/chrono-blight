@@ -588,7 +588,7 @@ class ArenaManager:
                 top_col, fill_col = phase_colors.get(self.boss_phase, ((255, 100, 100), (180, 40, 40)))
                 progress_pct = max(0.0, min(1.0, self.boss.health / self.boss._max_health))
             else:
-                boss_name = "SUMO SACERDOTE DEL VACﾃ弘"
+                boss_name = "SUMO SACERDOTE DEL VACIO"
                 phase_colors = {
                     1: ((240, 100, 220), (180, 40, 160)),
                     2: ((255, 150, 60), (200, 70, 20)),

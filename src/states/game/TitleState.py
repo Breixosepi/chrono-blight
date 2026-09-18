@@ -68,7 +68,7 @@ class TitleState(BaseState):
         render_text(
             surface,
             settings.TITLE,
-            settings.FONTS["title"],
+            settings.FONTS["main-title"],
             settings.VIRTUAL_WIDTH // 2,
             32,
             (235, 190, 70),

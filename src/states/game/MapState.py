@@ -28,28 +28,28 @@ class MapState(BaseState):
     ROOM_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "middle": {
             "name": "SALA CENTRAL",
-            "rect": pygame.Rect(166, 52, 44, 34),
+            "rect": pygame.Rect(166, 58, 44, 34),
             "poi": "altar",
             "desc": "Altar ancestral de guardado y restauracion total.",
             "desc_cleared": "Altar ancestral de guardado y restauracion total.",
         },
         "big_room": {
             "name": "GRAN SALON DEL NORTE",
-            "rect": pygame.Rect(154, 24, 76, 16),
+            "rect": pygame.Rect(154, 30, 76, 16),
             "poi": "final_boss",
             "desc": "Camara monumental sellada en la cuspide.",
             "desc_cleared": "El bastion supremo ha sido conquistado.",
         },
         "left_corner": {
             "name": "CAMARA DEL OBELISCO NOROESTE",
-            "rect": pygame.Rect(104, 48, 46, 20),
+            "rect": pygame.Rect(104, 54, 46, 20),
             "poi": "obelisk",
             "desc": "Monolito sagrado y conector hacia el futuro.",
             "desc_cleared": "Monolito sagrado y conector hacia el futuro.",
         },
         "sala_future": {
             "name": "CATEDRAL DEL CULTISTA",
-            "rect": pygame.Rect(104, 24, 46, 16),
+            "rect": pygame.Rect(104, 30, 46, 16),
             "poi": "boss_cultist",
             "event": "boss_cultist_defeated",
             "desc": "Dominio del Sumo Sacerdote Cultista.",
@@ -57,14 +57,14 @@ class MapState(BaseState):
         },
         "abismo_fixed": {
             "name": "ABISMO SUBTERRANEO",
-            "rect": pygame.Rect(104, 72, 46, 20),
+            "rect": pygame.Rect(104, 78, 46, 20),
             "poi": "falling_block",
             "desc": "Pasaje precario con plataformas desmoronables.",
             "desc_cleared": "Pasaje precario con plataformas desmoronables.",
         },
         "sala_past": {
             "name": "ARENA DEL PASADO",
-            "rect": pygame.Rect(50, 72, 46, 20),
+            "rect": pygame.Rect(50, 78, 46, 20),
             "poi": "boss_past",
             "event": "survival_boss_defeated",
             "desc": "Prueba de supervivencia ante el Gran Monstruo.",
@@ -72,14 +72,14 @@ class MapState(BaseState):
         },
         "esquina_1": {
             "name": "ESQUINA SUPERIOR NORESTE",
-            "rect": pygame.Rect(226, 48, 46, 20),
+            "rect": pygame.Rect(226, 54, 46, 20),
             "poi": "obelisk",
             "desc": "Monolito resonante tras el ascenso.",
             "desc_cleared": "Forma Morph desbloqueada en este sector.",
         },
         "subida": {
             "name": "SUBIDA AL ABISMO",
-            "rect": pygame.Rect(232, 72, 34, 32),
+            "rect": pygame.Rect(232, 78, 34, 32),
             "poi": "lava",
             "event": "subida_cleared",
             "desc": "Peligro letal: Lava y acido ascendente.",
@@ -90,21 +90,21 @@ class MapState(BaseState):
     # Interconnected straight architectural doors: (room_a, room_b, rect)
     CORRIDORS: List[Tuple[str, str, pygame.Rect]] = [
         # middle -> big_room (straight vertical doorway)
-        ("middle", "big_room", pygame.Rect(184, 40, 8, 12)),
+        ("middle", "big_room", pygame.Rect(184, 46, 8, 12)),
         # left_corner -> sala_future (straight vertical doorway)
-        ("left_corner", "sala_future", pygame.Rect(123, 40, 8, 8)),
+        ("left_corner", "sala_future", pygame.Rect(123, 46, 8, 8)),
         # sala_past -> abismo_fixed (straight horizontal doorway)
-        ("sala_past", "abismo_fixed", pygame.Rect(96, 78, 8, 8)),
+        ("sala_past", "abismo_fixed", pygame.Rect(96, 84, 8, 8)),
         # esquina_1 -> subida (straight vertical doorway)
-        ("esquina_1", "subida", pygame.Rect(245, 68, 8, 4)),
+        ("esquina_1", "subida", pygame.Rect(245, 74, 8, 4)),
         # middle upper-left -> left_corner (straight horizontal doorway)
-        ("middle", "left_corner", pygame.Rect(150, 54, 16, 8)),
+        ("middle", "left_corner", pygame.Rect(150, 60, 16, 8)),
         # middle lower-left -> abismo_fixed (straight horizontal doorway)
-        ("middle", "abismo_fixed", pygame.Rect(150, 76, 16, 8)),
+        ("middle", "abismo_fixed", pygame.Rect(150, 82, 16, 8)),
         # middle upper-right -> esquina_1 (straight horizontal doorway)
-        ("middle", "esquina_1", pygame.Rect(210, 54, 16, 8)),
+        ("middle", "esquina_1", pygame.Rect(210, 60, 16, 8)),
         # middle lower-right -> subida (straight horizontal doorway)
-        ("middle", "subida", pygame.Rect(210, 76, 22, 8)),
+        ("middle", "subida", pygame.Rect(210, 82, 22, 8)),
     ]
 
     ROOM_ORDER: List[str] = [
@@ -381,7 +381,7 @@ class MapState(BaseState):
             return
 
         # 3. Top Header: --o-- MAPA DEL MUNDO --o--
-        header_y = 12
+        header_y = 13
         render_text(
             surface,
             "--o-- MAPA DEL MUNDO --o--",
@@ -576,7 +576,7 @@ class MapState(BaseState):
                 title_str,
                 settings.FONTS["hud"],
                 54,
-                128,
+                124,
                 (44, 30, 40),
             )
 
@@ -592,7 +592,7 @@ class MapState(BaseState):
                 desc_str,
                 settings.FONTS["hud"],
                 54,
-                140,
+                136,
                 (105, 75, 85),
             )
         else:
@@ -611,15 +611,15 @@ class MapState(BaseState):
                 "SALA INEXPLORADA",
                 settings.FONTS["hud"],
                 54,
-                128,
+                124,
                 (95, 70, 80),
             )
             render_text(
                 surface,
-                "Niebla densa. Explora este sector para descubrir su contenido.",
-                settings.FONTS["hud"],
+                "Niebla densa. Sector aun sin explorar.",
+                settings.FONTS["hud_small"],
                 54,
-                140,
+                136,
                 (125, 95, 105),
             )
 
@@ -631,28 +631,31 @@ class MapState(BaseState):
         # Left: Controls
         render_text(
             surface,
-            "[M/ESC] Cerrar   [FLECHAS] Explorar",
-            settings.FONTS["hud"],
+            "[M/ESC] Cerrar  [FLECHAS] Explorar",
+            settings.FONTS["hud_small"],
             22,
-            161,
+            155,
             (65, 45, 55),
         )
 
         # Right: Exploration Percentage & Progress Bar
         exp_text = f"Exploracion: {visited_pct}% ({visited_count}/{total_rooms})"
+        exp_w = settings.FONTS["hud_small"].size(exp_text)[0]
+        bar_w = 30
+        bar_h = 4
+        bar_x = 296 - bar_w
+        bar_y = 160
+        txt_x = bar_x - 6 - exp_w
+
         render_text(
             surface,
             exp_text,
-            settings.FONTS["hud"],
-            172,
-            161,
+            settings.FONTS["hud_small"],
+            txt_x,
+            155,
             (65, 45, 55),
         )
 
-        bar_w = 42
-        bar_h = 4
-        bar_x = 254
-        bar_y = 163
         pygame.draw.rect(surface, (205, 170, 130), (bar_x, bar_y, bar_w, bar_h), border_radius=2)
         fill_w = max(2, int(bar_w * (visited_count / float(total_rooms))))
         pygame.draw.rect(surface, (210, 85, 35), (bar_x, bar_y, fill_w, bar_h), border_radius=2)

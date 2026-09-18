@@ -110,10 +110,11 @@ BOSS_VINES_FRAMES = FRAMES["boss_vines"]
 
 pygame.font.init()
 FONTS = {
-    "hud":        pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
-    "hud_small":  pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 9),
-    "ui":         pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
-    "title":      pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 18),
+    "hud": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
+    "hud_small": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 9),
+    "ui": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
+    "title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 18),
+    "title_1": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Undaunted-DEMO.otf", 20),
     "main-title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Undaunted-DEMO.otf", 24),
 }
 
@@ -127,7 +128,43 @@ def _crisp_render_text(
     bgcolor: Optional[pygame.Color] = None,
     center: bool = False,
     shadowed: bool = False,
+    clamp_to_surface: bool = True,
 ) -> None:
+    if "\n" in text:
+        lines = text.split("\n")
+        line_h = font.get_linesize()
+        if center:
+            total_h = len(lines) * line_h
+            start_y = y - total_h / 2.0 + line_h / 2.0
+            for i, line in enumerate(lines):
+                _crisp_render_text(
+                    surface,
+                    line,
+                    font,
+                    x,
+                    start_y + i * line_h,
+                    color,
+                    bgcolor=bgcolor,
+                    center=True,
+                    shadowed=shadowed,
+                    clamp_to_surface=clamp_to_surface,
+                )
+        else:
+            for i, line in enumerate(lines):
+                _crisp_render_text(
+                    surface,
+                    line,
+                    font,
+                    x,
+                    y + i * line_h,
+                    color,
+                    bgcolor=bgcolor,
+                    center=False,
+                    shadowed=shadowed,
+                    clamp_to_surface=clamp_to_surface,
+                )
+        return
+
     text_obj: pygame.Surface = font.render(text, False, color, bgcolor)
     text_rect: pygame.Rect = text_obj.get_rect()
 
@@ -136,6 +173,19 @@ def _crisp_render_text(
     else:
         text_rect.x = int(x)
         text_rect.y = int(y)
+
+    if clamp_to_surface:
+        surf_w, surf_h = surface.get_size()
+        if text_rect.width <= surf_w - 6:
+            if text_rect.left < 2:
+                text_rect.left = 2
+            elif text_rect.right > surf_w - 3:
+                text_rect.right = surf_w - 3
+        if text_rect.height <= surf_h - 6:
+            if text_rect.top < 2:
+                text_rect.top = 2
+            elif text_rect.bottom > surf_h - 3:
+                text_rect.bottom = surf_h - 3
 
     if shadowed:
         shadow_text: pygame.Surface = font.render(text, False, (0, 0, 0))
@@ -191,7 +241,6 @@ SOUNDS = {
 
     "rock-crack": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "crumble-rocks.wav"),
     "rock-smash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "smash.wav"),
-    "saw-hazard": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "saw.wav"),
     "lava-shower": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "lava_boss.wav"),
     "arena-cleared": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "arena_fanfare.mp3"),
 

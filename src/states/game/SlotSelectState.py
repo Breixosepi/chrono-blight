@@ -34,7 +34,7 @@ class SlotSelectState(BaseState):
         self.confirming_overwrite = False
         self._refresh_metadata()
 
-        self.card_w = 230
+        self.card_w = 236
         self.card_h = 34
         self.card_gap = 8
 
@@ -147,13 +147,13 @@ class SlotSelectState(BaseState):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((16, 12, 24))
 
-        title_text = "NUEVA PARTIDA" if self.mode == "new" else "CARGAR PARTIDA"
+        title_text = "Nueva Partida" if self.mode == "new" else "Cargar Partida"
         render_text(
             surface,
             title_text,
-            settings.FONTS["title"],
+            settings.FONTS["title_1"],
             settings.VIRTUAL_WIDTH // 2,
-            16,
+            20,
             (235, 190, 70),
             center=True,
             shadowed=True,
@@ -200,7 +200,7 @@ class SlotSelectState(BaseState):
                 render_text(
                     surface,
                     status_text,
-                    settings.FONTS["hud"],
+                    settings.FONTS["hud_small"],
                     self.start_x + 10,
                     cy + 17,
                     (110, 100, 125),
@@ -250,12 +250,13 @@ class SlotSelectState(BaseState):
                     time_str = f"{mins:02d}m {secs:02d}s"
 
                 exp_text = f"Explorado: {exploration}%"
+                exp_w = settings.FONTS["hud_small"].size(exp_text)[0]
                 render_text(
                     surface,
                     exp_text,
-                    settings.FONTS["hud"],
-                    self.start_x + self.card_w - 10 - settings.FONTS["hud"].size(exp_text)[0],
-                    cy + 4,
+                    settings.FONTS["hud_small"],
+                    self.start_x + self.card_w - 10 - exp_w,
+                    cy + 5,
                     (130, 230, 170) if is_selected else (100, 180, 130),
                     shadowed=True,
                 )
@@ -265,9 +266,9 @@ class SlotSelectState(BaseState):
                 render_text(
                     surface,
                     details,
-                    settings.FONTS["hud"],
+                    settings.FONTS["hud_small"],
                     self.start_x + 10,
-                    cy + 17,
+                    cy + 18,
                     detail_color,
                     shadowed=True,
                 )

@@ -8,6 +8,7 @@ from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.timer import Timer
 from gale.text import render_text
+from src.states.game.MapState import MapState
 
 import settings
 
@@ -55,7 +56,7 @@ class PauseState(BaseState):
         self.confirm_quit_index: int = 0  # 0: Cancelar, 1: Salir
 
         # Dimensions of the main pause paper board
-        self.BOARD_W: int = 240
+        self.BOARD_W: int = 264
         self.BOARD_H: int = 152
 
         # Trigger unfold animation
@@ -144,7 +145,6 @@ class PauseState(BaseState):
             # Close pause and open MapState
             def open_map():
                 self.state_machine.pop()
-                from src.states.game.MapState import MapState
                 self.state_machine.push(MapState(self.state_machine), play_state=self.play_state)
 
             self._start_close(on_finish_callback=open_map)
@@ -209,7 +209,7 @@ class PauseState(BaseState):
         cx = settings.VIRTUAL_WIDTH // 2
 
         # Decorative Header Banner
-        header_y = by + 8
+        header_y = by + 12
         render_text(
             surface,
             "--o-- PAUSA --o--",
@@ -248,7 +248,7 @@ class PauseState(BaseState):
                     ">",
                     settings.FONTS["hud"],
                     arrow_x,
-                    oy + 4,
+                    oy,
                     (195, 60, 30),
                 )
                 text_col = (195, 60, 30)
@@ -263,7 +263,7 @@ class PauseState(BaseState):
                 opt["label"],
                 settings.FONTS["hud"],
                 cx,
-                oy + 4,
+                oy + 8,
                 text_col,
                 center=True,
             )
@@ -298,17 +298,17 @@ class PauseState(BaseState):
         lines = [
             ("[FLECHAS / A-D]", "Moverse e interactuar"),
             ("[ESPACIO]", "Saltar"),
-            ("[Z] ATACAR", "Mago: Orbe | Cab: Espada | Morph: Rodar"),
-            ("[X] ESPECIAL", "Mago: Llama | Cab: Dash Evasivo"),
+            ("[Z] ATACAR", "Mag: Orbe | Swd: Espada | Mor: Garra"),
+            ("[X] ESPECIAL", "Mag: Fuego | Swd: Dash | Mor: Dash"),
             ("[Q] / [E]", "Alternar Formas desbloqueadas"),
-            ("[F]", "Cambio de Fase (Pasado <-> Futuro)"),
+            ("[F]", "Cambio de Fase (Pasado / Futuro)"),
             ("[M]", "Mapa del Mundo"),
         ]
 
         sy = by + 28
         for key_str, desc_str in lines:
-            render_text(surface, key_str, settings.FONTS["hud"], bx + 14, sy, (190, 60, 30))
-            render_text(surface, desc_str, settings.FONTS["hud"], bx + 84, sy, (55, 40, 50))
+            render_text(surface, key_str, settings.FONTS["hud_small"], bx + 12, sy, (190, 60, 30))
+            render_text(surface, desc_str, settings.FONTS["hud_small"], bx + 84, sy, (55, 40, 50))
             sy += 15
 
         render_text(

@@ -4,6 +4,43 @@ Todos los cambios notables realizados en el proyecto **Chrono Blight** (Platafor
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.18.0] - 2026-09-18
+
+### Añadido
+- **Estandarización de Tipografías Pixel-Art (`settings.FONTS` y `assets/fonts/`)**:
+  - Configuración del conjunto oficial de fuentes en `settings.FONTS`: `hud` (10pt), `hud_small` (9pt), `ui` (10pt), `title` (18pt) con `golden-apple.ttf`, y `main-title` (24pt) con `Undaunted-DEMO.otf`.
+  - Establecimiento del umbral mínimo de tamaño de fuente en 9pt (`hud_small`), garantizando máxima nitidez pixel-art y legibilidad en resolución virtual retro ($320 \times 180$).
+- **Soporte de Texto Multilínea y Clamping Perimetral en `_crisp_render_text` (`settings.py`)**:
+  - Soporte nativo para saltos de línea (`\n`) con cálculo dinámico de espaciado vertical proporcional (`font.get_linesize()`), evitando glifos no imprimibles.
+  - Clamping perimetral automático a los límites de superficie (`clamp_to_surface=True`): contención de textos y números flotantes de combate dentro de los márgenes visibles de la pantalla ($X \in [2, W-3]$, $Y \in [2, H-3]$), impidiendo que alertas o popups se corten fuera de la ventana.
+- **Documentación Técnica de Arquitectura (`ARCHITECTURE.md`)**:
+  - Creación del documento técnico arquitectónico en la raíz del proyecto detallando módulos, subsistemas desacoplados (FSM, StateStack, Command Pattern), pipeline de renderizado, topología del mundo y diagramas Mermaid.
+
+### Cambiado / Mejorado
+- **Prevención de Desbordamiento y Maquetación en Menú de Pausa (`src/states/game/PauseState.py`)**:
+  - Ampliación del ancho del pergamino a `BOARD_W = 264` px para dar margen visual holgado en la resolución de 320 px.
+  - Reorganización de la subpantalla `CONTROLES Y FORMAS` en dos columnas limpias (`tecla` en `bx + 12`, `descripción` en `bx + 84`).
+  - Adopción de la fuente `hud_small` (9pt) y síntesis de descripciones de habilidades, eliminando el corte que ocurría con frases largas como `"Mago: Orbe | Cab: Espada | Morph: Rodar"`.
+- **Reestructuración Anticolisión en el Mapa del Mundo (`src/states/game/MapState.py`)**:
+  - Sustitución de la descripción de sala inexplorada: condensada de `"Niebla densa. Explora este sector para descubrir su contenido."` (283 px, excedía la pantalla por 17 px) a `"Niebla densa. Sector aun sin explorar."` en `hud_small` (146 px).
+  - Reorganización total del pie de página del mapa: separación limpia entre controles a la izquierda (`[M] Cerrar [FLECHAS] Explorar`) y el porcentaje de exploración con barra de progreso a la derecha, erradicando la triple colisión visual anterior y dejando 58 px de separación.
+- **Ajustes de Márgenes en Ranuras de Guardado (`src/states/game/SlotSelectState.py`)**:
+  - Incremento del ancho de las tarjetas a `card_w = 236` px.
+  - Aplicación de `hud_small` (9pt) en detalles de guardado, tiempo de juego, porcentaje de exploración y texto de ranura vacía, asegurando más de 50 px de margen de seguridad frente al borde de la tarjeta.
+- **Calibración Visual del HUD (`src/ui/HUD.py`)**:
+  - Ajuste de las dimensiones del contenedor a $88 \times 36$ px para albergar cómodamente los indicadores.
+  - Reubicación vertical de los rótulos de formas activas a `row_forms_y = 20`, evitando que sobrepasen el borde inferior del marco.
+
+### Corregido
+- **Solapamiento de Barra vs Dígitos en HUD (`src/ui/HUD.py`)**:
+  - Reducción del ancho de las barras de HP y MP a 26 px (`bar_w = 26`, finaliza en $X=63$), erradicando la superposición gráfica de la barra sobre los dígitos de vida cuando el jugador supera los 100 HP (3 dígitos, inicio en $X=70$).
+
+### Eliminado
+- **Depuración de Tipografía Obsoleta (`assets/fonts/Minimal4.ttf`)**:
+  - Eliminación del archivo de fuente anterior tras completar la migración hacia `golden-apple.ttf`.
+
+---
+
 ## [0.17.0] - 2026-09-18
 
 ### Añadido

@@ -21,8 +21,8 @@ _FACE_CENTERS: dict[str, tuple[int, int]] = {
 class HUD:
 
     def __init__(self) -> None:
-        self.width: int = 86
-        self.height: int = 35
+        self.width: int = 88
+        self.height: int = 36
         self.avatar_size: int = 18
         self._avatar_cache: dict[tuple[str, str], pygame.Surface] = {}
 
@@ -130,7 +130,8 @@ class HUD:
     def render( self, surface: pygame.Surface, player: "Player", cam_x: float = 0.0, cam_y: float = 0.0, ) -> None:
         base_x = 4
         base_y = 4
-        font = settings.FONTS.get("hud")
+        font = settings.FONTS.get("hud_small")
+        font_number = settings.FONTS.get("hud")
         if not font:
             return
 
@@ -171,18 +172,18 @@ class HUD:
         tx = 25
         right_margin = self.width - 4
         bar_x = tx + 12
-        bar_w = 34
+        bar_w = 26
         bar_h = 3
 
         # HP 
-        row_hp_y = 3
+        row_hp_y = 0
         hp_lbl = font.render("HP", False, (240, 95, 95))
         hud_surf.blit(hp_lbl, (tx, row_hp_y))
 
-        hp_num_surf = font.render(f"{int(player.health)}", False, (225, 225, 225))
-        hud_surf.blit(hp_num_surf, (right_margin - hp_num_surf.get_width(), row_hp_y ))
+        hp_num_surf = font_number.render(f"{int(player.health)}", False, (225, 225, 225))
+        hud_surf.blit(hp_num_surf, (right_margin - hp_num_surf.get_width(), row_hp_y - 2))
 
-        hp_bar_y = row_hp_y + 6
+        hp_bar_y = row_hp_y + 8
         pygame.draw.rect(hud_surf, (28, 12, 14), pygame.Rect(bar_x, hp_bar_y, bar_w, bar_h))
         hp_ratio = max(0.0, min(1.0, player.health / player.MAX_HEALTH)) if player.MAX_HEALTH > 0 else 0.0
         fill_hp = int(bar_w * hp_ratio)
@@ -192,14 +193,14 @@ class HUD:
         pygame.draw.rect(hud_surf, (70, 35, 40), pygame.Rect(bar_x, hp_bar_y, bar_w, bar_h), 1)
 
         # MP 
-        row_mp_y = 12
+        row_mp_y = 10
         mp_lbl = font.render("MP", False, (75, 165, 245))
         hud_surf.blit(mp_lbl, (tx, row_mp_y))
 
-        mp_num_surf = font.render(f"{int(player.mana)}", False, (205, 225, 245))
-        hud_surf.blit(mp_num_surf, (right_margin - mp_num_surf.get_width(), row_mp_y  ))
+        mp_num_surf = font_number.render(f"{int(player.mana)}", False, (205, 225, 245))
+        hud_surf.blit(mp_num_surf, (right_margin - mp_num_surf.get_width(), row_mp_y - 1))
 
-        mp_bar_y = row_mp_y + 6
+        mp_bar_y = row_mp_y + 8
         pygame.draw.rect(hud_surf, (12, 20, 32), pygame.Rect(bar_x, mp_bar_y, bar_w, bar_h))
         mp_ratio = max(0.0, min(1.0, player.mana / player.MAX_MANA)) if player.MAX_MANA > 0 else 0.0
         fill_mp = int(bar_w * mp_ratio)
@@ -209,7 +210,7 @@ class HUD:
         pygame.draw.rect(hud_surf, (30, 60, 90), pygame.Rect(bar_x, mp_bar_y, bar_w, bar_h), 1)
 
         # DYNAMIC FORMS
-        row_forms_y = 22
+        row_forms_y = 20
         skin_cd = getattr(player, "skin_cooldown_timer", 0.0)
         
         unlocked = []
