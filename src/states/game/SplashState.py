@@ -1,19 +1,17 @@
 """
 Chrono Blight - Splash Screen State
 """
-from typing import Any
+from typing import Any, Optional
 import pygame
+import numpy as np
 from gale.state import BaseState
 from gale.input_handler import InputData
-from gale.timer import Timer
-
-import settings
 from src.states.game.TitleState import TitleState
-
+import settings
 
 class SplashState(BaseState):
-    DURATION_PAST: float = 1.0 
-    DURATION_FUTURE: float = 1.0  
+    DURATION_PAST: float = 1.5 
+    DURATION_FUTURE: float = 1.5  
 
     def enter(self, **params: Any) -> None:
         self.timer: float = 0.0
@@ -26,9 +24,59 @@ class SplashState(BaseState):
         self._flash_surf = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
         )
-        self._fade_surf = pygame.Surface(
-            (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
+
+        self._past_bg = self._create_radial_gradient(
+            outer_color=(23, 94, 67),  
+            center_color=(0, 0, 0),       
         )
+        self._future_bg = self._create_radial_gradient(
+            outer_color=(99, 18, 25),    
+            center_color=(0, 0, 0),         
+        )
+        self._logo_surf, self._logo_pos = self._prepare_crisp_logo()
+
+    def _create_radial_gradient(
+        self,
+        center_color: tuple[int, int, int],
+        outer_color: tuple[int, int, int],
+    ) -> pygame.Surface:
+        w, h = settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT
+        cx, cy = w / 2.0, h / 2.0
+
+        y_coords, x_coords = np.ogrid[:h, :w]
+        dist = np.sqrt(((x_coords - cx) / 1.15) ** 2 + (y_coords - cy) ** 2)
+        max_r = 135.0
+        norm = np.clip(dist / max_r, 0.0, 1.0)
+        factor = 1.0 - (norm ** 1.35)
+
+        r = outer_color[0] + factor * (center_color[0] - outer_color[0])
+        g = outer_color[1] + factor * (center_color[1] - outer_color[1])
+        b = outer_color[2] + factor * (center_color[2] - outer_color[2])
+
+        rgb = np.stack([r, g, b], axis=-1).astype(np.uint8)
+        rgb_trans = np.transpose(rgb, (1, 0, 2))
+
+        surf = pygame.surfarray.make_surface(rgb_trans)
+        return surf
+
+    def _prepare_crisp_logo(self) -> tuple[Optional[pygame.Surface], tuple[int, int]]:
+        raw_logo = settings.TEXTURES.get("logo")
+        if not raw_logo:
+            raw_logo = settings.TEXTURES.get("logo_past")
+            if not raw_logo:
+                return None, (0, 0)
+
+        bbox = raw_logo.get_bounding_rect()
+        cropped = raw_logo.subsurface(bbox)
+
+        target_w = 150
+        target_h = int(target_w * (bbox.height / bbox.width))
+        scaled_logo = pygame.transform.smoothscale(cropped, (target_w, target_h))
+
+        pos_x = (settings.VIRTUAL_WIDTH - target_w) // 2
+        pos_y = (settings.VIRTUAL_HEIGHT - target_h) // 2
+
+        return scaled_logo, (pos_x, pos_y)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_data.pressed and not self.is_done:
@@ -65,14 +113,12 @@ class SplashState(BaseState):
         self.state_machine.push(TitleState(self.state_machine))
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((10, 8, 14))
+        bg_surf = self._future_bg if self.phase == "future" else self._past_bg
+        surface.blit(bg_surf, (0, 0))
 
-        tex_key = "logo_future" if self.phase == "future" else "logo_past"
-        logo_tex = settings.TEXTURES.get(tex_key)
-        if logo_tex:
-            surface.blit(logo_tex, (0, 0))
+        if self._logo_surf:
+            surface.blit(self._logo_surf, self._logo_pos)
 
         if self.flash_alpha > 0.0:
-            self._flash_surf.fill((220, 60, 60, int(self.flash_alpha)))
+            self._flash_surf.fill((225, 60, 60, int(self.flash_alpha)))
             surface.blit(self._flash_surf, (0, 0))
-

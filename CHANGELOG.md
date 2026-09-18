@@ -14,6 +14,10 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - Contador de progreso de viñetas e insignias temáticas de orador (*Cronista Ancestral*, *Mago de Fase*, *Voz del Destino*).
   - Efecto mecanografiado dinámico (*Typewriter*) a 0.022s por carácter con sonido rítmico sutil de pulsación y atenuación de volumen.
   - Opciones de avance rápido con `[ENTER]` / `[ESPACIO]`, transiciones de audio dimensional entre paneles (`phase_shift_past` y `phase_shift_future`) y atajo para saltar el prólogo directamente al juego con `[ESC]`.
+- **Composición Vectorial de Splash Screen HD (`src/states/game/SplashState.py`)**:
+  - Sustitución de imágenes aplanadas de baja resolución por un pipeline de composición programática en tiempo real.
+  - Generación de degradados radiales elípticos de alta pureza (esmeralda profundo para el Pasado y carmesí para el Futuro) sin bandas de color ni artefactos de compresión.
+  - Renderizado del nuevo logo HD transparente (`2816x1536`) escalado con algoritmo bilineal `pygame.transform.smoothscale`, otorgando máxima nitidez, contraste y legibilidad a las letras y engranajes.
 
 ---
 

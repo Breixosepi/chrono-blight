@@ -69,9 +69,7 @@ TEXTURES = {
     "humble_ui":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "Humble Gift - v1.3" / "PNG" / "SpriteSheet.png"),
     "gothic_castle_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_past.png"),
     "gothic_castle_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_future.png"),
-    "logo_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo_past.png"),
-    "logo_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo_future.png"),
-    
+    "logo": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo.png"),
     "page_1":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "1.png"),
     "page_2":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "2.png"),
     "page_3":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "3.png"),
