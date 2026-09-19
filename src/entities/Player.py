@@ -226,6 +226,8 @@ class Player(Entity):
             return False
         self.phase_color = "green" if self.phase_color == "red" else "red"
         self.phase_cooldown_timer = self.phase_cooldown_max
+        self.move_direction = 0
+        self.vx = 0.0
         self._sync_animation()
         return True
 
@@ -497,8 +499,10 @@ class Player(Entity):
                     if cache_key not in self._flame_cache:
                         flame_rect = flame_rects[frame_idx]
                         sub_flame = flame_texture.subsurface(flame_rect)
-                        scaled = pygame.transform.scale(sub_flame, (size, size))
-                        scaled.set_alpha(200)
+                        scaled_src = pygame.transform.scale(sub_flame, (size, size))
+                        scaled = pygame.Surface(scaled_src.get_size(), pygame.SRCALPHA)
+                        scaled.blit(scaled_src, (0, 0))
+                        scaled.fill((255, 255, 255, 200), special_flags=pygame.BLEND_RGBA_MULT)
                         self._flame_cache[cache_key] = scaled
                         
                     cached_flame = self._flame_cache[cache_key]
