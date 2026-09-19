@@ -24,10 +24,11 @@ class DeathState(EntityBaseState):
         
         if player.is_animation_finished():
             if player.skin in player.available_skins:
+                player.form_stats[player.skin]["health"] = 0.0
                 player.available_skins.remove(player.skin)
                 
             if player.available_skins:
                 next_skin = player.available_skins[0]
                 player.change_skin(next_skin)
-                player.health = player.MAX_HEALTH
+                player.invulnerable_timer = player.invulnerable_max
                 self.change_state("idle")
