@@ -312,11 +312,13 @@ class Enemy(Entity):
                 ty = int(tr["y"] - camera_y)
                 tr_alpha = int(180 * (tr["life"] / 0.12))
                 tr_surf = pygame.Surface((6, 4), pygame.SRCALPHA)
+                tr_surf.fill((0, 0, 0, 0))
                 pygame.draw.ellipse(tr_surf, (255, 120, 40, tr_alpha), (0, 0, 6, 4))
                 surface.blit(tr_surf, (tx - 3, ty - 2))
 
             # Núcleo de plasma
             bullet_surf = pygame.Surface((10, 6), pygame.SRCALPHA)
+            bullet_surf.fill((0, 0, 0, 0))
             pygame.draw.ellipse(bullet_surf, (255, 90, 40, 200), (0, 0, 10, 6))
             pygame.draw.ellipse(bullet_surf, (255, 245, 160, 255), (2, 1, 6, 4))
             surface.blit(bullet_surf, (px - 5, py - 3))

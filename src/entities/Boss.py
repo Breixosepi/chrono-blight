@@ -630,6 +630,7 @@ class Boss(Enemy):
                 sx = int(sw["x"] - camera_x)
                 sy = int(sw["base_y"] - camera_y)
                 fb = pygame.Surface((28, 22), pygame.SRCALPHA)
+                fb.fill((0, 0, 0, 0))
                 pygame.draw.ellipse(fb, (160, 20, 120, 210), (0, 0, 28, 22))
                 surface.blit(fb, (sx - 14, sy - 20))
                 continue
@@ -664,14 +665,15 @@ class Boss(Enemy):
                 ty = int(tr["y"] - camera_y)
                 t_alpha = int(160 * (tr["life"] / 0.18))
                 t_surf = pygame.Surface((10, 10), pygame.SRCALPHA)
+                t_surf.fill((0, 0, 0, 0))
                 pygame.draw.circle(t_surf, (190, 40, 180, t_alpha), (5, 5), 4)
                 surface.blit(t_surf, (tx - 5, ty - 5))
 
             if not orb_frames:
-                # Fallback: círculo simple
                 ox = int(orb["x"] - camera_x)
                 oy = int(orb["y"] - camera_y)
                 fb = pygame.Surface((20, 20), pygame.SRCALPHA)
+                fb.fill((0, 0, 0, 0))
                 pygame.draw.circle(fb, (240, 60, 200, 200), (10, 10), 9)
                 surface.blit(fb, (ox - 10, oy - 10))
                 continue
@@ -738,6 +740,7 @@ class Boss(Enemy):
                     aura_col = (255, 60, 60, 65) if color == "red" else (60, 255, 120, 65)
                     aura_w, aura_h = surf.get_width() + 10, surf.get_height() + 10
                     aura_surf = pygame.Surface((aura_w, aura_h), pygame.SRCALPHA)
+                    aura_surf.fill((0, 0, 0, 0))
                     pygame.draw.ellipse(aura_surf, aura_col, (0, 0, aura_w, aura_h))
                     ax = int(wb["x"] - camera_x) - aura_w // 2
                     ay = int(wb["y"] - camera_y) - aura_h // 2
@@ -805,6 +808,7 @@ class Boss(Enemy):
                     surf = v_frames[f_idx]
                     aura_w, aura_h = surf.get_width() + 10, surf.get_height() + 10
                     aura_surf = pygame.Surface((aura_w, aura_h), pygame.SRCALPHA)
+                    aura_surf.fill((0, 0, 0, 0))
                     pygame.draw.ellipse(aura_surf, (*col_rgb, 75), (0, 0, aura_w, aura_h))
                     surface.blit(aura_surf, (tx - aura_w // 2, by - aura_h // 2))
                     surface.blit(surf, (tx - surf.get_width() // 2, by - surf.get_height() // 2))

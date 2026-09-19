@@ -88,7 +88,7 @@ def load_effect_row(
     
     start = row_idx * cols
     end = start + cols
-    return [sheet.subsurface(r) for r in all_rects[start:end]]
+    return [sheet.subsurface(r).copy() for r in all_rects[start:end]]
 
 
 def load_crown_frames(base_dir: pathlib.Path) -> List[pygame.Surface]:
