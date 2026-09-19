@@ -22,6 +22,7 @@ WINDOW_HEIGHT = 720
 TILE_SIZE = 16
 
 TEXTURES = {
+    #https://immortal-burrito.itch.io/blood-demons
     "sword_red":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "sword" / "Sword.png"),
     "sword_green":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "sword" / "sword_green.png"),
     "morph_red":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "morph" / "Morph.png"),
@@ -30,17 +31,37 @@ TEXTURES = {
     "mage_green":     pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "Mage_green.png"),
     "mage_atk2_red":  pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "mage_atk2.png"),
     "mage_atk2_green":pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "mage_atk2_green.png"),
+
+    #https://kekkorider.itch.io/pixel-art-flame-effect
     "flame_purple":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "flame_purple.png"),
     "flame_green":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "player" / "mage" / "flame_green.png"),
+
+    #https://sanctumpixel.itch.io/sword-skeleton-pixel-art-character
     "skeleton_sword": pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "skeleton_sword" / "ready_1.png"),
+
+    #https://zneeke.itch.io/dark-fantasy-monster-pack-1
     "monster_eyes":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "monster_eyes" / "monster001eyes.png"),
+
+    #https://zneeke.itch.io/goblin-scout-silhouette
     "goblin":         pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "goblin" / "goblin.png"),
     "crown":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "crown" / "crow_idle.png"),
+
+    #https://zneeke.itch.io/dark-fantasy-monster-pack-3
     "monster2":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "monster2" / "monster2.png"),
+
+    #https://zneeke.itch.io/dark-fantasy-monster-pack-2
     "monster3":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "enemies" / "monster3" / "monster3.png"),
+
+    #https://rili-xl.itch.io/cultist-priest-pack
     "cultist_priest": pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "bosses" / "cultist_priest" / "cultist_priest_idle_1.png"),
+
+    #https://zneeke.itch.io/dark-fantasy-big-boss-1
     "big_monster":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "bosses" / "big_monster" / "dark fantasy big boss idle.png"),
+
+    #https://nemorium.itch.io/the-harvester
     "the_harvester":  pygame.image.load(BASE_DIR / "assets" / "graphics" / "entity" / "bosses" / "The_harvester" / "TheHarvester.png"),
+
+    #AI-generated
     "abismo_1_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_past.png"),
     "abismo_1_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "abismo_1_future.png"),
     "sala_past":       pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "sala_past.png"),
@@ -50,26 +71,6 @@ TEXTURES = {
     "middle_past":     pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "middle_past.png"),
     "middle_future":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "middle_future.png"),
     "big_room_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "b_r_past.png"),
-    "big_room_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "b_r_future.png"),
-    "void_orb":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "void_orb.png"),
-    "wind_blade":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "wind_blade.png"),
-    "explosion":         pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "explosion.png"),
-    "monolith":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "monolith" / "animation" / "monolith_animation_sheet.png"),
-    "ground_shockwave":  pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "ground_shockwave.png"),
-    "saw_blade":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "saws" / "saw_blade.png"),
-    "destructible_block": pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "blocks" / "Brick1.png"),
-    "moving_platform":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "platforms" / "Moving Platfrom_A.png"),
-    "elevator_open":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "13.png"),
-    "elevator_closed":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "12.png"),
-    "elevator_rope":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "22.png"),
-    "obelisk":            pygame.image.load(BASE_DIR / "assets" / "graphics" / "world" / "objects" / "obelisk.png"),
-    "animated_items":     pygame.image.load(BASE_DIR / "assets" / "graphics" / "items" / "animated_items.png"),
-    "keyboard_ui":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "keyboard.png"),
-    "save_icon":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "save_icon.png"),
-    "humble_ui":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "Humble Gift - v1.3" / "PNG" / "SpriteSheet.png"),
-    "gothic_castle_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_past.png"),
-    "gothic_castle_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_future.png"),
-    "logo": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo.png"),
     "page_1":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "1.png"),
     "page_2":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "2.png"),
     "page_3":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "3.png"),
@@ -79,6 +80,42 @@ TEXTURES = {
     "page_7":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "7.png"),
     "page_8":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "8.png"),
     "page_9":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "story" / "9.png"),
+    "gothic_castle_past":   pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_past.png"),
+    "gothic_castle_future": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "bg_chrono_blight_future.png"),
+    "logo": pygame.image.load(BASE_DIR / "assets" / "graphics" / "backgrounds" / "logo.png"),
+
+    #https://bdragon1727.itch.io/1050-rpg-effects-64x64 
+    "void_orb":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "void_orb.png"),
+    "wind_blade":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "wind_blade.png"),
+    "explosion":         pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "explosion.png"),
+    "ground_shockwave":  pygame.image.load(BASE_DIR / "assets" / "graphics" / "effects" / "ground_shockwave.png"),
+
+    #https://creativekind.itch.io/obelisk
+    "obelisk":            pygame.image.load(BASE_DIR / "assets" / "graphics" / "world" / "objects" / "obelisk.png"),
+
+    #https://arijkx.itch.io/pixel-art-portal-monolith
+    "monolith":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "monolith" / "animation" / "monolith_animation_sheet.png"),
+
+    #https://bdragon1727.itch.io/platfrom-trap-and-weapon
+    "saw_blade":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "saws" / "saw_blade.png"),
+    "destructible_block": pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "blocks" / "Brick1.png"),
+    "moving_platform":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "platforms" / "Moving Platfrom_A.png"),
+    "elevator_open":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "13.png"),
+    "elevator_closed":    pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "12.png"),
+    "elevator_rope":      pygame.image.load(BASE_DIR / "assets" / "graphics" / "traps" / "elevator" / "22.png"),
+
+    # https://dani-maccari.itch.io/platformer-metroidvania-pixel-items-free-assets
+    "animated_items":     pygame.image.load(BASE_DIR / "assets" / "graphics" / "items" / "animated_items.png"),
+
+    # https://vryell.itch.io/controller-keyboard-icons
+    "keyboard_ui":        pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "keyboard.png"),
+
+    # https://omniclause.itch.io/16x16-floppy-disk-spinning-animation
+    "save_icon":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "save_icon.png"),
+
+    # https://humblepixel.itch.io/super-asset-bundle-5-mini-pocket-status
+    "humble_ui":          pygame.image.load(BASE_DIR / "assets" / "graphics" / "ui" / "Humble Gift - v1.3" / "PNG" / "SpriteSheet.png"),
+    
 }
 
 SAVE_SLOTS = ["slot_1", "slot_2", "slot_3"]
@@ -108,6 +145,9 @@ BOSS_VINES_FRAMES = FRAMES["boss_vines"]
 
 pygame.font.init()
 FONTS = {
+    #https://tjtrewin.itch.io/undaunted-blackletter-font
+    #https://sysl.itch.io/role-playing-fonts
+
     "hud": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
     "hud_small": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 9),
     "ui": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "golden-apple.ttf", 10),
@@ -197,55 +237,80 @@ def _crisp_render_text(
 gale.text.render_text = _crisp_render_text
 
 SOUNDS = {
+
+    #https://tommusic.itch.io/free-fantasy-200-sfx-pack
+    #https://placeholder-assets.itch.io/50-free-sounds-pack
+    #https://xdeviruchi.itch.io/16-bit-fantasy-adventure-music-pack
+    #https://pixabay.com/es/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=28887
+    #https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=28887
+    #https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7152
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7152
+    #https://pixabay.com/es/users/flutie8211-17475707/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494216
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494216
+    #https://pixabay.com/users/dragon-studio-38165424/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=382724
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=382724
+    #https://pixabay.com/es/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=44324
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=44324
+    #https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=41231
+    #https://pixabay.com/es/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=41231
+    #https://pixabay.com/es/users/dragon-studio-38165424/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=393847
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=393847
+    #https://pixabay.com/es/users/dragon-studio-38165424/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=393847
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=393847
+    #https://pixabay.com/es/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=81138
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=81138
+    #https://pixabay.com/es/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=87456
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=87456
+    #https://pixabay.com/es/users/soundreality-31074404/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=285209
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=285209
+    #https://pixabay.com/es/users/djartmusic-46653586/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=298750
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=298750
+    #https://pixabay.com/es/users/djartmusic-46653586/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=298750
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=298750
+    #https://pixabay.com/es/users/coghezzi-55265179/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=533277
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=266309
+    #https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=143940
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=177982
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=202282
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=6826
+    #https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=46452
+    #https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=529465
+
     "intro": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "intro.wav"),
     "ambient": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "ambient.mp3"),
     "game-over": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "game_over.mp3"),
-
     "jump": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "jump.wav"),
     "lava": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "lava.wav"),
-
     "close": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "close.wav"),
     "open": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "open.wav"),
-
     "save": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "save.wav"),
-
     "change": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "change.wav"),
     "enter": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "enter.wav"),
-    
     "heart": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "heart.wav"),
     "hit-player": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hit_player.wav"),
     "enemy-death": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "enemy_death.wav"),
-
     "boss-wind-spell": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "boss_wind_spell.wav"),
-
     "morph-power": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "morph_rocks.wav"),
     "morph-fire": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "morph_fire.wav"),
     "morph-dash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "dash_morph.mp3"),
-
     "sword": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sword.wav"),
     "sword-dash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sword_dash.wav"),
-
     "mage-special": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "mage_special.wav"),
     "mage-attack": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "mage.wav"),
-
     "giant_boss": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "giant_boss.wav"),
     "boss_survive": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "small_boss.wav"),
     "final_boss": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "final_boss.wav"),
-
     "phase_shift_past": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "past.wav"),
     "phase_shift_future": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "future.wav"),
     "change-skin": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "change_skin.wav"),
     "on-land": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "on_land.mp3"),
-
     "rock-crack": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "crumble-rocks.wav"),
     "rock-smash": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "smash.wav"),
     "saw-hazard": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "saw.wav"),
     "lava-shower": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "lava_boss.wav"),
     "arena-cleared": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "arena_fanfare.mp3"),
-
     "paper-unfold": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "unfold_map.mp3"),
     "paper-fold": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "fold_map.wav"),
-
     "player-death": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "player_death.wav"),
     "unlock-state": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "unlock_state.wav"),
     "slash-hit": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hit_flesh.mp3"),

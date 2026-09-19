@@ -152,3 +152,4 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
 ## License
 
 This project is an academic submission developed for the **ISPPV1** course. All original code is authored by the project team. Third-party assets are used under their respective free/open licenses (see `CREDITS.md`).
+
