@@ -112,13 +112,16 @@ class Room:
     def _preprocess_tilemap(self) -> None:
         self.flipped_tiles: Dict[Tuple[str, int, int], Tuple[bool, bool, bool]] = {}
         for layer_name in self.tilemap.layer_names():
+            grid = self.tilemap.get_layer(layer_name)
             for r in range(self.tilemap.rows):
                 for c in range(self.tilemap.cols):
-                    raw = self.tilemap.get_gid(layer_name, r, c)
-                    if raw > 100000:
+                    raw = grid[r][c]
+                    if (raw & 0xE0000000) != 0 or raw > 100000:
                         fh, fv, fd = bool(raw & 0x80000000), bool(raw & 0x40000000), bool(raw & 0x20000000)
                         self.flipped_tiles[(layer_name, r, c)] = (fh, fv, fd)
-                        self.tilemap.set_gid(layer_name, r, c, raw & 0x1FFFFFFF)
+                        clean_gid = raw & 0x1FFFFFFF
+                        grid[r][c] = clean_gid
+                        self.tilemap.set_gid(layer_name, r, c, clean_gid)
 
     def _get_active_collision_layers(self) -> List[str]:
         return _PHASE_LAYERS.get(self.player.phase_color, ["ground", "red_ground"])

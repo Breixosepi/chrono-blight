@@ -64,14 +64,18 @@ class RoomRenderer:
         return None
 
     def _get_tile_surface(self, gid: int, flip_h: bool, flip_v: bool, flip_d: bool, ghost: bool) -> Optional[pygame.Surface]:
-        key = (gid, flip_h, flip_v, flip_d)
+        clean_gid = gid & 0x1FFFFFFF
+        key = (clean_gid, flip_h, flip_v, flip_d)
         cache = self._ghost_tile_cache if ghost else self._tile_cache
         if key in cache: return cache[key]
         
-        tileset = self.room.tilemap.tileset_for_gid(gid)
+        tileset = self.room.tilemap.tileset_for_gid(clean_gid)
         if not tileset: return None
         
-        sub = tileset.image.subsurface(tileset.rect_for(gid))
+        try:
+            sub = tileset.image.subsurface(tileset.rect_for(clean_gid))
+        except (IndexError, ValueError):
+            return None
         if flip_d: sub = pygame.transform.flip(pygame.transform.rotate(sub, 270), True, False)
         if flip_h or flip_v: sub = pygame.transform.flip(sub, flip_h, flip_v)
         
