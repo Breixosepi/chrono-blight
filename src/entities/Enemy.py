@@ -297,8 +297,9 @@ class Enemy(Entity):
                     self.render_outline(surface, h_surf, hx, hy, (255, 90, 90, 180))
                     surface.blit(h_surf, (hx, hy))
                 else:
-                    ghost = h_surf.copy()
-                    ghost.set_alpha(self.GHOST_ALPHA)
+                    ghost = pygame.Surface(h_surf.get_size(), pygame.SRCALPHA)
+                    ghost.blit(h_surf, (0, 0))
+                    ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
                     surface.blit(ghost, (hx, hy))
 
         # Renderizar proyectiles / balas
@@ -341,6 +342,7 @@ class Enemy(Entity):
             self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_col)
             surface.blit(sprite_surf, (draw_x, draw_y))
         else:
-            ghost = sprite_surf.copy()
-            ghost.set_alpha(self.GHOST_ALPHA)
+            ghost = pygame.Surface(sprite_surf.get_size(), pygame.SRCALPHA)
+            ghost.blit(sprite_surf, (0, 0))
+            ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
             surface.blit(ghost, (draw_x, draw_y))

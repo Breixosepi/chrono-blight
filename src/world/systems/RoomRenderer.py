@@ -80,8 +80,9 @@ class RoomRenderer:
         if flip_h or flip_v: sub = pygame.transform.flip(sub, flip_h, flip_v)
         
         if ghost:
-            ghost_surf = sub.copy()
-            ghost_surf.set_alpha(75)
+            ghost_surf = pygame.Surface(sub.get_size(), pygame.SRCALPHA)
+            ghost_surf.blit(sub, (0, 0))
+            ghost_surf.fill((255, 255, 255, 75), special_flags=pygame.BLEND_RGBA_MULT)
             cache[key] = ghost_surf
             return ghost_surf
             
