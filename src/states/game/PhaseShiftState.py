@@ -14,7 +14,8 @@ class PhaseShiftState(BaseState):
     _OVERLAYS: Optional[Dict[str, Tuple[pygame.Surface, Tuple[int, int, int]]]] = None
     _RING_SURF: Optional[pygame.Surface] = None
 
-    def enter(self, phase_color: str = "green", **params: Any) -> None:
+    def enter(self, phase_color: str = "green", play_state: Any = None, **params: Any) -> None:
+        self.play_state = play_state
         if phase_color == "green":
             settings.SOUNDS["phase_shift_past"].play()
         else:
@@ -51,8 +52,28 @@ class PhaseShiftState(BaseState):
         if hasattr(self, "transition_timer") and self.transition_timer is not None:
             self.transition_timer.remove()
             self.transition_timer = None
+        if self.play_state is not None and hasattr(self.play_state, "player"):
+            player = self.play_state.player
+            keys = pygame.key.get_pressed()
+            from src import controls_manager
+            left_k = controls_manager.CURRENT_KEYBINDS.get("move_left", pygame.K_a)
+            right_k = controls_manager.CURRENT_KEYBINDS.get("move_right", pygame.K_d)
+            is_left = bool(keys[left_k] or keys[pygame.K_LEFT])
+            is_right = bool(keys[right_k] or keys[pygame.K_RIGHT])
+            if is_left and not is_right:
+                player.move_direction = -1
+            elif is_right and not is_left:
+                player.move_direction = 1
+            elif not is_left and not is_right:
+                player.move_direction = 0
+
+    def on_input(self, input_id: str, input_data: Any) -> None:
+        if self.play_state is not None:
+            self.play_state.on_input(input_id, input_data)
 
     def update(self, dt: float) -> None:
+        if self.play_state is not None:
+            self.play_state.update(dt)
         self.elapsed += dt
 
     def render(self, surface: pygame.Surface) -> None:

@@ -228,7 +228,7 @@ class PlayState(BaseState):
             if self.room.map_name == "sala_future":
                 return
             if self.player.toggle_phase():
-                self.state_machine.push(PhaseShiftState(self.state_machine), phase_color=self.player.phase_color)
+                self.state_machine.push(PhaseShiftState(self.state_machine), phase_color=self.player.phase_color, play_state=self)
         elif input_id == "prev_form" and input_data.pressed:
             self.player.cycle_skin(-1)
         elif input_id in ("next_form", "toggle_morph") and input_data.pressed:

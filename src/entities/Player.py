@@ -226,8 +226,6 @@ class Player(Entity):
             return False
         self.phase_color = "green" if self.phase_color == "red" else "red"
         self.phase_cooldown_timer = self.phase_cooldown_max
-        self.move_direction = 0
-        self.vx = 0.0
         self._sync_animation()
         return True
 
