@@ -71,19 +71,20 @@ python main.py
 
 | Action | Key |
 |---|---|
-| Move left / right | `A` / `D` |
+| Move left / right | `Left Arrow` / `Right Arrow` |
+| Look up / Elevator / Altar | `Up Arrow` |
+| Look down | `Down Arrow` |
 | Jump | `Space` |
-| Look up (elevator) | `W` |
-| Dash | `Left Shift` |
-| Basic attack | `J` |
-| Special attack | `K` |
-| Phase shift (Past ↔ Future) | `L` |
+| Basic attack | `Z` |
+| Special attack | `X` |
+| Dash | `C` |
+| Phase shift (Past ↔ Future) | `F` |
 | Previous form | `Q` |
 | Next form | `E` |
 | World map | `M` |
 | Pause | `P` |
 
-> All controls are fully remappable from the **SETTINGS** screen, accessible from the main menu or the pause menu. Bindings are saved automatically to `src/controls.json`.
+> All controls are fully remappable to any keys (such as WASD, J, K, L) from the **SETTINGS** screen in the main menu or pause menu. Custom bindings are saved automatically to `src/controls.json`.
 
 ---
 
