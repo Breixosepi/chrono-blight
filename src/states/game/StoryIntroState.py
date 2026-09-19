@@ -268,7 +268,7 @@ class StoryIntroState(BaseState):
 
         if input_id in ("enter", "jump", "attack"):
             self._advance_dialogue()
-        elif input_id in ("quit", "back"):
+        elif input_id in ("escape", "quit", "back"):
             if "change" in settings.SOUNDS:
                 settings.SOUNDS["change"].play()
             self._start_game()
@@ -402,12 +402,14 @@ class StoryIntroState(BaseState):
                 (130, 120, 140),
             )
 
+        skip_msg = "[ESC] Saltar Prologo"
+        skip_w = settings.FONTS["hud_small"].size(skip_msg)[0]
         render_text(
             surface,
-            "[ESC] Saltar Prólogo",
+            skip_msg,
             settings.FONTS["hud_small"],
-            settings.VIRTUAL_WIDTH - 6,
-            5,
+            settings.VIRTUAL_WIDTH - skip_w - 8,
+            6,
             (160, 145, 170),
             shadowed=True,
         )

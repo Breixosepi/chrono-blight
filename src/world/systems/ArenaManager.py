@@ -137,7 +137,7 @@ class ArenaManager:
                 self.boss.shield_active = False
                 self.boss.invulnerable = False
                 self.boss.change_state("idle")
-            self._show_banner("!THE HARVESTER! - FASE 1: DESINCRONIZACION", (255, 100, 100), 3.5)
+            self._show_banner("!THE HARVESTER: DESINCRONIZACION!", (255, 100, 100), 3.5)
         else:
             boss_track = "final_boss" if self.room.map_name == "big_room" else "giant_boss"
             settings.play_music(boss_track)
@@ -416,7 +416,7 @@ class ArenaManager:
                     self.boss.boss_phase = 2
                     self.boss.invulnerable = True
                     self.darkness_overlay.set_target_darkness(0.95, speed=2.0)
-                    self._show_banner("!FASE 2: OSCURIDAD TOTAL! !ACTIVA LOS 3 MONOLITOS!", (255, 140, 60), 4.5)
+                    self._show_banner("!FASE 2: OSCURIDAD! !ACTIVA LOS 3 MONOLITOS!", (255, 140, 60), 4.5)
                     self.room.camera.shake(5.0, 0.45)
                     self._spawn_monoliths()
 
@@ -430,7 +430,7 @@ class ArenaManager:
                     self.monoliths.clear()
                     self.room.monoliths = []
                     self.floor_split_active = True
-                    self._show_banner("!FASE 3: COLAPSO TEMPORAL! !DUELO EN LAS ALTURAS!", (255, 60, 60), 5.0)
+                    self._show_banner("!FASE 3: COLAPSO TEMPORAL! !DUELO FINAL!", (255, 60, 60), 5.0)
                     self.room.camera.shake(6.0, 0.6)
                     self.boss.teleport_to(785.0, 85.0)
                     self.boss.change_state("attack")
@@ -474,7 +474,7 @@ class ArenaManager:
         if act_count < total:
             self._show_banner(f"!MONOLITO ACTIVADO! ({act_count}/{total})", (120, 255, 180), 2.0)
         else:
-            self._show_banner("!MONOLITOS ACTIVADOS! !JEFE ATURDIDO!", (255, 230, 80), 4.0)
+            self._show_banner("!MONOLITOS ACTIVADOS! !ATACA AL JEFE!", (255, 230, 80), 4.0)
             self.darkness_overlay.set_target_darkness(0.20, speed=3.5)
             self.room.camera.shake(5.5, 0.45)
             if self.boss and not self.boss.dead:
@@ -539,10 +539,11 @@ class ArenaManager:
 
     def render_hud(self, surface: pygame.Surface) -> None:
         if self.banner_text:
+            banner_font = settings.FONTS["title"] if settings.FONTS["title"].size(self.banner_text)[0] <= 280 else settings.FONTS["hud"]
             render_text(
                 surface,
                 self.banner_text,
-                settings.FONTS["title"],
+                banner_font,
                 settings.VIRTUAL_WIDTH // 2,
                 24,
                 self.banner_color,

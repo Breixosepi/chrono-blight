@@ -29,7 +29,4 @@ class ChronoBlight(Game):
         self.state_stack.render(surface)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
-        if input_id == "quit" and input_data.pressed:
-            self.quit()
-        else:
-            self.state_stack.on_input(input_id, input_data)
+        self.state_stack.on_input(input_id, input_data)

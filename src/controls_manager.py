@@ -22,7 +22,7 @@ DEFAULT_KEYBINDS = {
 }
 
 SYSTEM_KEYBINDS = {
-    "quit": pygame.K_ESCAPE,
+    "escape": pygame.K_ESCAPE,
     "back": pygame.K_BACKSPACE,
     "enter": pygame.K_RETURN,
 }

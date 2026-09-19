@@ -1,7 +1,7 @@
 from typing import Any, Optional
 import pygame
 from gale.state import BaseState
-from gale.input_handler import InputData
+from gale.input_handler import InputData, InputHandler
 from gale.text import render_text
 
 import settings
@@ -30,6 +30,7 @@ class SettingsState(BaseState):
         self.from_pause = from_pause
         self.selected_index = 0
         self.rebinding_action: Optional[str] = None
+        self._interceptor_installed: bool = False
         self.pulse_timer: float = 0.0
         self.status_message: str = ""
         self.status_timer: float = 0.0
@@ -46,6 +47,45 @@ class SettingsState(BaseState):
         self._dim_overlay = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA)
         self._dim_overlay.fill((10, 8, 14, 200))
 
+    def _setup_key_interceptor(self) -> None:
+        if getattr(self, "_interceptor_installed", False):
+            return
+        self._interceptor_installed = True
+        self._orig_handle_input = InputHandler.handle_input
+
+        def _interceptor(event: pygame.event.Event) -> None:
+            if self.rebinding_action is not None and event.type == pygame.KEYDOWN:
+                key = event.key
+                if key == pygame.K_ESCAPE:
+                    self.rebinding_action = None
+                    self.status_message = "Asignacion cancelada"
+                    self.status_timer = 2.0
+                    self._remove_key_interceptor()
+                    if "close" in settings.SOUNDS:
+                        settings.SOUNDS["close"].play()
+                    return
+                controls_manager.set_control(self.rebinding_action, key)
+                self.rebinding_action = None
+                self.status_message = "!Tecla guardada!"
+                self.status_timer = 2.0
+                self._remove_key_interceptor()
+                if "save" in settings.SOUNDS:
+                    settings.SOUNDS["save"].play()
+                elif "enter" in settings.SOUNDS:
+                    settings.SOUNDS["enter"].play()
+                return
+            self._orig_handle_input(event)
+
+        InputHandler.handle_input = _interceptor
+
+    def _remove_key_interceptor(self) -> None:
+        if getattr(self, "_interceptor_installed", False):
+            InputHandler.handle_input = self._orig_handle_input
+            self._interceptor_installed = False
+
+    def exit(self) -> None:
+        self._remove_key_interceptor()
+
     def update(self, dt: float) -> None:
         self.pulse_timer += dt
         if not self.from_pause:
@@ -54,25 +94,6 @@ class SettingsState(BaseState):
             self.status_timer = max(0.0, self.status_timer - dt)
             if self.status_timer <= 0.0:
                 self.status_message = ""
-
-        if self.rebinding_action is not None:
-            for event in pygame.event.get(pygame.KEYDOWN):
-                if event.key == pygame.K_ESCAPE:
-                    self.rebinding_action = None
-                    self.status_message = "Asignacion cancelada"
-                    self.status_timer = 2.0
-                    if "close" in settings.SOUNDS:
-                        settings.SOUNDS["close"].play()
-                    return
-                controls_manager.set_control(self.rebinding_action, event.key)
-                self.rebinding_action = None
-                self.status_message = "!Tecla guardada!"
-                self.status_timer = 2.0
-                if "save" in settings.SOUNDS:
-                    settings.SOUNDS["save"].play()
-                elif "enter" in settings.SOUNDS:
-                    settings.SOUNDS["enter"].play()
-                return
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if not input_data.pressed:
@@ -112,6 +133,7 @@ class SettingsState(BaseState):
             self.rebinding_action = self.CONFIG_ACTIONS[self.selected_index]
             self.status_message = "Presiona una tecla..."
             self.status_timer = 999.0
+            self._setup_key_interceptor()
             if "enter" in settings.SOUNDS:
                 settings.SOUNDS["enter"].play()
         elif self.selected_index == len(self.CONFIG_ACTIONS):
@@ -124,6 +146,7 @@ class SettingsState(BaseState):
             self._exit_state()
 
     def _exit_state(self) -> None:
+        self._remove_key_interceptor()
         if "paper-fold" in settings.SOUNDS:
             settings.SOUNDS["paper-fold"].play()
         elif "close" in settings.SOUNDS:
