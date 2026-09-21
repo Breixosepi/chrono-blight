@@ -2,7 +2,7 @@
 Chrono Blight
 """
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 import pygame
 from gale.animation import Animation
 from gale.state import StateMachine
@@ -38,6 +38,7 @@ def _build_animations() -> dict[str, dict[str, Animation]]:
 
 
 class Player(Entity):
+    _sprite_cache: Dict[Any, pygame.Surface] = {}
 
     def __init__(
         self,
@@ -438,7 +439,10 @@ class Player(Entity):
                 return
 
         texture_key = f"{self.skin}_{self.phase_color}"
-        frame_rect: pygame.Rect = self.current_animation.get_current_frame()
+        frame_rect = self.current_animation.get_current_frame()
+        frame_key = (frame_rect.x, frame_rect.y, frame_rect.w, frame_rect.h) if isinstance(frame_rect, pygame.Rect) else id(frame_rect)
+        facing_key = self.facing
+        player_cache_key = (texture_key, frame_key, facing_key)
 
         offsets = entity_defs.ENTITY_DEFS["player"]["forms"][self.skin]["offsets"]
         ox = offsets["right"] if self.facing == "right" else offsets["left"]
@@ -447,14 +451,17 @@ class Player(Entity):
         draw_x = self.hitbox.x + ox - camera_x
         draw_y = self.hitbox.y + oy - camera_y
 
-        sub = settings.TEXTURES[texture_key].subsurface(frame_rect)
-        if self.facing == "right":
-            sprite_surf = sub
-        else:
-            sprite_surf = pygame.transform.flip(sub, True, False)
+        sprite_surf = self._sprite_cache.get(player_cache_key)
+        if sprite_surf is None:
+            sub = settings.TEXTURES[texture_key].subsurface(frame_rect)
+            if self.facing == "right":
+                sprite_surf = sub
+            else:
+                sprite_surf = pygame.transform.flip(sub, True, False)
+            self._sprite_cache[player_cache_key] = sprite_surf
 
         outline_color = (255, 120, 130, 240) if self.phase_color == "red" else (100, 255, 175, 240)
-        self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_color)
+        self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_color, cache_key=player_cache_key)
 
         surface.blit(sprite_surf, (draw_x, draw_y))
 

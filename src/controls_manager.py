@@ -78,7 +78,10 @@ def load_controls() -> dict:
                 data = json.load(f)
             for action, key in data.items():
                 if action in CURRENT_KEYBINDS:
-                    CURRENT_KEYBINDS[action] = int(key)
+                    val = int(key)
+                    if val in SYSTEM_KEYBINDS.values():
+                        val = DEFAULT_KEYBINDS[action]
+                    CURRENT_KEYBINDS[action] = val
         except Exception:
             pass
     return CURRENT_KEYBINDS
@@ -95,12 +98,14 @@ def save_controls(controls_dict: dict = None) -> None:
 
 def apply_controls() -> None:
     input_handler.InputHandler.input_binding["keyboard"].clear()
-    for action, key in SYSTEM_KEYBINDS.items():
-        input_handler.InputHandler.set_keyboard_action(key, action)
     for action, key in CURRENT_KEYBINDS.items():
+        input_handler.InputHandler.set_keyboard_action(key, action)
+    for action, key in SYSTEM_KEYBINDS.items():
         input_handler.InputHandler.set_keyboard_action(key, action)
 
 def set_control(action: str, key_code: int) -> None:
+    if key_code in SYSTEM_KEYBINDS.values():
+        return
     CURRENT_KEYBINDS[action] = key_code
     save_controls()
     apply_controls()

@@ -21,8 +21,8 @@ class Enemy(Entity):
     """Base class for all Chrono Blight enemies."""
 
     GHOST_ALPHA: int = 65
-    _flip_cache: Dict[int, pygame.Surface] = {}
-    _ghost_cache: Dict[int, pygame.Surface] = {}
+    _flip_cache: Dict[Any, pygame.Surface] = {}
+    _ghost_cache: Dict[Any, pygame.Surface] = {}
     _plasma_trail_surf: Optional[pygame.Surface] = None
     _plasma_bullet_surf: Optional[pygame.Surface] = None
 
@@ -341,30 +341,36 @@ class Enemy(Entity):
         draw_y = self.hitbox.y + self.render_offset_y - camera_y
 
         if isinstance(frame, pygame.Surface):
-            sub = frame
+            frame_key = id(frame)
         else:
-            sub = settings.TEXTURES[self.enemy_type].subsurface(frame)
+            frame_key = (self.enemy_type, frame.x, frame.y, frame.w, frame.h)
 
         default_facing = self.defn.get("default_facing", "right")
         needs_flip = (self.facing != default_facing)
-        if needs_flip:
-            sub_id = id(sub)
-            sprite_surf = self._flip_cache.get(sub_id)
-            if sprite_surf is None:
+        cache_key = (frame_key, needs_flip)
+
+        sprite_surf = self._flip_cache.get(cache_key)
+        if sprite_surf is None:
+            if isinstance(frame, pygame.Surface):
+                sub = frame
+            else:
+                sub = settings.TEXTURES[self.enemy_type].subsurface(frame)
+
+            if needs_flip:
                 sprite_surf = pygame.transform.flip(sub, True, False)
-                self._flip_cache[sub_id] = sprite_surf
-        else:
-            sprite_surf = sub
+            else:
+                sprite_surf = sub
+            self._flip_cache[cache_key] = sprite_surf
 
         if self.is_active():
             outline_col = (255, 90, 90, 200) if self.phase == "red" else (90, 240, 150, 200)
-            self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_col)
+            self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_col, cache_key=cache_key)
             surface.blit(sprite_surf, (draw_x, draw_y))
         else:
-            ghost = self._ghost_cache.get(id(sprite_surf))
+            ghost = self._ghost_cache.get(cache_key)
             if ghost is None:
                 ghost = pygame.Surface(sprite_surf.get_size(), pygame.SRCALPHA)
                 ghost.blit(sprite_surf, (0, 0))
                 ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
-                self._ghost_cache[id(sprite_surf)] = ghost
+                self._ghost_cache[cache_key] = ghost
             surface.blit(ghost, (draw_x, draw_y))

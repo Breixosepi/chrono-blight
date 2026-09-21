@@ -64,6 +64,14 @@ class SettingsState(BaseState):
                     if "close" in settings.SOUNDS:
                         settings.SOUNDS["close"].play()
                     return
+                if key in controls_manager.SYSTEM_KEYBINDS.values():
+                    self.rebinding_action = None
+                    self.status_message = "!Tecla reservada!"
+                    self.status_timer = 2.0
+                    self._remove_key_interceptor()
+                    if "close" in settings.SOUNDS:
+                        settings.SOUNDS["close"].play()
+                    return
                 controls_manager.set_control(self.rebinding_action, key)
                 self.rebinding_action = None
                 self.status_message = "!Tecla guardada!"

@@ -263,7 +263,7 @@ class Entity:
     def is_dead(self) -> bool:
         return self.health <= 0.0
 
-    _outline_cache: Dict[Tuple[int, Tuple[int, int, int, int]], pygame.Surface] = {}
+    _outline_cache: Dict[Any, pygame.Surface] = {}
 
     @classmethod
     def render_outline(
@@ -273,8 +273,9 @@ class Entity:
         draw_x: float,
         draw_y: float,
         outline_color: Tuple[int, int, int, int],
+        cache_key: Any = None,
     ) -> None:
-        key = (id(sprite_surf), outline_color)
+        key = (cache_key if cache_key is not None else id(sprite_surf), outline_color)
         baked = cls._outline_cache.get(key)
         if baked is None:
             mask = pygame.mask.from_surface(sprite_surf)

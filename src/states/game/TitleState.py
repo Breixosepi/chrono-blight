@@ -44,7 +44,7 @@ class TitleState(BaseState):
         elif input_id in ("down"):
             self.selected_index = (self.selected_index + 1) % len(self.options)
             settings.SOUNDS["change"].play()
-        elif input_id in ("enter"):
+        elif input_id in ("enter", "jump", "attack"):
             settings.SOUNDS["enter"].play()
             self._confirm_selection()
 

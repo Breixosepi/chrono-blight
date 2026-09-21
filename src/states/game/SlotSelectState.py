@@ -61,7 +61,7 @@ class SlotSelectState(BaseState):
             return
 
         if self.confirming_overwrite:
-            if input_id in ("enter"):
+            if input_id in ("enter", "jump", "attack"):
                 settings.SOUNDS["enter"].play()
                 self._start_new_game_on_slot(self.slots[self.selected_index])
             elif input_id in ("back", "pause"):
@@ -74,7 +74,7 @@ class SlotSelectState(BaseState):
         elif input_id in ("down"):
             self.selected_index = (self.selected_index + 1) % len(self.slots)
             settings.SOUNDS["change"].play()
-        elif input_id in ("enter"):
+        elif input_id in ("enter", "jump", "attack"):
             settings.SOUNDS["enter"].play()
             self._handle_slot_selection()
         elif input_id == "special":
