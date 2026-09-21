@@ -313,7 +313,7 @@ class Boss(Enemy):
         map_w = float(getattr(self, "map_w", settings.VIRTUAL_WIDTH))
 
         # Actualizar ondas de choque terrestres
-        for sw in self.ground_shockwaves[:]:
+        for sw in self.ground_shockwaves:
             sw["anim_t"] += dt
 
             if sw["state"] == "spawn":
@@ -331,8 +331,7 @@ class Boss(Enemy):
                     sw["anim_t"] = 0.0
             elif sw["state"] == "despawn":
                 if sw["anim_t"] >= 5 * self._EFFECT_FPS:
-                    if sw in self.ground_shockwaves:
-                        self.ground_shockwaves.remove(sw)
+                    sw["is_dead"] = True
 
             # Colisión con jugador (activa durante spawn y travel)
             if sw["state"] in ("spawn", "travel"):
@@ -357,13 +356,12 @@ class Boss(Enemy):
                         self.on_hazard_hit({"damage": sw["damage"], "hitbox": sw_rect})
 
         # Actualizar orbes del vacío flotantes
-        for orb in self.void_orbs[:]:
+        for orb in self.void_orbs:
             orb["anim_t"] += dt
             orb["trail"].append({"x": orb["x"], "y": orb["y"], "life": 0.18})
-            for tr in orb["trail"][:]:
+            for tr in orb["trail"]:
                 tr["life"] -= dt
-                if tr["life"] <= 0:
-                    orb["trail"].remove(tr)
+            orb["trail"] = [tr for tr in orb["trail"] if tr["life"] > 0]
 
             if orb["state"] == "spawn":
                 if orb["anim_t"] >= 5 * self._EFFECT_FPS:
@@ -391,8 +389,7 @@ class Boss(Enemy):
                     orb["anim_t"] = 0.0
             elif orb["state"] == "despawn":
                 if orb["anim_t"] >= 5 * self._EFFECT_FPS:
-                    if orb in self.void_orbs:
-                        self.void_orbs.remove(orb)
+                    orb["is_dead"] = True
 
             # Colisión con jugador (activa durante spawn y travel)
             if orb["state"] in ("spawn", "travel"):
@@ -416,7 +413,7 @@ class Boss(Enemy):
                     if self.on_hazard_hit:
                         self.on_hazard_hit({"damage": orb["damage"], "hitbox": orb_rect})
 
-        for b in self.burst_hazards[:]:
+        for b in self.burst_hazards:
             b["timer"] += dt
             if b["state"] == "warning":
                 if b["timer"] >= 1.0:
@@ -441,10 +438,9 @@ class Boss(Enemy):
                         if self.on_hazard_hit:
                             self.on_hazard_hit({"damage": b["damage"], "hitbox": b_rect})
                 if b["timer"] >= 1.0:
-                    if b in self.burst_hazards:
-                        self.burst_hazards.remove(b)
+                    b["is_dead"] = True
 
-        for s in self.side_shoots[:]:
+        for s in self.side_shoots:
             s["anim_t"] += dt
             s["x"] += s["vx"] * dt
             s["life"] -= dt
@@ -466,16 +462,14 @@ class Boss(Enemy):
                 player.take_damage(int(s["damage"]), source_x=s["x"])
                 if self.on_hazard_hit:
                     self.on_hazard_hit({"damage": s["damage"], "hitbox": s_rect})
-                if s in self.side_shoots:
-                    self.side_shoots.remove(s)
+                s["is_dead"] = True
                 continue
 
             if s["life"] <= 0 or s["x"] < -100.0 or s["x"] > map_w + 100.0:
-                if s in self.side_shoots:
-                    self.side_shoots.remove(s)
+                s["is_dead"] = True
 
         # Actualizar ondas de viento (wind_blades)
-        for wb in self.wind_blades[:]:
+        for wb in self.wind_blades:
             wb["anim_t"] += dt
             wb["x"] += wb["vx"] * dt
             wb["life"] -= dt
@@ -513,15 +507,13 @@ class Boss(Enemy):
                         col = (80, 255, 120) if wb["phase_color"] == "green" else (255, 80, 80)
                         self.room._spawn_popup(f"-{int(wb['damage'])}", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
                         self.room.spawn_dust(wb["x"], wb["y"], count=8)
-                    if wb in self.wind_blades:
-                        self.wind_blades.remove(wb)
+                    wb["is_dead"] = True
                     continue
 
             if wb["life"] <= 0 or wb["x"] < -100.0 or wb["x"] > map_w + 100.0:
-                if wb in self.wind_blades:
-                    self.wind_blades.remove(wb)
+                wb["is_dead"] = True
 
-        for ds in self.dimensional_slashes[:]:
+        for ds in self.dimensional_slashes:
             ds["timer"] += dt
             ds["anim_t"] += dt
 
@@ -558,10 +550,9 @@ class Boss(Enemy):
                                 self.room._spawn_popup(f"-{int(ds['damage'])}", player.hitbox.centerx, player.hitbox.top - 10, 0.7, col)
 
                 if ds["timer"] >= 0.70:
-                    if ds in self.dimensional_slashes:
-                        self.dimensional_slashes.remove(ds)
+                    ds["is_dead"] = True
 
-        for fb in self.falling_blades[:]:
+        for fb in self.falling_blades:
             fb["timer"] += dt
             fb["anim_t"] += dt
 
@@ -600,8 +591,16 @@ class Boss(Enemy):
                     if self.room:
                         self.room.camera.shake(2.5, 0.12)
                         self.room.spawn_dust(fb["target_x"], 238.0, count=8)
-                    if fb in self.falling_blades:
-                        self.falling_blades.remove(fb)
+                    fb["is_dead"] = True
+
+        # Limpieza consolidada por comprensión de listas (elimina .remove y copias en runtime)
+        self.ground_shockwaves = [sw for sw in self.ground_shockwaves if not sw.get("is_dead")]
+        self.void_orbs = [orb for orb in self.void_orbs if not orb.get("is_dead")]
+        self.burst_hazards = [b for b in self.burst_hazards if not b.get("is_dead")]
+        self.side_shoots = [s for s in self.side_shoots if not s.get("is_dead")]
+        self.wind_blades = [wb for wb in self.wind_blades if not wb.get("is_dead")]
+        self.dimensional_slashes = [ds for ds in self.dimensional_slashes if not ds.get("is_dead")]
+        self.falling_blades = [fb for fb in self.falling_blades if not fb.get("is_dead")]
 
         super().update(dt)
 

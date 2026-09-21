@@ -80,3 +80,6 @@ scratch/
 saves/
 *.sav
 
+# Planificación local y metadatos GSD
+.planning/
+
