@@ -109,6 +109,42 @@ class Boss(Enemy):
         self._orb_anim_timer: float = 0.0
         self._EFFECT_FPS: float = 1.0 / 12.0
 
+        # Pre-allocated surfaces to eliminate per-frame allocations during rendering
+        self._fallback_sw_surf: pygame.Surface = pygame.Surface((28, 22), pygame.SRCALPHA)
+        self._fallback_sw_surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(self._fallback_sw_surf, (160, 20, 120, 210), (0, 0, 28, 22))
+
+        self._fallback_orb_surf: pygame.Surface = pygame.Surface((20, 20), pygame.SRCALPHA)
+        self._fallback_orb_surf.fill((0, 0, 0, 0))
+        pygame.draw.circle(self._fallback_orb_surf, (240, 60, 200, 200), (10, 10), 9)
+
+        self._orb_trail_surf: pygame.Surface = pygame.Surface((10, 10), pygame.SRCALPHA)
+        self._beam_surf: pygame.Surface = pygame.Surface((22, 300), pygame.SRCALPHA)
+        self._aura_cache: dict[tuple[int, int, tuple[int, int, int], int], pygame.Surface] = {}
+
+        self._falling_trail_surfs: dict[str, pygame.Surface] = {}
+        for c_name, c_rgb in [("red", (255, 70, 70)), ("green", (60, 255, 130))]:
+            t_s = pygame.Surface((16, 56), pygame.SRCALPHA)
+            for ty in range(56):
+                a = int(120 * (ty / 56))
+                pygame.draw.line(t_s, (*c_rgb, a), (0, ty), (16, ty))
+            self._falling_trail_surfs[c_name] = t_s
+
+    def _get_aura_surf(
+        self,
+        width: int,
+        height: int,
+        color_rgb: tuple[int, int, int],
+        alpha: int = 65,
+    ) -> pygame.Surface:
+        key = (width, height, color_rgb, alpha)
+        surf = self._aura_cache.get(key)
+        if surf is None:
+            surf = pygame.Surface((width, height), pygame.SRCALPHA)
+            pygame.draw.ellipse(surf, (*color_rgb, alpha), (0, 0, width, height))
+            self._aura_cache[key] = surf
+        return surf
+
     def teleport_to(self, tx: float, ty: float) -> None:
         old_x, old_y = self.x, self.y
         self.x = float(tx)
@@ -628,10 +664,7 @@ class Boss(Enemy):
                 # Fallback: elipse simple si no hay sprite cargado
                 sx = int(sw["x"] - camera_x)
                 sy = int(sw["base_y"] - camera_y)
-                fb = pygame.Surface((28, 22), pygame.SRCALPHA)
-                fb.fill((0, 0, 0, 0))
-                pygame.draw.ellipse(fb, (160, 20, 120, 210), (0, 0, 28, 22))
-                surface.blit(fb, (sx - 14, sy - 20))
+                surface.blit(self._fallback_sw_surf, (sx - 14, sy - 20))
                 continue
 
             # Selección de frames por estado
@@ -658,23 +691,19 @@ class Boss(Enemy):
         # --- Orbe del vacío con sprite ---
         orb_frames = self._orb_frames
         for orb in self.void_orbs:
-            # Estela dibujada en pygame.draw (ligera, no necesita sprite)
+            # Estela dibujada en pygame.draw (ligera, reutiliza superficie prealocada)
             for tr in orb.get("trail", []):
                 tx = int(tr["x"] - camera_x)
                 ty = int(tr["y"] - camera_y)
                 t_alpha = int(160 * (tr["life"] / 0.18))
-                t_surf = pygame.Surface((10, 10), pygame.SRCALPHA)
-                t_surf.fill((0, 0, 0, 0))
-                pygame.draw.circle(t_surf, (190, 40, 180, t_alpha), (5, 5), 4)
-                surface.blit(t_surf, (tx - 5, ty - 5))
+                self._orb_trail_surf.fill((0, 0, 0, 0))
+                pygame.draw.circle(self._orb_trail_surf, (190, 40, 180, t_alpha), (5, 5), 4)
+                surface.blit(self._orb_trail_surf, (tx - 5, ty - 5))
 
             if not orb_frames:
                 ox = int(orb["x"] - camera_x)
                 oy = int(orb["y"] - camera_y)
-                fb = pygame.Surface((20, 20), pygame.SRCALPHA)
-                fb.fill((0, 0, 0, 0))
-                pygame.draw.circle(fb, (240, 60, 200, 200), (10, 10), 9)
-                surface.blit(fb, (ox - 10, oy - 10))
+                surface.blit(self._fallback_orb_surf, (ox - 10, oy - 10))
                 continue
 
             if orb["state"] == "spawn":
@@ -735,12 +764,10 @@ class Boss(Enemy):
                     # In frame 4/6, convex cutting edge is on LEFT. If moving right (> 0), flip X!
                     if wb["direction"] > 0:
                         surf = pygame.transform.flip(surf, True, False)
-                    # Radiant vertical aura to make it striking and visible
-                    aura_col = (255, 60, 60, 65) if color == "red" else (60, 255, 120, 65)
+                    # Radiant vertical aura to make it striking and visible (cached texture)
+                    aura_col = (255, 60, 60) if color == "red" else (60, 255, 120)
                     aura_w, aura_h = surf.get_width() + 10, surf.get_height() + 10
-                    aura_surf = pygame.Surface((aura_w, aura_h), pygame.SRCALPHA)
-                    aura_surf.fill((0, 0, 0, 0))
-                    pygame.draw.ellipse(aura_surf, aura_col, (0, 0, aura_w, aura_h))
+                    aura_surf = self._get_aura_surf(aura_w, aura_h, aura_col, 65)
                     ax = int(wb["x"] - camera_x) - aura_w // 2
                     ay = int(wb["y"] - camera_y) - aura_h // 2
                     surface.blit(aura_surf, (ax, ay))
@@ -773,42 +800,30 @@ class Boss(Enemy):
                     dy = int(ds["y"] - camera_y) - b_surf.get_height() // 2
                     surface.blit(b_surf, (dx, dy))
 
-        # --- Cortes que caen del cielo (falling_blades) ---
         for fb in self.falling_blades:
             color = fb["phase_color"]
             col_rgb = (255, 70, 70) if color == "red" else (60, 255, 130)
             tx = int(fb["target_x"] - camera_x)
 
             if fb["state"] == "warning":
-                # Haz vertical de luz telegrafiado desde el cielo hasta el suelo
                 alpha_pulse = int(45 + 35 * math.sin(fb["timer"] * 24))
-                beam_surf = pygame.Surface((22, 300), pygame.SRCALPHA)
-                beam_surf.fill((*col_rgb, alpha_pulse))
-                pygame.draw.line(beam_surf, (*col_rgb, min(255, alpha_pulse * 2)), (11, 0), (11, 300), 2)
-                surface.blit(beam_surf, (tx - 11, int(-camera_y)))
-                # Retícula en el suelo
+                self._beam_surf.fill((*col_rgb, alpha_pulse))
+                pygame.draw.line(self._beam_surf, (*col_rgb, min(255, alpha_pulse * 2)), (11, 0), (11, 300), 2)
+                surface.blit(self._beam_surf, (tx - 11, int(-camera_y)))
                 ground_screen_y = int(238 - camera_y)
                 pygame.draw.ellipse(surface, (*col_rgb, 200), (tx - 14, ground_screen_y - 6, 28, 12), 2)
 
             elif fb["state"] == "falling":
-                # Estela de velocidad cayendo hacia abajo
-                trail_h = 56
-                trail_surf = pygame.Surface((16, trail_h), pygame.SRCALPHA)
-                for ty in range(trail_h):
-                    a = int(120 * (ty / trail_h))
-                    pygame.draw.line(trail_surf, (*col_rgb, a), (0, ty), (16, ty))
+                trail_surf = self._falling_trail_surfs.get(color, self._falling_trail_surfs["green"])
                 by = int(fb["y"] - camera_y)
-                surface.blit(trail_surf, (tx - 8, by - trail_h))
+                surface.blit(trail_surf, (tx - 8, by - 56))
 
-                # Sprite de la hoja vertical cayendo en picada
                 v_frames = self._wb_red_v if color == "red" else self._wb_green_v
                 if v_frames:
                     f_idx = int(fb["anim_t"] / 0.08) % len(v_frames)
                     surf = v_frames[f_idx]
                     aura_w, aura_h = surf.get_width() + 10, surf.get_height() + 10
-                    aura_surf = pygame.Surface((aura_w, aura_h), pygame.SRCALPHA)
-                    aura_surf.fill((0, 0, 0, 0))
-                    pygame.draw.ellipse(aura_surf, (*col_rgb, 75), (0, 0, aura_w, aura_h))
+                    aura_surf = self._get_aura_surf(aura_w, aura_h, col_rgb, 75)
                     surface.blit(aura_surf, (tx - aura_w // 2, by - aura_h // 2))
                     surface.blit(surf, (tx - surf.get_width() // 2, by - surf.get_height() // 2))
 

@@ -41,6 +41,7 @@ class ArenaManager:
         self.monoliths: list = []
         self.floor_split_active: bool = False
         self.liquid_anim_timer: float = 0.0
+        self._liquid_surf = pygame.Surface((settings.VIRTUAL_WIDTH, 50), pygame.SRCALPHA)
         
         self.trigger_rect = pygame.Rect(72, 0, 2000, 2000)
         self._extract_trigger_rect()
@@ -499,11 +500,12 @@ class ArenaManager:
             for m in self.monoliths:
                 m.render(surface, cam_x, cam_y)
 
-            # Peligro de suelo dividido en Fase 3 (ﾃ｡cido a la izquierda, lava a la derecha)
+            # Peligro de suelo dividido en Fase 3 (ácido a la izquierda, lava a la derecha)
             if self.floor_split_active:
                 floor_y = 240.0
                 liq_y = int(floor_y - 2 - cam_y)
-                liq_surf = pygame.Surface((settings.VIRTUAL_WIDTH, 50), pygame.SRCALPHA)
+                liq_surf = self._liquid_surf
+                liq_surf.fill((0, 0, 0, 0))
                 
                 # Acid (left: x < 800)
                 acid_left_x = int(-cam_x)

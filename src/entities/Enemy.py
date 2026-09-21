@@ -21,6 +21,10 @@ class Enemy(Entity):
     """Base class for all Chrono Blight enemies."""
 
     GHOST_ALPHA: int = 65
+    _flip_cache: Dict[int, pygame.Surface] = {}
+    _ghost_cache: Dict[int, pygame.Surface] = {}
+    _plasma_trail_surf: Optional[pygame.Surface] = None
+    _plasma_bullet_surf: Optional[pygame.Surface] = None
 
     def __init__(
         self,
@@ -297,31 +301,40 @@ class Enemy(Entity):
                     self.render_outline(surface, h_surf, hx, hy, (255, 90, 90, 180))
                     surface.blit(h_surf, (hx, hy))
                 else:
-                    ghost = pygame.Surface(h_surf.get_size(), pygame.SRCALPHA)
-                    ghost.blit(h_surf, (0, 0))
-                    ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
+                    ghost = self._ghost_cache.get(id(h_surf))
+                    if ghost is None:
+                        ghost = pygame.Surface(h_surf.get_size(), pygame.SRCALPHA)
+                        ghost.blit(h_surf, (0, 0))
+                        ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
+                        self._ghost_cache[id(h_surf)] = ghost
                     surface.blit(ghost, (hx, hy))
 
         # Renderizar proyectiles / balas
-        for p in self.projectiles:
-            px = int(p["x"] - camera_x)
-            py = int(p["y"] - camera_y)
-            # Rastro
-            for tr in p.get("trail", []):
-                tx = int(tr["x"] - camera_x)
-                ty = int(tr["y"] - camera_y)
-                tr_alpha = int(180 * (tr["life"] / 0.12))
-                tr_surf = pygame.Surface((6, 4), pygame.SRCALPHA)
-                tr_surf.fill((0, 0, 0, 0))
-                pygame.draw.ellipse(tr_surf, (255, 120, 40, tr_alpha), (0, 0, 6, 4))
-                surface.blit(tr_surf, (tx - 3, ty - 2))
+        if self.projectiles:
+            if Enemy._plasma_bullet_surf is None:
+                Enemy._plasma_trail_surf = pygame.Surface((6, 4), pygame.SRCALPHA)
+                b_surf = pygame.Surface((10, 6), pygame.SRCALPHA)
+                b_surf.fill((0, 0, 0, 0))
+                pygame.draw.ellipse(b_surf, (255, 90, 40, 200), (0, 0, 10, 6))
+                pygame.draw.ellipse(b_surf, (255, 245, 160, 255), (2, 1, 6, 4))
+                Enemy._plasma_bullet_surf = b_surf
 
-            # Núcleo de plasma
-            bullet_surf = pygame.Surface((10, 6), pygame.SRCALPHA)
-            bullet_surf.fill((0, 0, 0, 0))
-            pygame.draw.ellipse(bullet_surf, (255, 90, 40, 200), (0, 0, 10, 6))
-            pygame.draw.ellipse(bullet_surf, (255, 245, 160, 255), (2, 1, 6, 4))
-            surface.blit(bullet_surf, (px - 5, py - 3))
+            for p in self.projectiles:
+                px = int(p["x"] - camera_x)
+                py = int(p["y"] - camera_y)
+                # Rastro
+                for tr in p.get("trail", []):
+                    tx = int(tr["x"] - camera_x)
+                    ty = int(tr["y"] - camera_y)
+                    tr_alpha = int(180 * (tr["life"] / 0.12))
+                    if Enemy._plasma_trail_surf:
+                        Enemy._plasma_trail_surf.fill((0, 0, 0, 0))
+                        pygame.draw.ellipse(Enemy._plasma_trail_surf, (255, 120, 40, tr_alpha), (0, 0, 6, 4))
+                        surface.blit(Enemy._plasma_trail_surf, (tx - 3, ty - 2))
+
+                # Núcleo de plasma
+                if Enemy._plasma_bullet_surf:
+                    surface.blit(Enemy._plasma_bullet_surf, (px - 5, py - 3))
 
         frame = self.current_animation.get_current_frame()
         draw_x = self.hitbox.x + self.render_offset_x - camera_x
@@ -335,7 +348,11 @@ class Enemy(Entity):
         default_facing = self.defn.get("default_facing", "right")
         needs_flip = (self.facing != default_facing)
         if needs_flip:
-            sprite_surf = pygame.transform.flip(sub, True, False)
+            sub_id = id(sub)
+            sprite_surf = self._flip_cache.get(sub_id)
+            if sprite_surf is None:
+                sprite_surf = pygame.transform.flip(sub, True, False)
+                self._flip_cache[sub_id] = sprite_surf
         else:
             sprite_surf = sub
 
@@ -344,7 +361,10 @@ class Enemy(Entity):
             self.render_outline(surface, sprite_surf, draw_x, draw_y, outline_col)
             surface.blit(sprite_surf, (draw_x, draw_y))
         else:
-            ghost = pygame.Surface(sprite_surf.get_size(), pygame.SRCALPHA)
-            ghost.blit(sprite_surf, (0, 0))
-            ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
+            ghost = self._ghost_cache.get(id(sprite_surf))
+            if ghost is None:
+                ghost = pygame.Surface(sprite_surf.get_size(), pygame.SRCALPHA)
+                ghost.blit(sprite_surf, (0, 0))
+                ghost.fill((255, 255, 255, self.GHOST_ALPHA), special_flags=pygame.BLEND_RGBA_MULT)
+                self._ghost_cache[id(sprite_surf)] = ghost
             surface.blit(ghost, (draw_x, draw_y))

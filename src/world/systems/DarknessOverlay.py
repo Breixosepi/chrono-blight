@@ -68,32 +68,45 @@ class DarknessOverlay:
             for m in monoliths:
                 mx = int(m.hitbox.centerx - camera_x)
                 my = int(m.hitbox.centery - camera_y)
-                if getattr(m, "is_activated", False):
-                    self._carve_halo(mx, my + 10, radius=90, core_radius=50)
-                else:
-                    self._carve_halo(mx, my + 10, radius=20, core_radius=8)
+                is_act = getattr(m, "is_activated", False)
+                radius = 80 if is_act else 18
+                core_radius = 44 if is_act else 7
+                if -radius <= mx <= settings.VIRTUAL_WIDTH + radius and -radius <= (my + 10) <= settings.VIRTUAL_HEIGHT + radius:
+                    self._carve_halo(mx, my + 10, radius=radius, core_radius=core_radius)
 
         if boss is not None and not boss.dead:
             bx = int(boss.hitbox.centerx - camera_x)
             by = int(boss.hitbox.centery - camera_y)
             if is_phase_2:
-                self._carve_halo(bx, by - 14, radius=18, core_radius=7)
+                if -20 <= bx <= settings.VIRTUAL_WIDTH + 20 and -20 <= (by - 14) <= settings.VIRTUAL_HEIGHT + 20:
+                    self._carve_halo(bx, by - 14, radius=18, core_radius=7)
             else:
-                self._carve_halo(bx, by, radius=50, core_radius=28)
+                if -50 <= bx <= settings.VIRTUAL_WIDTH + 50 and -50 <= by <= settings.VIRTUAL_HEIGHT + 50:
+                    self._carve_halo(bx, by, radius=50, core_radius=28)
 
             for wb in getattr(boss, "wind_blades", []):
                 wx = int(wb["x"] - camera_x)
                 wy = int(wb["y"] - camera_y)
-                self._carve_halo(wx, wy, radius=28, core_radius=14)
+                if -22 <= wx <= settings.VIRTUAL_WIDTH + 22 and -22 <= wy <= settings.VIRTUAL_HEIGHT + 22:
+                    self._carve_halo(wx, wy, radius=22, core_radius=11)
 
             for ds in getattr(boss, "dimensional_slashes", []):
                 dx = int(ds["x"] - camera_x)
                 dy = int(ds["y"] - camera_y)
-                self._carve_halo(dx, dy, radius=38, core_radius=20)
+                if -30 <= dx <= settings.VIRTUAL_WIDTH + 30 and -30 <= dy <= settings.VIRTUAL_HEIGHT + 30:
+                    self._carve_halo(dx, dy, radius=30, core_radius=15)
 
         target_surface.blit(self._surface, (0, 0))
 
     def _carve_halo(self, cx: int, cy: int, radius: int, core_radius: int) -> None:
+        if (
+            cx + radius < 0
+            or cx - radius > settings.VIRTUAL_WIDTH
+            or cy + radius < 0
+            or cy - radius > settings.VIRTUAL_HEIGHT
+        ):
+            return
+
         key = (radius, core_radius)
         if key not in self._halo_cache:
             mask = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)

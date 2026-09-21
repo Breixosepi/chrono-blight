@@ -46,6 +46,23 @@ class LightMonolith:
             loops=1
         )
 
+        # Pre-rendered glow and gem textures to eliminate per-frame allocations
+        r_inact = max(14, int(28 * scale))
+        self._glow_surf_inact = pygame.Surface((r_inact * 2, r_inact * 2), pygame.SRCALPHA)
+        pygame.draw.circle(self._glow_surf_inact, (*self.glow_color, 70), (r_inact, r_inact), r_inact)
+        pygame.draw.circle(self._glow_surf_inact, (*self.glow_color, 160), (r_inact, r_inact), r_inact // 2)
+
+        r_act = max(14, int(48 * scale))
+        self._glow_surf_act = pygame.Surface((r_act * 2, r_act * 2), pygame.SRCALPHA)
+        pygame.draw.circle(self._glow_surf_act, (*self.glow_color, 70), (r_act, r_act), r_act)
+        pygame.draw.circle(self._glow_surf_act, (*self.glow_color, 160), (r_act, r_act), r_act // 2)
+
+        gem_w = max(6, int(12 * scale))
+        gem_h = max(8, int(16 * scale))
+        self._gem_surf = pygame.Surface((gem_w, gem_h), pygame.SRCALPHA)
+        pygame.draw.ellipse(self._gem_surf, (*self.glow_color, 230), (0, 0, gem_w, gem_h))
+        pygame.draw.ellipse(self._gem_surf, (255, 255, 255, 240), (max(1, int(3 * scale)), max(1, int(3 * scale)), max(2, int(6 * scale)), max(3, int(8 * scale))))
+
     def update(self, dt: float) -> None:
         self.pulse_timer += dt * 3.5
         
@@ -87,23 +104,24 @@ class LightMonolith:
         rx = int(self.x - camera_x)
         ry = int(self.y - camera_y)
 
+        # Viewport culling
+        if (
+            rx + self.width < -60
+            or rx > settings.VIRTUAL_WIDTH + 60
+            or ry + self.height < -60
+            or ry > settings.VIRTUAL_HEIGHT + 60
+        ):
+            return
+
         pulse_alpha = int(120 + 55 * math.sin(self.pulse_timer))
-        glow_radius = int((28 if not self.is_activated else 48) * self.scale)
-        glow_radius = max(14, glow_radius)
         core_pos = (rx + self.width // 2, ry + int(105 * self.scale))
 
-        glow_surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(glow_surf, (*self.glow_color, pulse_alpha // 2), (glow_radius, glow_radius), glow_radius)
-        pygame.draw.circle(glow_surf, (*self.glow_color, pulse_alpha), (glow_radius, glow_radius), glow_radius // 2)
-        surface.blit(glow_surf, (core_pos[0] - glow_radius, core_pos[1] - glow_radius))
+        glow_surf = self._glow_surf_act if self.is_activated else self._glow_surf_inact
+        glow_surf.set_alpha(pulse_alpha)
+        r = glow_surf.get_width() // 2
+        surface.blit(glow_surf, (core_pos[0] - r, core_pos[1] - r))
 
         if self._frames:
             frame_surf = self.animation.get_current_frame()
             surface.blit(frame_surf, (rx, ry))
-
-            gem_w = max(6, int(12 * self.scale))
-            gem_h = max(8, int(16 * self.scale))
-            gem_surf = pygame.Surface((gem_w, gem_h), pygame.SRCALPHA)
-            pygame.draw.ellipse(gem_surf, (*self.glow_color, 230), (0, 0, gem_w, gem_h))
-            pygame.draw.ellipse(gem_surf, (255, 255, 255, 240), (max(1, int(3 * self.scale)), max(1, int(3 * self.scale)), max(2, int(6 * self.scale)), max(3, int(8 * self.scale))))
-            surface.blit(gem_surf, (rx + int(21 * self.scale), ry + int(98 * self.scale)))
+            surface.blit(self._gem_surf, (rx + int(21 * self.scale), ry + int(98 * self.scale)))

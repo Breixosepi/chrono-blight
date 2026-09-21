@@ -263,24 +263,36 @@ class Entity:
     def is_dead(self) -> bool:
         return self.health <= 0.0
 
-    @staticmethod
+    _outline_cache: Dict[Tuple[int, Tuple[int, int, int, int]], pygame.Surface] = {}
+
+    @classmethod
     def render_outline(
+        cls,
         surface: pygame.Surface,
         sprite_surf: pygame.Surface,
         draw_x: float,
         draw_y: float,
         outline_color: Tuple[int, int, int, int],
     ) -> None:
-        mask = pygame.mask.from_surface(sprite_surf)
-        r, g, b = outline_color[:3]
-        outer_color = (max(0, r - 30), max(0, g - 30), max(0, b - 30), 65)
-        outer_surf = mask.to_surface(setcolor=outer_color, unsetcolor=(0, 0, 0, 0))
-        for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1)):
-            surface.blit(outer_surf, (draw_x + dx, draw_y + dy))
+        key = (id(sprite_surf), outline_color)
+        baked = cls._outline_cache.get(key)
+        if baked is None:
+            mask = pygame.mask.from_surface(sprite_surf)
+            w, h = sprite_surf.get_size()
+            baked = pygame.Surface((w + 4, h + 4), pygame.SRCALPHA)
+            r, g, b = outline_color[:3]
+            outer_color = (max(0, r - 30), max(0, g - 30), max(0, b - 30), 65)
+            outer_surf = mask.to_surface(setcolor=outer_color, unsetcolor=(0, 0, 0, 0))
+            for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+                baked.blit(outer_surf, (2 + dx, 2 + dy))
 
-        inner_surf = mask.to_surface(setcolor=outline_color, unsetcolor=(0, 0, 0, 0))
-        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-            surface.blit(inner_surf, (draw_x + dx, draw_y + dy))
+            inner_surf = mask.to_surface(setcolor=outline_color, unsetcolor=(0, 0, 0, 0))
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                baked.blit(inner_surf, (2 + dx, 2 + dy))
+
+            cls._outline_cache[key] = baked
+
+        surface.blit(baked, (draw_x - 2, draw_y - 2))
 
     def render(
         self,
